@@ -28,22 +28,28 @@ import { getLocalizedListing } from '../utils/listingTranslator';
 
 interface ListingPreviewModalProps {
   listing: HousingListing | null;
+  isOpen?: boolean;
   onClose: () => void;
-  isFavorite: boolean;
-  onToggleFavorite: (listingId: string) => void;
-  onOpenDetailPage: (listing: HousingListing) => void;
-  onOpenVideoTour: (listing: HousingListing) => void;
-  onOpenChat: (user: string, subject: string) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (listingId: string) => void;
+  onOpenDetailPage?: (listing: HousingListing) => void;
+  onOpenDirectDetailPage?: (listing: HousingListing) => void;
+  onOpenVideoTour?: (listing: HousingListing) => void;
+  onOpenVideoModal?: (listing: HousingListing) => void;
+  onOpenChat?: (user: string, subject: string) => void;
   currentLang?: Language;
 }
 
 export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
   listing: rawListing,
+  isOpen,
   onClose,
-  isFavorite,
+  isFavorite = false,
   onToggleFavorite,
   onOpenDetailPage,
+  onOpenDirectDetailPage,
   onOpenVideoTour,
+  onOpenVideoModal,
   onOpenChat,
   currentLang = 'tr',
 }) => {
@@ -63,7 +69,8 @@ export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
 
   const handleGoToDetailPage = () => {
     onClose();
-    onOpenDetailPage(listing);
+    const fn = onOpenDetailPage || onOpenDirectDetailPage;
+    if (fn) fn(listing);
   };
 
   const nextImg = (e: React.MouseEvent) => {

@@ -41,6 +41,7 @@ export const HomePage: React.FC = () => {
     setIsMobileFilterOpen,
     setPreviewModalListing,
     setVideoModalListing,
+    handleOpenChat,
   } = useApp();
 
   const handleOpenDetailPage = (listing: any) => {
@@ -329,10 +330,14 @@ export const HomePage: React.FC = () => {
                   key={listing.id}
                   listing={listing}
                   isFavorite={favoriteIds.includes(listing.id)}
+                  onToggleFavorite={(e) => handleToggleFavorite(e, listing.id)}
                   onFavoriteToggle={(e) => handleToggleFavorite(e, listing.id)}
-                  onSelectListing={() => handleOpenDetailPage(listing)}
+                  onOpenDetailPage={handleOpenDetailPage}
+                  onSelectListing={handleOpenDetailPage}
+                  onOpenVideoModal={(l) => setVideoModalListing(l)}
                   onOpenVideoTour={(l) => setVideoModalListing(l)}
                   onOpenPreviewModal={(l) => setPreviewModalListing(l)}
+                  onOpenChat={handleOpenChat}
                   currentLang={currentLang}
                 />
               ))}

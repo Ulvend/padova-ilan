@@ -30,11 +30,14 @@ import { FlatmateIcon } from './FlatmateIcon';
 interface ListingCardProps {
   listing: HousingListing;
   isFavorite: boolean;
-  onToggleFavorite: (e: React.MouseEvent, listingId: string) => void;
-  onOpenDetailPage: (listing: HousingListing) => void;
+  onToggleFavorite?: (e: React.MouseEvent, listingId: string) => void;
+  onFavoriteToggle?: (e: React.MouseEvent, listingId: string) => void;
+  onOpenDetailPage?: (listing: HousingListing) => void;
+  onSelectListing?: (listing: HousingListing) => void;
   onOpenPreviewModal: (listing: HousingListing) => void;
-  onOpenVideoModal: (listing: HousingListing) => void;
-  onOpenChat: (user: string, subject: string) => void;
+  onOpenVideoModal?: (listing: HousingListing) => void;
+  onOpenVideoTour?: (listing: HousingListing) => void;
+  onOpenChat?: (user: string, subject: string) => void;
   currentLang?: Language;
   layoutMode?: 'single' | 'double';
 }
@@ -43,9 +46,12 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   listing: rawListing,
   isFavorite,
   onToggleFavorite,
+  onFavoriteToggle,
   onOpenDetailPage,
+  onSelectListing,
   onOpenPreviewModal,
   onOpenVideoModal,
+  onOpenVideoTour,
   onOpenChat,
   currentLang = 'tr',
   layoutMode = 'double',
@@ -53,6 +59,25 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const listing = getLocalizedListing(rawListing, currentLang);
   const isDouble = layoutMode === 'double';
+
+  const handleToggleFav = (e: React.MouseEvent) => {
+    const fn = onToggleFavorite || onFavoriteToggle;
+    if (fn) fn(e, listing.id);
+  };
+
+  const handleOpenDetail = () => {
+    const fn = onOpenDetailPage || onSelectListing;
+    if (fn) fn(listing);
+  };
+
+  const handleOpenVideo = () => {
+    const fn = onOpenVideoModal || onOpenVideoTour;
+    if (fn) fn(listing);
+  };
+
+  const handleChat = () => {
+    if (onOpenChat) onOpenChat(listing.poster.username, listing.title);
+  };
 
   return (
     <article 
@@ -90,7 +115,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           {/* Favorite Button */}
           <button
             type="button"
-            onClick={(e) => onToggleFavorite(e, listing.id)}
+            onClick={handleToggleFav}
             className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full border border-stone-200 bg-stone-50 hover:bg-rose-50 active:scale-95 transition cursor-pointer"
             title={isFavorite ? t.unfavorite : t.favorite}
             aria-label="Favori"
@@ -156,7 +181,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
         <div>
           <h3 
             id={`listing-title-${listing.id}`}
-            onClick={() => onOpenDetailPage(listing)}
+            onClick={handleOpenDetail}
             className="font-bold text-base sm:text-lg text-stone-900 hover:text-orange-600 cursor-pointer transition-colors leading-snug mb-1 line-clamp-2"
             title={t.goToDetailPage}
           >
@@ -349,7 +374,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           {/* Primary CTA: İlan Sayfası */}
           <button 
             id={`btn-card-detail-${listing.id}`}
-            onClick={() => onOpenDetailPage(listing)}
+            onClick={handleOpenDetail}
             className="col-span-6 min-h-[42px] bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs sm:text-sm rounded-xl cursor-pointer transition flex items-center justify-center gap-1.5 shadow-xs active:scale-[0.98]"
             title={t.goToDetailPage}
           >
@@ -359,7 +384,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
 
           {/* Message CTA */}
           <button 
-            onClick={() => onOpenChat(listing.poster.username, listing.title)}
+            onClick={handleChat}
             className="col-span-3 min-h-[42px] bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-bold uppercase cursor-pointer flex items-center justify-center gap-1 shadow-xs transition active:scale-[0.98]"
             title={t.sendMessage}
           >
@@ -371,7 +396,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
         {/* Video Tour Quick Action */}
         {listing.hasVideoTour && (
           <button 
-            onClick={() => onOpenVideoModal(listing)}
+            onClick={handleOpenVideo}
             className="w-full min-h-[38px] border border-purple-200 bg-purple-50 hover:bg-purple-100/70 text-purple-900 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition mt-1"
           >
             <Video className="w-4 h-4 text-purple-700" />

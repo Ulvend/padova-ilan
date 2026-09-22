@@ -84,10 +84,20 @@ const AppLayout: React.FC = () => {
     activeConversationId,
     setActiveConversationId,
     handleSendMessage,
+    favoriteIds,
+    handleToggleFavorite,
+    handleOpenChat,
   } = useApp();
 
   const handleNavigateView = (view: ActiveView) => {
     navigate(VIEW_TO_PATH[view] || '/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const onListingCreated = (newListing: any) => {
+    handleAddListing(newListing);
+    setIsCreateModalOpen(false);
+    navigate(`/ilan/${newListing.id}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -166,6 +176,12 @@ const AppLayout: React.FC = () => {
         isOpen={!!previewModalListing}
         onClose={() => setPreviewModalListing(null)}
         currentLang={currentLang}
+        isFavorite={Boolean(previewModalListing && favoriteIds.includes(previewModalListing.id))}
+        onToggleFavorite={(id) => handleToggleFavorite(undefined, id)}
+        onOpenDetailPage={(l) => {
+          setPreviewModalListing(null);
+          navigate(`/ilan/${l.id}`);
+        }}
         onOpenDirectDetailPage={(l) => {
           setPreviewModalListing(null);
           navigate(`/ilan/${l.id}`);
@@ -174,13 +190,17 @@ const AppLayout: React.FC = () => {
           setPreviewModalListing(null);
           setVideoModalListing(l);
         }}
+        onOpenChat={(user, subject) => {
+          setPreviewModalListing(null);
+          handleOpenChat(user, subject);
+        }}
       />
 
       <CreateListingModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onAddListing={handleAddListing}
-        onSubmitListing={handleAddListing}
+        onAddListing={onListingCreated}
+        onSubmitListing={onListingCreated}
         currentLang={currentLang}
         currentUser={currentUser}
         isLoggedIn={isLoggedIn}
