@@ -119,6 +119,29 @@ export async function saveListingToFirestore(listing: HousingListing, userId: st
   }
 }
 
+export async function updateListingInFirestore(listingId: string, updates: Partial<HousingListing>): Promise<void> {
+  const path = `listings/${listingId}`;
+  try {
+    const listingRef = doc(db, 'listings', listingId);
+    await updateDoc(listingRef, {
+      ...updates,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export async function deleteListingFromFirestore(listingId: string): Promise<void> {
+  const path = `listings/${listingId}`;
+  try {
+    const listingRef = doc(db, 'listings', listingId);
+    await deleteDoc(listingRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
 export function subscribeToListings(
   onUpdate: (listings: HousingListing[]) => void,
   onError?: (error: any) => void

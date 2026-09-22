@@ -14,6 +14,9 @@ export const ListingDetailPage: React.FC = () => {
     handleToggleFavorite, 
     handleOpenChat, 
     setVideoModalListing,
+    handleOpenEditListingModal,
+    currentUser,
+    isLoggedIn,
     currentLang,
     t
   } = useApp();
@@ -61,6 +64,9 @@ export const ListingDetailPage: React.FC = () => {
       onBackToHome={() => navigate('/')}
       onOpenChat={(username, subject) => handleOpenChat(username, subject)}
       onOpenVideoTourModal={(l) => setVideoModalListing(l)}
+      onEditListing={(l) => handleOpenEditListingModal(l)}
+      currentUser={currentUser}
+      isLoggedIn={isLoggedIn}
       currentLang={currentLang}
     />
   );

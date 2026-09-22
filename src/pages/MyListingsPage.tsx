@@ -9,6 +9,7 @@ export const MyListingsPage: React.FC = () => {
     myListings,
     archivedListings,
     handleOpenCreateListingModal,
+    handleOpenEditListingModal,
     setVideoModalListing,
     handleDeleteListing,
     handleMarkListingAsRented,
@@ -22,6 +23,7 @@ export const MyListingsPage: React.FC = () => {
       myListings={myListings}
       archivedListings={archivedListings}
       onOpenCreateModal={handleOpenCreateListingModal}
+      onEditListing={handleOpenEditListingModal}
       onSelectListing={(listing) => navigate(`/ilan/${listing.id}`)}
       onOpenVideoTour={(listing) => setVideoModalListing(listing)}
       onDeleteListing={handleDeleteListing}

@@ -197,3 +197,83 @@ export async function uploadProfilePhoto(
     );
   });
 }
+
+/**
+ * Uploads a listing photo to Firebase Storage with canvas compression.
+ * Falls back to highly-compressed WebP DataURL (<80KB) if Storage is in demo/offline mode.
+ */
+export async function uploadListingPhoto(
+  file: File,
+  userId: string,
+  onProgress?: UploadProgressCallback
+): Promise<string> {
+  if (!file) {
+    throw new Error('Yüklenecek görsel dosyası bulunamadı.');
+  }
+
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Yalnızca görsel dosyaları (PNG, JPG, WEBP) yüklenebilir.');
+  }
+
+  // Compress to max 1280x850 at 0.78 quality to keep size small (<90KB)
+  const { blob, contentType } = await compressImage(file, 1280, 850, 0.78);
+
+  const cleanUserId = userId ? userId.replace(/[^a-zA-Z0-9_-]/g, '_') : 'guest_user';
+  const timestamp = Date.now();
+  const rand = Math.random().toString(36).substring(2, 7);
+  const extension = contentType === 'image/webp' ? 'webp' : 'jpg';
+  const filePath = `listing_photos/${cleanUserId}/${timestamp}_${rand}.${extension}`;
+
+  const storageRef = ref(storage, filePath);
+  const metadata = {
+    contentType,
+    customMetadata: {
+      userId: cleanUserId,
+      uploadedAt: new Date().toISOString(),
+    },
+  };
+
+  return new Promise((resolve) => {
+    try {
+      const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          if (onProgress && snapshot.totalBytes > 0) {
+            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            onProgress(progress);
+          }
+        },
+        async (error) => {
+          console.warn('Firebase storage upload failed, converting compressed blob to DataURL fallback:', error);
+          // Safe fallback: convert compressed small blob to data url so user is not blocked
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        },
+        async () => {
+          try {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadUrl);
+          } catch {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              resolve(reader.result as string);
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
+      );
+    } catch (e) {
+      console.warn('Storage initiation error, fallback to data URL:', e);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.readAsDataURL(blob);
+    }
+  });
+}

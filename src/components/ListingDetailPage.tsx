@@ -37,9 +37,10 @@ import {
   Wifi,
   Car,
   Cigarette,
-  Dog
+  Dog,
+  Pencil
 } from 'lucide-react';
-import { HousingListing, Language } from '../types';
+import { HousingListing, Language, UserProfile } from '../types';
 import { DISTRICT_BENCHMARKS } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
@@ -53,6 +54,9 @@ interface ListingDetailPageProps {
   onBackToHome: () => void;
   onOpenChat: (username: string, subject: string) => void;
   onOpenVideoTourModal: (listing: HousingListing) => void;
+  onEditListing?: (listing: HousingListing) => void;
+  currentUser?: UserProfile;
+  isLoggedIn?: boolean;
   currentLang: Language;
 }
 
@@ -63,6 +67,9 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   onBackToHome,
   onOpenChat,
   onOpenVideoTourModal,
+  onEditListing,
+  currentUser,
+  isLoggedIn = false,
   currentLang,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
@@ -118,6 +125,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
     setActivePhotoIndex((prev) => (prev - 1 + listing.images.length) % listing.images.length);
   };
 
+  const isOwner = Boolean(
+    currentUser && (
+      (currentUser.id && (rawListing.userId === currentUser.id || rawListing.poster?.id === currentUser.id)) ||
+      (currentUser.username && rawListing.poster?.username === currentUser.username) ||
+      rawListing.isMyListing
+    )
+  );
+
   return (
     <div className="w-full space-y-6 pb-24 sm:pb-16">
       
@@ -135,6 +150,19 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* İlanı Düzenle Button for Listing Owner */}
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => onEditListing?.(rawListing)}
+              className="border border-amber-400 bg-amber-500 hover:bg-amber-600 text-white min-h-[42px] px-4 py-2 text-xs font-bold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5"
+              title="İlanı, fotoğrafları ve videoyu düzenle"
+            >
+              <Pencil className="w-4 h-4" />
+              <span>{currentLang === 'tr' ? 'İlanı Düzenle' : currentLang === 'it' ? 'Modifica Annuncio' : 'Edit Listing'}</span>
+            </button>
+          )}
+
           {/* WhatsApp Direct Share */}
           <button
             type="button"

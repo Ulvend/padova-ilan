@@ -15,7 +15,8 @@ import {
   TrendingUp, 
   Calendar, 
   Coins, 
-  ArrowLeft 
+  ArrowLeft,
+  Pencil
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
@@ -25,6 +26,7 @@ interface MyListingsViewProps {
   myListings: HousingListing[];
   archivedListings?: HousingListing[];
   onOpenCreateModal: () => void;
+  onEditListing?: (listing: HousingListing) => void;
   onSelectListing: (listing: HousingListing) => void;
   onOpenVideoTour: (listing: HousingListing) => void;
   onDeleteListing: (id: string) => void;
@@ -39,6 +41,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
   myListings,
   archivedListings = [],
   onOpenCreateModal,
+  onEditListing,
   onSelectListing,
   onOpenVideoTour,
   onDeleteListing,
@@ -215,6 +218,17 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
 
                       {/* Action buttons including "Kiracı Buldum" */}
                       <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                        {/* İlanı Düzenle Button */}
+                        <button
+                          type="button"
+                          onClick={() => onEditListing?.(rawListing)}
+                          className="border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer min-h-[40px] flex items-center gap-1.5 shadow-2xs active:scale-95"
+                          title="İlanı, fotoğrafları ve videoyu düzenle"
+                        >
+                          <Pencil className="w-4 h-4 text-amber-600" />
+                          <span>{currentLang === 'tr' ? 'Düzenle' : currentLang === 'it' ? 'Modifica' : 'Edit'}</span>
+                        </button>
+
                         {/* REQ 4: "Kiracı Buldum" Button */}
                         <button
                           type="button"

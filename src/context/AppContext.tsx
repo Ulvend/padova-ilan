@@ -26,6 +26,8 @@ import {
   syncUserProfile, 
   updateUserFavorites, 
   saveListingToFirestore, 
+  updateListingInFirestore,
+  deleteListingFromFirestore,
   subscribeToListings 
 } from '../services/firebaseService';
 
@@ -78,6 +80,7 @@ interface AppContextType {
   filteredListings: HousingListing[];
   myListings: HousingListing[];
   handleAddListing: (newListing: HousingListing) => void;
+  handleUpdateListing: (listingId: string, updates: Partial<HousingListing>) => void;
   handleDeleteListing: (id: string) => void;
   handleToggleVerifyListing: (id: string) => void;
   handleToggleVideoVerified: (id: string) => void;
@@ -85,6 +88,9 @@ interface AppContextType {
   handleMarkListingAsRented: (listingId: string, details?: { rentedPrice: number; tenantType: string; note?: string }) => void;
   handleReactivateListing: (listingId: string) => void;
   handleToggleFavorite: (e?: React.MouseEvent, listingId?: string) => void;
+  editingListing: HousingListing | null;
+  setEditingListing: (listing: HousingListing | null) => void;
+  handleOpenEditListingModal: (listing: HousingListing) => void;
 
   // Conversations & Chat
   conversations: ConversationContact[];
@@ -292,6 +298,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [videoModalListing, setVideoModalListing] = useState<HousingListing | null>(null);
   const [previewModalListing, setPreviewModalListing] = useState<HousingListing | null>(null);
+  const [editingListing, setEditingListing] = useState<HousingListing | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -400,6 +407,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       handleOpenAuthModal('register', 'createListing');
       return;
     }
+    setEditingListing(null);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleOpenEditListingModal = (listing: HousingListing) => {
+    if (!isLoggedIn) {
+      handleOpenAuthModal('login', 'createListing');
+      return;
+    }
+    setEditingListing(listing);
     setIsCreateModalOpen(true);
   };
 
@@ -563,8 +580,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .catch((err) => console.warn('Firestore listing persistence error:', err));
   };
 
+  const handleUpdateListing = (listingId: string, updates: Partial<HousingListing>) => {
+    setListings((prev) =>
+      prev.map((l) => {
+        if (l.id === listingId) {
+          const updated = { ...l, ...updates };
+          if (updates.streetAddress || updates.district) {
+            const [lat, lng] = resolveListingCoords(updated);
+            updated.lat = updates.lat || lat;
+            updated.lng = updates.lng || lng;
+          }
+          return updated;
+        }
+        return l;
+      })
+    );
+    updateListingInFirestore(listingId, updates).catch((err) =>
+      console.warn('Firestore listing update error:', err)
+    );
+  };
+
   const handleDeleteListing = (id: string) => {
     setListings((prev) => prev.filter((item) => item.id !== id));
+    deleteListingFromFirestore(id).catch((err) =>
+      console.warn('Firestore listing deletion error:', err)
+    );
   };
 
   const handleToggleVerifyListing = (id: string) => {
@@ -754,6 +794,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     filteredListings,
     myListings,
     handleAddListing,
+    handleUpdateListing,
     handleDeleteListing,
     handleToggleVerifyListing,
     handleToggleVideoVerified,
@@ -761,6 +802,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleMarkListingAsRented,
     handleReactivateListing,
     handleToggleFavorite,
+    editingListing,
+    setEditingListing,
+    handleOpenEditListingModal,
     conversations,
     activeConversationId,
     setActiveConversationId,

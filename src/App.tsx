@@ -70,7 +70,10 @@ const AppLayout: React.FC = () => {
     setPreviewModalListing,
     isCreateModalOpen,
     setIsCreateModalOpen,
+    editingListing,
+    setEditingListing,
     handleAddListing,
+    handleUpdateListing,
     isProfileSettingsOpen,
     handleUpdateProfile,
     isAuthModalOpen,
@@ -198,9 +201,15 @@ const AppLayout: React.FC = () => {
 
       <CreateListingModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingListing(null);
+        }}
+        initialListing={editingListing}
+        isEditMode={Boolean(editingListing)}
         onAddListing={onListingCreated}
         onSubmitListing={onListingCreated}
+        onUpdateListing={handleUpdateListing}
         currentLang={currentLang}
         currentUser={currentUser}
         isLoggedIn={isLoggedIn}

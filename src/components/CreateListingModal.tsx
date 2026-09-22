@@ -1,5 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, ShieldCheck, Video, Building2, Send, Calendar, Clock, Users, Flame, Wind, Wifi, Bike, Car, Cigarette, Dog, Sparkles, UserPlus, LogIn, Lock, MapPin, Loader2, Check } from 'lucide-react';
+import { 
+  X, 
+  Plus, 
+  ShieldCheck, 
+  Video, 
+  Building2, 
+  Send, 
+  Calendar, 
+  Clock, 
+  Users, 
+  Flame, 
+  Wind, 
+  Wifi, 
+  Bike, 
+  Car, 
+  Cigarette, 
+  Dog, 
+  Sparkles, 
+  UserPlus, 
+  LogIn, 
+  Lock, 
+  MapPin, 
+  Loader2, 
+  Check,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Play,
+  Film,
+  Star,
+  ExternalLink,
+  Layers,
+  Pencil
+} from 'lucide-react';
 import { HousingListing, RoomType, ContractType, DistrictArea, Language, UserProfile } from '../types';
 import { DISTRICT_COORDINATES_MAP, resolveListingCoords } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
@@ -10,6 +43,7 @@ import {
   calculateNearestFaculty, 
   AddressSuggestion 
 } from '../services/geocodingService';
+import { uploadListingPhoto } from '../services/storageService';
 import { MiniLocationPicker } from './MiniLocationPicker';
 
 interface CreateListingModalProps {
@@ -17,6 +51,9 @@ interface CreateListingModalProps {
   onClose: () => void;
   onAddListing?: (listing: HousingListing) => void;
   onSubmitListing?: (listing: HousingListing) => void;
+  onUpdateListing?: (listingId: string, updates: Partial<HousingListing>) => void;
+  initialListing?: HousingListing | null;
+  isEditMode?: boolean;
   currentLang?: Language;
   currentUser?: UserProfile;
   isLoggedIn?: boolean;
@@ -28,6 +65,9 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   onClose,
   onAddListing,
   onSubmitListing,
+  onUpdateListing,
+  initialListing = null,
+  isEditMode = false,
   currentLang = 'tr',
   currentUser,
   isLoggedIn = false,
@@ -57,13 +97,129 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [contractStartDate, setContractStartDate] = useState('2026-10-01');
   const [isImmediate, setIsImmediate] = useState(false);
   const [contractDuration, setContractDuration] = useState('12 Ay (Akademik Yıl)');
+  // Photos States
+  const [images, setImages] = useState<string[]>([
+    'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
+  ]);
+  const [customImageUrl, setCustomImageUrl] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Video Tour States
   const [hasVideoTour, setHasVideoTour] = useState(true);
+  const [videoTourUrl, setVideoTourUrl] = useState('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+  const [showAdvancedVideoAngles, setShowAdvancedVideoAngles] = useState(false);
+  const [videoAngles, setVideoAngles] = useState<{
+    room?: string;
+    desk?: string;
+    kitchen?: string;
+    balcony?: string;
+  }>({
+    room: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    desk: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    kitchen: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    balcony: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+  });
+
   const [roomM2, setRoomM2] = useState('15');
   const [apartmentM2, setApartmentM2] = useState('95');
   const [bathrooms, setBathrooms] = useState('2');
   const [description, setDescription] = useState('');
   const [flatmateName, setFlatmateName] = useState('Matteo');
   const [flatmateFaculty, setFlatmateFaculty] = useState('UniPD Mühendislik');
+
+  // Prefill when initialListing is provided (Edit Mode)
+  useEffect(() => {
+    if (initialListing) {
+      setTitle(initialListing.title || '');
+      if (initialListing.district) setDistrict(initialListing.district);
+      setStreetAddress(initialListing.streetAddress || '');
+      setPrice(String(initialListing.price || 420));
+      setExpenses(initialListing.expenses || '+€40 Giderler');
+      if (initialListing.roomType) setRoomType(initialListing.roomType);
+      if (initialListing.contractType) setContractType(initialListing.contractType);
+      if (initialListing.roomM2) setRoomM2(String(initialListing.roomM2));
+      if (initialListing.apartmentM2) setApartmentM2(String(initialListing.apartmentM2));
+      if (initialListing.bathrooms) setBathrooms(String(initialListing.bathrooms));
+      setDescription(initialListing.description || '');
+      if (initialListing.totalHousemates) setTotalHousemates(String(initialListing.totalHousemates));
+      if (initialListing.genderPreference) setGenderPreference(initialListing.genderPreference);
+      if (initialListing.genderDistribution) setGenderDistribution(initialListing.genderDistribution);
+      if (initialListing.occupantType) setOccupantType(initialListing.occupantType);
+      setSmokingAllowed(Boolean(initialListing.smokingAllowed));
+      setPetsAllowed(Boolean(initialListing.petsAllowed));
+      if (initialListing.heatingType) setHeatingType(initialListing.heatingType);
+      setHasAirConditioning(Boolean(initialListing.hasAirConditioning));
+      setHasWashingMachine(Boolean(initialListing.hasWashingMachine));
+      setHasWifi(Boolean(initialListing.hasWifi));
+      setHasBikeParking(Boolean(initialListing.hasBikeParking));
+      setBikeParkingDetails(initialListing.bikeParkingDetails || '');
+      setHasParking(Boolean(initialListing.hasParking));
+      setParkingDetails(initialListing.parkingDetails || '');
+      if (initialListing.lat) setLat(initialListing.lat);
+      if (initialListing.lng) setLng(initialListing.lng);
+      if (initialListing.distanceToFaculty) setDistanceToFaculty(initialListing.distanceToFaculty);
+      if (initialListing.images && initialListing.images.length > 0) {
+        setImages(initialListing.images);
+      }
+      setHasVideoTour(Boolean(initialListing.hasVideoTour));
+      if (initialListing.videoTourUrl) setVideoTourUrl(initialListing.videoTourUrl);
+      if (initialListing.videoAngles) setVideoAngles(initialListing.videoAngles);
+    }
+  }, [initialListing, isOpen]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingPhoto(true);
+    setUploadProgress(10);
+    try {
+      const newUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const url = await uploadListingPhoto(file, currentUser?.id || 'guest', (p) => {
+          setUploadProgress(Math.round(((i + p / 100) / files.length) * 100));
+        });
+        if (url) newUrls.push(url);
+      }
+      setImages((prev) => [...prev, ...newUrls]);
+    } catch (err) {
+      console.error('Error uploading photos:', err);
+    } finally {
+      setIsUploadingPhoto(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAddImageUrl = () => {
+    if (!customImageUrl.trim()) return;
+    setImages((prev) => [...prev, customImageUrl.trim()]);
+    setCustomImageUrl('');
+  };
+
+  const handleMakeCoverPhoto = (idx: number) => {
+    setImages((prev) => {
+      const copy = [...prev];
+      const [item] = copy.splice(idx, 1);
+      return [item, ...copy];
+    });
+  };
+
+  const handleRemovePhoto = (idx: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleFillDemoPhotos = () => {
+    setImages([
+      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80',
+    ]);
+  };
 
   // Real Geocoding States
   const [lat, setLat] = useState<number>(() => DISTRICT_COORDINATES_MAP['Policlinico / Tıp Fakültesi (< 500m)'][0]);
@@ -220,7 +376,60 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
       const address = streetAddress.trim() || 'Via Belzoni, Padova';
       const formattedStartDate = formatDisplayStartDate(contractStartDate, isImmediate);
+      const safeImages = images.length > 0 ? images : [
+        'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
+      ];
 
+      if (initialListing) {
+        // Edit Mode: update existing listing
+        const updates: Partial<HousingListing> = {
+          title: title.trim(),
+          district,
+          streetAddress: address,
+          lat: finalLat,
+          lng: finalLng,
+          distanceToFaculty: distanceToFaculty || nearestFacultyText || 'Fakülteye yakın',
+          price: Number(price) || 400,
+          expenses,
+          fairPriceStatus: Number(price) <= 435 ? 'lower' : 'higher',
+          fairPriceText: Number(price) <= 435 ? 'Rayiç Ortalamasında / Uygun' : 'Rayiç Üstü Bildirimi',
+          roomType,
+          contractType,
+          contractStartDate: formattedStartDate,
+          contractDuration,
+          hasVideoTour,
+          videoTourUrl: hasVideoTour ? (videoTourUrl.trim() || undefined) : undefined,
+          videoAngles: hasVideoTour && Object.values(videoAngles).some(Boolean) ? videoAngles : undefined,
+          videoTitle: hasVideoTour ? (initialListing.videoTitle || '360° Oda ve Ortak Alan Canlı Turu') : undefined,
+          totalHousemates: Number(totalHousemates) || 3,
+          genderPreference,
+          genderDistribution: genderDistribution.trim() || 'Karma Ev',
+          occupantType,
+          smokingAllowed,
+          petsAllowed,
+          heatingType,
+          hasAirConditioning,
+          hasWashingMachine,
+          hasWifi,
+          hasBikeParking,
+          bikeParkingDetails: hasBikeParking ? bikeParkingDetails.trim() : undefined,
+          hasParking,
+          parkingDetails: hasParking ? parkingDetails.trim() : undefined,
+          roomM2: Number(roomM2) || 14,
+          apartmentM2: Number(apartmentM2) || 90,
+          bathrooms: Number(bathrooms) || 1,
+          description: description.trim() || initialListing.description,
+          images: safeImages,
+        };
+        if (onUpdateListing) {
+          onUpdateListing(initialListing.id, updates);
+        }
+        onClose();
+        return;
+      }
+
+      // Create Mode: new listing
       const newListing: HousingListing = {
         id: `PD-${Date.now().toString().slice(-4)}`,
         title: title.trim(),
@@ -238,6 +447,8 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         contractStartDate: formattedStartDate,
         contractDuration,
         hasVideoTour,
+        videoTourUrl: hasVideoTour ? (videoTourUrl.trim() || undefined) : undefined,
+        videoAngles: hasVideoTour && Object.values(videoAngles).some(Boolean) ? videoAngles : undefined,
         videoTitle: hasVideoTour ? '360° Oda ve Ortak Alan Canlı Turu' : undefined,
         isStudentCardVerified: true,
         compatibilityScore: 92,
@@ -251,43 +462,40 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             icon: 'grad',
           },
         ],
-      totalHousemates: Number(totalHousemates) || 3,
-      genderPreference,
-      genderDistribution: genderDistribution.trim() || 'Karma Ev',
-      occupantType,
-      smokingAllowed,
-      petsAllowed,
-      heatingType,
-      hasAirConditioning,
-      hasWashingMachine,
-      hasWifi,
-      hasBikeParking,
-      bikeParkingDetails: hasBikeParking ? bikeParkingDetails.trim() : undefined,
-      hasParking,
-      parkingDetails: hasParking ? parkingDetails.trim() : undefined,
-      roomM2: Number(roomM2) || 14,
-      apartmentM2: Number(apartmentM2) || 90,
-      bathrooms: Number(bathrooms) || 1,
-      confirmationTimeLeft: '3 Gün Teyitli: 72s Kaldı',
-      description: description.trim() || 'Padova Üniversitesi öğrencileri için uygun, temiz ve resmi sözleşmeli oda.',
-      userId: currentUser?.id,
-      poster: {
-        id: currentUser?.id,
-        username: currentUser?.username || 'ogrenci',
-        name: currentUser?.name || 'UniPD Öğrencisi',
-        avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
-        verifiedUniPD: currentUser?.studentIdVerified ?? true,
-        department: currentUser?.faculty || 'UniPD',
-        phone: currentUser?.phone || '+39 340 000 0000',
-      },
-      images: [
-        'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
-      ],
-      createdAt: 'Şimdi',
-      views: 1,
-      isMyListing: true,
-    };
+        totalHousemates: Number(totalHousemates) || 3,
+        genderPreference,
+        genderDistribution: genderDistribution.trim() || 'Karma Ev',
+        occupantType,
+        smokingAllowed,
+        petsAllowed,
+        heatingType,
+        hasAirConditioning,
+        hasWashingMachine,
+        hasWifi,
+        hasBikeParking,
+        bikeParkingDetails: hasBikeParking ? bikeParkingDetails.trim() : undefined,
+        hasParking,
+        parkingDetails: hasParking ? parkingDetails.trim() : undefined,
+        roomM2: Number(roomM2) || 14,
+        apartmentM2: Number(apartmentM2) || 90,
+        bathrooms: Number(bathrooms) || 1,
+        confirmationTimeLeft: '3 Gün Teyitli: 72s Kaldı',
+        description: description.trim() || 'Padova Üniversitesi öğrencileri için uygun, temiz ve resmi sözleşmeli oda.',
+        userId: currentUser?.id,
+        poster: {
+          id: currentUser?.id,
+          username: currentUser?.username || 'ogrenci',
+          name: currentUser?.name || 'UniPD Öğrencisi',
+          avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
+          verifiedUniPD: currentUser?.studentIdVerified ?? true,
+          department: currentUser?.faculty || 'UniPD',
+          phone: currentUser?.phone || '+39 340 000 0000',
+        },
+        images: safeImages,
+        createdAt: 'Şimdi',
+        views: 1,
+        isMyListing: true,
+      };
 
       const addFn = onAddListing || onSubmitListing;
       if (addFn) {
@@ -388,8 +596,12 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         {/* Modal Header */}
         <div className="bg-stone-900 text-white px-5 py-3.5 flex items-center justify-between border-b border-stone-800 shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="bg-orange-600 px-2.5 py-0.5 font-bold uppercase text-[10px] rounded-full">{t.postAdBtn}</span>
-            <h3 className="font-bold text-sm">{t.newListingHeader}</h3>
+            <span className={`px-2.5 py-0.5 font-bold uppercase text-[10px] rounded-full ${isEditMode || initialListing ? 'bg-amber-600 text-white' : 'bg-orange-600 text-white'}`}>
+              {isEditMode || initialListing ? (currentLang === 'it' ? 'MODIFICA' : 'DÜZENLEME') : t.postAdBtn}
+            </span>
+            <h3 className="font-bold text-sm">
+              {isEditMode || initialListing ? (currentLang === 'it' ? 'Modifica Annuncio' : 'İlanı Düzenle') : t.newListingHeader}
+            </h3>
           </div>
           <button 
             onClick={onClose} 
@@ -956,18 +1168,287 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             </div>
           </div>
 
-          {/* Video Tour Check */}
-          <div className="border border-purple-200 p-3.5 rounded-2xl bg-purple-50/60 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Video className="w-4 h-4 text-purple-700" />
-              <span className="font-semibold text-purple-900">{t.addVideoTourCheck}</span>
+          {/* FOTOĞRAFLAR & GALERİ YÖNETİMİ */}
+          <div className="p-4 bg-stone-50 border border-stone-200/90 rounded-2xl space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 pb-2.5">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-orange-600" />
+                <h4 className="font-bold text-xs uppercase tracking-wide text-stone-900">
+                  {currentLang === 'tr' ? 'İlan Fotoğrafları & Galeri' : currentLang === 'it' ? 'Foto & Galleria Annuncio' : 'Listing Photos & Gallery'}
+                </h4>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                  {images.length} {currentLang === 'tr' ? 'Görsel' : 'Photos'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleFillDemoPhotos}
+                  className="text-[11px] font-semibold text-stone-600 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200 px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  <span>{currentLang === 'tr' ? 'Örnek Fotoğraf Doldur' : 'Riempi Foto Esempio'}</span>
+                </button>
+              </div>
             </div>
-            <input 
-              type="checkbox" 
-              checked={hasVideoTour}
-              onChange={(e) => setHasVideoTour(e.target.checked)}
-              className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
-            />
+
+            {/* Fotoğraf Ekleme Alanı (Dosya Yükleme veya URL Ekleme) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Cihazdan / Bilgisayardan Fotoğraf Yükle */}
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="w-full h-11 border-2 border-dashed border-orange-300 hover:border-orange-500 bg-orange-50/50 hover:bg-orange-50 text-orange-700 font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer text-xs"
+                >
+                  {isUploadingPhoto ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-orange-600" />
+                      <span>{currentLang === 'tr' ? `Yükleniyor (%${uploadProgress})...` : `Caricamento (%${uploadProgress})...`}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 text-orange-600" />
+                      <span>{currentLang === 'tr' ? 'Cihazdan Fotoğraf Seç / Yükle' : 'Carica Foto dal Dispositivo'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* URL ile Görsel Ekle */}
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="url"
+                  value={customImageUrl}
+                  onChange={(e) => setCustomImageUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddImageUrl();
+                    }
+                  }}
+                  placeholder="https://.../resim.jpg"
+                  className="flex-1 border border-stone-200 bg-white rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-orange-500 transition min-h-[44px]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  disabled={!customImageUrl.trim()}
+                  className="h-11 px-3 bg-stone-900 hover:bg-black disabled:bg-stone-300 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1 transition cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{currentLang === 'tr' ? 'Ekle' : 'Aggiungi'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Fotoğraf Küçük Resimleri Galerisi */}
+            {images.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                {images.map((imgUrl, idx) => (
+                  <div
+                    key={idx}
+                    className={`group relative rounded-xl overflow-hidden border bg-stone-100 aspect-4/3 transition shadow-2xs ${
+                      idx === 0 ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-stone-200 hover:border-stone-400'
+                    }`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Fotoğraf ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+
+                    {/* Kapak Rozeti */}
+                    {idx === 0 && (
+                      <span className="absolute top-1.5 left-1.5 bg-orange-600/95 text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-xs flex items-center gap-1">
+                        <Star className="w-2.5 h-2.5 fill-current" />
+                        <span>{currentLang === 'tr' ? 'Kapak' : 'Copertina'}</span>
+                      </span>
+                    )}
+
+                    {/* Hover Eylem Butonları */}
+                    <div className="absolute inset-0 bg-stone-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
+                      {idx > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleMakeCoverPhoto(idx)}
+                          title={currentLang === 'tr' ? 'Kapak Fotoğrafı Yap' : 'Imposta come copertina'}
+                          className="bg-white/95 hover:bg-white text-stone-900 text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm transition cursor-pointer flex items-center gap-1"
+                        >
+                          <Star className="w-3 h-3 text-amber-500" />
+                          <span>{currentLang === 'tr' ? 'Kapak Yap' : 'Copertina'}</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(idx)}
+                        title={currentLang === 'tr' ? 'Fotoğrafı Sil' : 'Rimuovi foto'}
+                        className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-lg shadow-sm transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 border-2 border-dashed border-stone-200 rounded-xl text-center text-stone-500 space-y-1">
+                <ImageIcon className="w-6 h-6 mx-auto text-stone-400" />
+                <p className="text-xs font-semibold">
+                  {currentLang === 'tr' ? 'Henüz fotoğraf eklenmedi.' : 'Nessuna foto aggiunta.'}
+                </p>
+                <p className="text-[10px] text-stone-400">
+                  {currentLang === 'tr'
+                    ? 'Fotoğraf eklemek veya örnek fotoğraflarla doldurmak için yukarıdaki butonları kullanabilirsiniz.'
+                    : 'Usa i pulsanti sopra per caricare foto o riempire con esempi.'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 360° CANLI VİDEO TUR & VİDEO EKLEME */}
+          <div className="p-4 bg-purple-50/60 border border-purple-200/90 rounded-2xl space-y-3.5">
+            <div className="flex items-center justify-between border-b border-purple-200/80 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Video className="w-4 h-4 text-purple-700" />
+                <h4 className="font-bold text-xs uppercase tracking-wide text-purple-950">
+                  {currentLang === 'tr' ? '360° Canlı Video Tur & Sanal Gezinti' : currentLang === 'it' ? 'Tour Video 360° & Vista Virtuale' : '360° Live Video Tour'}
+                </h4>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-[11px] font-semibold text-purple-900">
+                  {hasVideoTour ? (currentLang === 'tr' ? 'Video Tur Aktif' : 'Tour Attivo') : (currentLang === 'tr' ? 'Kapalı' : 'Disattivato')}
+                </span>
+                <input 
+                  type="checkbox" 
+                  checked={hasVideoTour}
+                  onChange={(e) => setHasVideoTour(e.target.checked)}
+                  className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {hasVideoTour && (
+              <div className="space-y-3 animate-in fade-in">
+                {/* Ana Video URL Girişi */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-semibold text-stone-700 uppercase text-[10px] tracking-wide">
+                      {currentLang === 'tr' ? 'Ana 360° Video URL (MP4 / WebM / Cloud)' : 'URL Video Principale 360°'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVideoTourUrl('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+                        setVideoAngles({
+                          room: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                          desk: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                          kitchen: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                          balcony: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+                        });
+                      }}
+                      className="text-[10px] text-purple-700 hover:text-purple-900 font-bold underline cursor-pointer"
+                    >
+                      {currentLang === 'tr' ? 'Örnek 360° Video Ekle' : 'Aggiungi Video Esempio'}
+                    </button>
+                  </div>
+                  <input
+                    type="url"
+                    value={videoTourUrl}
+                    onChange={(e) => setVideoTourUrl(e.target.value)}
+                    placeholder="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                    className="w-full border border-purple-200 bg-white rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition min-h-[42px]"
+                  />
+                </div>
+
+                {/* Canlı Video Önizleme Oynatıcısı */}
+                {videoTourUrl.trim() && (
+                  <div className="rounded-xl overflow-hidden border border-purple-200 bg-stone-950 p-2 space-y-1.5 shadow-sm">
+                    <div className="flex items-center justify-between text-[10px] px-1 text-white">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>{currentLang === 'tr' ? 'Canlı Video Önizleme' : 'Anteprima Video'}</span>
+                      </span>
+                      <span className="text-purple-300 font-mono text-[9px]">HTML5 Video</span>
+                    </div>
+                    <video
+                      key={videoTourUrl}
+                      src={videoTourUrl}
+                      controls
+                      playsInline
+                      className="w-full h-36 rounded-lg object-cover bg-black"
+                    />
+                  </div>
+                )}
+
+                {/* Çok Açılı Video (Oda, Masa, Mutfak, Balkon) Gelişmiş Açılar */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedVideoAngles((prev) => !prev)}
+                    className="text-[11px] font-bold text-purple-800 hover:text-purple-950 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>
+                      {showAdvancedVideoAngles
+                        ? (currentLang === 'tr' ? 'Gelişmiş Kamera Açılarını Gizle ▲' : 'Nascondi Altre Angolazioni ▲')
+                        : (currentLang === 'tr' ? 'Farklı Kamera Açıları Ekle (Masa, Mutfak, Balkon) ▼' : 'Aggiungi Altre Angolazioni ▼')}
+                    </span>
+                  </button>
+
+                  {showAdvancedVideoAngles && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 p-3 bg-white/80 rounded-xl border border-purple-100">
+                      <div>
+                        <label className="text-[10px] font-semibold text-stone-600 block mb-0.5">
+                          {currentLang === 'tr' ? 'Çalışma Masası Açısı Video URL' : 'Angolazione Scrivania URL'}
+                        </label>
+                        <input
+                          type="url"
+                          value={videoAngles.desk || ''}
+                          onChange={(e) => setVideoAngles((prev) => ({ ...prev, desk: e.target.value }))}
+                          placeholder="https://.../desk.mp4"
+                          className="w-full border border-stone-200 rounded-lg p-2 text-xs outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-stone-600 block mb-0.5">
+                          {currentLang === 'tr' ? 'Mutfak / Ortak Alan Video URL' : 'Angolazione Cucina URL'}
+                        </label>
+                        <input
+                          type="url"
+                          value={videoAngles.kitchen || ''}
+                          onChange={(e) => setVideoAngles((prev) => ({ ...prev, kitchen: e.target.value }))}
+                          placeholder="https://.../kitchen.mp4"
+                          className="w-full border border-stone-200 rounded-lg p-2 text-xs outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="text-[10px] font-semibold text-stone-600 block mb-0.5">
+                          {currentLang === 'tr' ? 'Balkon / Şehir Manzarası Video URL' : 'Angolazione Balcone URL'}
+                        </label>
+                        <input
+                          type="url"
+                          value={videoAngles.balcony || ''}
+                          onChange={(e) => setVideoAngles((prev) => ({ ...prev, balcony: e.target.value }))}
+                          placeholder="https://.../balcony.mp4"
+                          className="w-full border border-stone-200 rounded-lg p-2 text-xs outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -985,17 +1466,21 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full py-3.5 text-xs uppercase tracking-wider font-bold bg-orange-600 hover:bg-orange-700 disabled:bg-stone-400 text-white rounded-xl cursor-pointer shadow-sm active:translate-y-0.5 transition min-h-[44px] flex items-center justify-center gap-2"
+              className={`w-full py-3.5 text-xs uppercase tracking-wider font-bold text-white rounded-xl cursor-pointer shadow-sm active:translate-y-0.5 transition min-h-[44px] flex items-center justify-center gap-2 ${
+                isEditMode || initialListing
+                  ? 'bg-amber-600 hover:bg-amber-700 disabled:bg-stone-400'
+                  : 'bg-orange-600 hover:bg-orange-700 disabled:bg-stone-400'
+              }`}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>İlan ve Konum Kaydediliyor...</span>
+                  <span>{isEditMode || initialListing ? 'Değişiklikler Kaydediliyor...' : 'İlan ve Konum Kaydediliyor...'}</span>
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
-                  <span>{t.publishListingBtn}</span>
+                  {isEditMode || initialListing ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                  <span>{isEditMode || initialListing ? (currentLang === 'it' ? 'Salva Modifiche' : 'Değişiklikleri Kaydet') : t.publishListingBtn}</span>
                 </>
               )}
             </button>
