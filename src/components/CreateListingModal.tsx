@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
-import { X, Plus, ShieldCheck, Video, Building2, Send, Calendar, Clock, Users, Flame, Wind, Wifi, Bike, Car, Cigarette, Dog, Sparkles, UserPlus, LogIn, Lock } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Plus, ShieldCheck, Video, Building2, Send, Calendar, Clock, Users, Flame, Wind, Wifi, Bike, Car, Cigarette, Dog, Sparkles, UserPlus, LogIn, Lock, MapPin, Loader2, Check } from 'lucide-react';
 import { HousingListing, RoomType, ContractType, DistrictArea, Language, UserProfile } from '../types';
-import { resolveListingCoords } from '../data/mockData';
+import { DISTRICT_COORDINATES_MAP, resolveListingCoords } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
+import { 
+  geocodeAddress, 
+  searchAddressSuggestions, 
+  reverseGeocode, 
+  calculateNearestFaculty, 
+  AddressSuggestion 
+} from '../services/geocodingService';
+import { MiniLocationPicker } from './MiniLocationPicker';
 
 interface CreateListingModalProps {
   isOpen: boolean;
@@ -45,6 +53,96 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [flatmateName, setFlatmateName] = useState('Matteo');
   const [flatmateFaculty, setFlatmateFaculty] = useState('UniPD Mühendislik');
 
+  // Real Geocoding States
+  const [lat, setLat] = useState<number>(() => DISTRICT_COORDINATES_MAP['Policlinico / Tıp Fakültesi (< 500m)'][0]);
+  const [lng, setLng] = useState<number>(() => DISTRICT_COORDINATES_MAP['Policlinico / Tıp Fakültesi (< 500m)'][1]);
+  const [isGeocoding, setIsGeocoding] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [nearestFacultyText, setNearestFacultyText] = useState<string>('');
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Compute nearest faculty whenever lat/lng updates
+  useEffect(() => {
+    if (lat && lng) {
+      const nearest = calculateNearestFaculty(lat, lng, currentLang);
+      setNearestFacultyText(nearest.formattedText);
+      setDistanceToFaculty(nearest.formattedText);
+    }
+  }, [lat, lng, currentLang]);
+
+  // When district changes, if no specific address typed, update coords to district center
+  const handleDistrictChange = (newDistrict: DistrictArea) => {
+    setDistrict(newDistrict);
+    if (!streetAddress.trim() && DISTRICT_COORDINATES_MAP[newDistrict]) {
+      const [dLat, dLng] = DISTRICT_COORDINATES_MAP[newDistrict];
+      setLat(dLat);
+      setLng(dLng);
+    }
+  };
+
+  // Real-time Address autocomplete search with OpenStreetMap Nominatim
+  const handleAddressChange = (value: string) => {
+    setStreetAddress(value);
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
+    if (value.trim().length >= 3) {
+      searchDebounceRef.current = setTimeout(async () => {
+        setIsGeocoding(true);
+        const results = await searchAddressSuggestions(value);
+        setAddressSuggestions(results);
+        setShowSuggestions(results.length > 0);
+        setIsGeocoding(false);
+      }, 400);
+    } else {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
+    setStreetAddress(suggestion.streetName);
+    setLat(suggestion.lat);
+    setLng(suggestion.lng);
+    setShowSuggestions(false);
+    const faculty = calculateNearestFaculty(suggestion.lat, suggestion.lng, currentLang);
+    setNearestFacultyText(faculty.formattedText);
+    setDistanceToFaculty(faculty.formattedText);
+  };
+
+  const handleAddressBlur = () => {
+    setTimeout(async () => {
+      setShowSuggestions(false);
+      if (streetAddress.trim().length >= 3) {
+        setIsGeocoding(true);
+        const result = await geocodeAddress(streetAddress, district);
+        if (result && result.lat && result.lng) {
+          setLat(result.lat);
+          setLng(result.lng);
+        }
+        setIsGeocoding(false);
+      }
+    }, 250);
+  };
+
+  // Interactive Mini-Map pin click or drag
+  const handleLocationPickerChange = async (newLat: number, newLng: number) => {
+    setLat(newLat);
+    setLng(newLng);
+    const faculty = calculateNearestFaculty(newLat, newLng, currentLang);
+    setNearestFacultyText(faculty.formattedText);
+    setDistanceToFaculty(faculty.formattedText);
+
+    // Reverse geocode to refine street name if user just clicked without typing
+    const reverse = await reverseGeocode(newLat, newLng);
+    if (reverse && reverse.streetAddress && (!streetAddress.trim() || streetAddress.includes('Via Belzoni'))) {
+      setStreetAddress(reverse.streetAddress);
+    }
+  };
+
   // Roommate & Flat Profile States
   const [totalHousemates, setTotalHousemates] = useState('3');
   const [genderPreference, setGenderPreference] = useState<'female_only' | 'male_only' | 'any'>('any');
@@ -84,48 +182,63 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     return dateStr;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSubmitting) return;
 
-    const address = streetAddress.trim() || 'Via Belzoni, Padova';
-    const [lat, lng] = resolveListingCoords({
-      district,
-      streetAddress: address,
-    }, Date.now() % 10);
+    setIsSubmitting(true);
 
-    const formattedStartDate = formatDisplayStartDate(contractStartDate, isImmediate);
+    try {
+      let finalLat = lat;
+      let finalLng = lng;
 
-    const newListing: HousingListing = {
-      id: `PD-${Date.now().toString().slice(-4)}`,
-      title: title.trim(),
-      district,
-      streetAddress: address,
-      lat,
-      lng,
-      distanceToFaculty,
-      price: Number(price) || 400,
-      expenses,
-      fairPriceStatus: Number(price) <= 435 ? 'lower' : 'higher',
-      fairPriceText: Number(price) <= 435 ? 'Rayiç Ortalamasında / Uygun' : 'Rayiç Üstü Bildirimi',
-      roomType,
-      contractType,
-      contractStartDate: formattedStartDate,
-      contractDuration,
-      hasVideoTour,
-      videoTitle: hasVideoTour ? '360° Oda ve Ortak Alan Canlı Turu' : undefined,
-      isStudentCardVerified: true,
-      compatibilityScore: 92,
-      compatibilityReason: 'UniPD Öğrenci Topluluğu',
-      currentFlatmates: [
-        {
-          name: flatmateName || 'Ev Arkadaşı',
-          age: 22,
-          faculty: flatmateFaculty || 'UniPD',
-          traits: 'Düzenli, Sessiz Saatler',
-          icon: 'grad',
-        },
-      ],
+      // Ensure valid coordinates through real geocoding if needed
+      if (!finalLat || !finalLng || isNaN(finalLat) || isNaN(finalLng)) {
+        const addressToGeocode = streetAddress.trim() || district;
+        const geo = await geocodeAddress(addressToGeocode, district);
+        if (geo && geo.lat && geo.lng) {
+          finalLat = geo.lat;
+          finalLng = geo.lng;
+        } else {
+          const [dLat, dLng] = resolveListingCoords({ district, streetAddress });
+          finalLat = dLat;
+          finalLng = dLng;
+        }
+      }
+
+      const address = streetAddress.trim() || 'Via Belzoni, Padova';
+      const formattedStartDate = formatDisplayStartDate(contractStartDate, isImmediate);
+
+      const newListing: HousingListing = {
+        id: `PD-${Date.now().toString().slice(-4)}`,
+        title: title.trim(),
+        district,
+        streetAddress: address,
+        lat: finalLat,
+        lng: finalLng,
+        distanceToFaculty: distanceToFaculty || nearestFacultyText || 'Fakülteye yakın',
+        price: Number(price) || 400,
+        expenses,
+        fairPriceStatus: Number(price) <= 435 ? 'lower' : 'higher',
+        fairPriceText: Number(price) <= 435 ? 'Rayiç Ortalamasında / Uygun' : 'Rayiç Üstü Bildirimi',
+        roomType,
+        contractType,
+        contractStartDate: formattedStartDate,
+        contractDuration,
+        hasVideoTour,
+        videoTitle: hasVideoTour ? '360° Oda ve Ortak Alan Canlı Turu' : undefined,
+        isStudentCardVerified: true,
+        compatibilityScore: 92,
+        compatibilityReason: 'UniPD Öğrenci Topluluğu',
+        currentFlatmates: [
+          {
+            name: flatmateName || 'Ev Arkadaşı',
+            age: 22,
+            faculty: flatmateFaculty || 'UniPD',
+            traits: 'Düzenli, Sessiz Saatler',
+            icon: 'grad',
+          },
+        ],
       totalHousemates: Number(totalHousemates) || 3,
       genderPreference,
       genderDistribution: genderDistribution.trim() || 'Karma Ev',
@@ -164,8 +277,13 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
       isMyListing: true,
     };
 
-    onAddListing(newListing);
-    onClose();
+      onAddListing(newListing);
+      onClose();
+    } catch (err) {
+      console.error('Failed to submit listing:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isLoggedIn) {
@@ -286,7 +404,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
               <label className="font-semibold text-stone-700 block mb-1.5 uppercase text-[11px] tracking-wide">{t.districtLabel}</label>
               <select 
                 value={district}
-                onChange={(e) => setDistrict(e.target.value as DistrictArea)}
+                onChange={(e) => handleDistrictChange(e.target.value as DistrictArea)}
                 className="w-full border border-stone-200 rounded-xl p-3 bg-stone-50/50 outline-none focus:bg-white focus:border-orange-500 transition min-h-[44px]"
               >
                 <option value="Policlinico / Tıp Fakültesi (< 500m)">{t.districtPoliclinico}</option>
@@ -298,16 +416,82 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
               </select>
             </div>
 
-            <div>
-              <label className="font-semibold text-stone-700 block mb-1.5 uppercase text-[11px] tracking-wide">{t.streetAddressLabel}</label>
-              <input 
-                type="text" 
-                value={streetAddress}
-                onChange={(e) => setStreetAddress(e.target.value)}
-                placeholder="Via Forcellini 42, Padova" 
-                className="w-full border border-stone-200 rounded-xl p-3 bg-stone-50/50 outline-none focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition min-h-[44px]"
-              />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-semibold text-stone-700 uppercase text-[11px] tracking-wide">{t.streetAddressLabel}</label>
+                {isGeocoding && (
+                  <span className="flex items-center gap-1 text-[10px] text-orange-600 font-semibold">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>OSM Geocoding...</span>
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={streetAddress}
+                  onChange={(e) => handleAddressChange(e.target.value)}
+                  onBlur={handleAddressBlur}
+                  onFocus={() => {
+                    if (addressSuggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  placeholder="Via Forcellini 42, Padova" 
+                  className="w-full border border-stone-200 rounded-xl p-3 bg-stone-50/50 outline-none focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition min-h-[44px] pr-9"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+                  <MapPin className="w-4 h-4 text-orange-600" />
+                </div>
+              </div>
+
+              {/* Real Autocomplete Dropdown suggestions from OpenStreetMap Nominatim */}
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-[600] bg-white border border-stone-200 rounded-2xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                  <div className="px-3 py-1.5 bg-stone-50 border-b border-stone-100 text-[10px] font-semibold text-stone-500 flex items-center justify-between">
+                    <span>OpenStreetMap Önerileri</span>
+                    <span className="font-mono text-[9px] text-stone-400">Padova</span>
+                  </div>
+                  {addressSuggestions.map((s, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectSuggestion(s);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 border-b border-stone-100 last:border-b-0 transition flex items-start gap-2 text-xs cursor-pointer"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-stone-800 truncate">{s.streetName}</p>
+                        <p className="text-[10px] text-stone-500 truncate">{s.displayName}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Interactive Mini-Map Pinpoint & Real Geocoding verification */}
+          <div className="bg-stone-50/60 p-3.5 rounded-2xl border border-stone-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-semibold text-stone-700 uppercase text-[11px] tracking-wide flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                <span>Harita Konum Doğrulaması & İğne Belirleme</span>
+              </span>
+              <span className="text-[10px] text-stone-500 bg-white px-2 py-0.5 rounded border border-stone-200">
+                Canlı OpenStreetMap
+              </span>
+            </div>
+            <MiniLocationPicker
+              lat={lat}
+              lng={lng}
+              onLocationChange={handleLocationPickerChange}
+              address={streetAddress || district}
+              isGeocoding={isGeocoding}
+              nearestFacultyText={nearestFacultyText}
+              currentLang={currentLang}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -785,10 +969,20 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
           <div className="pt-2">
             <button 
               type="submit" 
-              className="w-full py-3.5 text-xs uppercase tracking-wider font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl cursor-pointer shadow-sm active:translate-y-0.5 transition min-h-[44px] flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="w-full py-3.5 text-xs uppercase tracking-wider font-bold bg-orange-600 hover:bg-orange-700 disabled:bg-stone-400 text-white rounded-xl cursor-pointer shadow-sm active:translate-y-0.5 transition min-h-[44px] flex items-center justify-center gap-2"
             >
-              <Send className="w-4 h-4" />
-              <span>{t.publishListingBtn}</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>İlan ve Konum Kaydediliyor...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>{t.publishListingBtn}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -499,7 +499,14 @@ export const App: React.FC = () => {
   };
 
   const handleAddListing = (newListing: HousingListing) => {
-    const [lat, lng] = resolveListingCoords(newListing, listings.length);
+    const hasValidCoords =
+      typeof newListing.lat === 'number' &&
+      typeof newListing.lng === 'number' &&
+      !isNaN(newListing.lat) &&
+      !isNaN(newListing.lng) &&
+      newListing.lat > 0 &&
+      newListing.lng > 0;
+    const [lat, lng] = hasValidCoords ? [newListing.lat, newListing.lng] : resolveListingCoords(newListing);
     const listingWithCoords = { ...newListing, lat, lng };
     setListings((prev) => [listingWithCoords, ...prev]);
     setIsMapSectionOpen(true);

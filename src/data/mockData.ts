@@ -62,36 +62,7 @@ export const DISTRICT_COORDINATES_MAP: Record<string, [number, number]> = {
   'Guizza': [45.3820, 11.8715],
 };
 
-export const STREET_KEYWORDS_COORDS: Record<string, [number, number]> = {
-  'forcellini': [45.3975, 11.8980],
-  'belzoni': [45.4085, 11.8910],
-  'portello': [45.4090, 11.8935],
-  'venezia': [45.4110, 11.8980],
-  'beato pellegrino': [45.4145, 11.8690],
-  'pellegrino': [45.4145, 11.8690],
-  'prato della valle': [45.3985, 11.8765],
-  'prato': [45.3985, 11.8765],
-  'roma': [45.4040, 11.8755],
-  'altinate': [45.4075, 11.8810],
-  'morgagni': [45.4060, 11.8860],
-  'policlinico': [45.4015, 11.8925],
-  'giustiniani': [45.4020, 11.8930],
-  'arcella': [45.4240, 11.8820],
-  'guizza': [45.3820, 11.8715],
-  'stazione': [45.4170, 11.8795],
-  'santa sofia': [45.4068, 11.8850],
-  'marzolo': [45.4080, 11.8880],
-  'paolotti': [45.4082, 11.8895],
-  'bassano': [45.4190, 11.8780],
-  'san fermo': [45.4095, 11.8770],
-  'garibaldi': [45.4090, 11.8775],
-  'tommaseo': [45.4130, 11.8850],
-  'manzoni': [45.3960, 11.8810],
-  'facciolati': [45.3920, 11.8920],
-  'falloppio': [45.4040, 11.8870],
-};
-
-export const resolveListingCoords = (listing: Partial<HousingListing>, index: number = 0): [number, number] => {
+export const resolveListingCoords = (listing: Partial<HousingListing>, _index: number = 0): [number, number] => {
   if (
     typeof listing.lat === 'number' && 
     typeof listing.lng === 'number' && 
@@ -103,28 +74,25 @@ export const resolveListingCoords = (listing: Partial<HousingListing>, index: nu
     return [listing.lat, listing.lng];
   }
 
-  // Check street address keywords
-  const address = (listing.streetAddress || '').toLowerCase();
-  for (const [key, coords] of Object.entries(STREET_KEYWORDS_COORDS)) {
-    if (address.includes(key)) {
-      const jitterLat = ((index % 5) - 2) * 0.0012;
-      const jitterLng = (((index * 3) % 5) - 2) * 0.0012;
-      return [Number((coords[0] + jitterLat).toFixed(5)), Number((coords[1] + jitterLng).toFixed(5))];
+  // Check geocoding cache from localStorage
+  try {
+    const raw = localStorage.getItem('padova_geocode_cache_v2');
+    if (raw) {
+      const cache = JSON.parse(raw);
+      const key = (listing.streetAddress || '').toLowerCase().trim();
+      if (cache[key]?.lat && cache[key]?.lng) {
+        return [cache[key].lat, cache[key].lng];
+      }
     }
-  }
+  } catch (e) {}
 
-  // Check district
+  // Fallback to official district coordinates without fake jitter
   if (listing.district && DISTRICT_COORDINATES_MAP[listing.district]) {
-    const base = DISTRICT_COORDINATES_MAP[listing.district];
-    const jitterLat = ((index % 5) - 2) * 0.0022;
-    const jitterLng = (((index * 3) % 5) - 2) * 0.0022;
-    return [Number((base[0] + jitterLat).toFixed(5)), Number((base[1] + jitterLng).toFixed(5))];
+    return DISTRICT_COORDINATES_MAP[listing.district];
   }
 
-  // Default to Padova Centro with slight spread
-  const jitterLat = ((index % 6) - 2.5) * 0.003;
-  const jitterLng = (((index * 2) % 6) - 2.5) * 0.003;
-  return [Number((45.4064 + jitterLat).toFixed(5)), Number((11.8768 + jitterLng).toFixed(5))];
+  // Default to historical Padova Centro
+  return [45.4064, 11.8768];
 };
 
 export const INITIAL_HOUSING_LISTINGS: HousingListing[] = [];
