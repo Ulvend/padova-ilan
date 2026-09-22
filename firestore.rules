@@ -2,13 +2,14 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Default Deny All
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Common Global Helpers
+    // ---------- Yardımcılar ----------
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -17,43 +18,180 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function tokenEmail() {
+      return request.auth.token.get('email', '').lower();
+    }
+
+    // E-posta adresine gelen linke tıklanarak (veya Google/Apple ile) doğrulanmış hesap.
+    function isVerified() {
+      return isSignedIn() && request.auth.token.get('email_verified', false) == true;
+    }
+
+    // src/config.ts → SUPERADMIN_EMAILS ile aynı tutulmalı.
+    function isSuperAdmin() {
+      return isVerified() && tokenEmail() in ['cnkborasimsek@gmail.com'];
+    }
+
+    // Ana admin veya ana admin tarafından /admins altına eklenmiş kullanıcı.
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'cnkborasimsek@gmail.com';
+      return isSuperAdmin()
+        || (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    // src/config.ts → isUniPdEmail ile aynı tutulmalı.
+    // "UniPD Onaylı" rozeti yalnızca doğrulanmış UniPD e-postasıyla yazılabilir.
+    function isUniPd() {
+      return isVerified() && tokenEmail().matches('.*@(studenti[.])?unipd[.]it$');
     }
 
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // 1. User Profiles: /users/{userId}
-    match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+    function isShortString(value, max) {
+      return value is string && value.size() <= max;
     }
 
-    // 2. Housing Listings: /listings/{listingId}
+    function optionalString(data, key, max) {
+      return !(key in data) || isShortString(data[key], max);
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------- 1. Kullanıcı profilleri ----------
+
+    function isValidPublicProfile(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['id', 'name', 'username', 'faculty', 'bio', 'photoURL', 'unipdVerified', 'createdAt', 'updatedAt'])
+        && d.id == userId
+        && isShortString(d.name, 100)
+        && isShortString(d.username, 50)
+        && isShortString(d.faculty, 150)
+        && isShortString(d.bio, 500)
+        && isShortString(d.photoURL, 2048)
+        && d.unipdVerified == isUniPd();
+    }
+
+    // Herkese açık profil: ad, kullanıcı adı, fakülte, fotoğraf, UniPD rozeti.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(userId) && isValidPublicProfile(userId);
+      allow delete: if isAdmin();
+
+      // Özel bilgiler: e-posta, telefon, favoriler. Yalnızca sahibi ve adminler okur.
+      match /private/{docId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update: if isOwner(userId)
+          && docId == 'profile'
+          && request.resource.data.keys().hasOnly(['email', 'phone', 'savedListingIds', 'updatedAt'])
+          && optionalString(request.resource.data, 'email', 320)
+          && optionalString(request.resource.data, 'phone', 30)
+          && (!('savedListingIds' in request.resource.data)
+              || (request.resource.data.savedListingIds is list && request.resource.data.savedListingIds.size() <= 500));
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // ---------- 2. Admin yetkileri ----------
+
+    // Belgenin varlığı admin olmak demektir. Yalnızca ana admin verir/geri alır.
+    match /admins/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update: if isSuperAdmin()
+        && isValidId(uid)
+        && request.resource.data.keys().hasOnly(['uid', 'note', 'grantedBy', 'createdAt'])
+        && request.resource.data.uid == uid
+        && optionalString(request.resource.data, 'note', 200);
+      allow delete: if isSuperAdmin();
+    }
+
+    // ---------- 3. İlanlar ----------
+
+    function isValidListing(d) {
+      return isShortString(d.title, 150) && d.title.size() > 0
+        && d.price is number && d.price > 0 && d.price < 10000
+        && isShortString(d.description, 5000)
+        && d.images is list && d.images.size() <= 20
+        && d.userId is string;
+    }
+
+    // İlan sahibinin kendisi değiştiremeyeceği alanlar (doğrulama rozeti, sahiplik).
+    function ownerProtectedKeys() {
+      return ['userId', 'isStudentCardVerified', 'poster', 'createdAt'];
+    }
+
     match /listings/{listingId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create: if isVerified()
+        && isValidId(listingId)
+        && request.resource.data.userId == request.auth.uid
+        && isValidListing(request.resource.data)
+        && request.resource.data.isStudentCardVerified == isUniPd()
+        && request.resource.data.poster.id == request.auth.uid
+        && request.resource.data.poster.verifiedUniPD == isUniPd();
+
+      allow update: if isSignedIn() && (
+        (isAdmin() && isValidListing(request.resource.data))
+        || (isVerified()
+            && resource.data.userId == request.auth.uid
+            && isValidListing(request.resource.data)
+            && !changedKeys().hasAny(ownerProtectedKeys()))
+      );
+
       allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // 3. Direct Messages: /messages/{messageId}
+    // ---------- 4. Mesajlar ----------
+
+    function isValidNewMessage() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['senderId', 'recipientId', 'participants', 'text', 'listingId', 'subject', 'read', 'createdAt'])
+        && d.senderId == request.auth.uid
+        && d.recipientId is string && d.recipientId != d.senderId
+        && d.participants == [d.senderId, d.recipientId]
+        && isShortString(d.text, 2000) && d.text.size() > 0
+        && optionalString(d, 'listingId', 128)
+        && optionalString(d, 'subject', 200)
+        && d.read == false
+        && d.createdAt is number;
+    }
+
     match /messages/{messageId} {
-      allow read: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.recipientId == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
-      allow update: if false;
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isVerified() && isValidNewMessage();
+      // Alıcı yalnızca "okundu" işaretleyebilir.
+      allow update: if isSignedIn()
+        && resource.data.recipientId == request.auth.uid
+        && changedKeys().hasOnly(['read'])
+        && request.resource.data.read == true;
       allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
     }
 
-    // 4. Notifications: /notifications/{notificationId}
+    // ---------- 5. Bildirimler ----------
+
+    function isValidNotification() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId', 'title', 'message', 'type', 'read', 'createdAt', 'timestamp', 'linkView', 'linkId'])
+        && d.userId is string
+        && isShortString(d.title, 120)
+        && isShortString(d.message, 500)
+        && d.type in ['message', 'listing', 'security', 'tenant', 'system', 'admin']
+        && d.read == false
+        && d.timestamp is number;
+    }
+
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // Kullanıcı yalnızca kendine bildirim yazar; adminler ilan sahiplerini bilgilendirebilir.
+      allow create: if isSignedIn()
+        && isValidNotification()
+        && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && changedKeys().hasOnly(['read']);
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }

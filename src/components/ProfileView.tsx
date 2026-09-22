@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
+import { UniPdVerificationCard } from './UniPdVerificationCard';
 
 interface ProfileViewProps {
   favoriteListings: HousingListing[];
@@ -28,7 +29,6 @@ interface ProfileViewProps {
   currentUser?: UserProfile;
   isLoggedIn?: boolean;
   onOpenProfileSettings?: () => void;
-  onVerifySso?: () => void;
   onOpenAuthModal?: (mode?: 'login' | 'register') => void;
 }
 
@@ -40,14 +40,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   currentUser = CURRENT_USER,
   isLoggedIn = false,
   onOpenProfileSettings,
-  onVerifySso,
   onOpenAuthModal,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const [copiedHash, setCopiedHash] = useState(false);
 
   const handleCopyHash = () => {
-    navigator.clipboard.writeText(currentUser.userHash || 'usr_unipd_master_001');
+    navigator.clipboard.writeText(currentUser.userHash);
     setCopiedHash(true);
     setTimeout(() => setCopiedHash(false), 2000);
   };
@@ -153,10 +152,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </span>
                 ) : null}
 
-                <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>{currentUser.ssoVerified ? 'UniPD SSO Doğrulanmış Öğrenci' : t.verifiedUniPD}</span>
-                </span>
+                {currentUser.studentIdVerified && (
+                  <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>UniPD Onaylı</span>
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <p className="text-xs text-orange-600 font-semibold">
@@ -178,25 +179,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <div className="border border-emerald-200 bg-emerald-50/70 p-3 rounded-xl text-xs text-right">
-              <span className="text-[10px] text-stone-500 block uppercase font-semibold">UniPD Kurumsal SSO</span>
-              <span className="text-emerald-800 font-bold flex items-center justify-end gap-1 mt-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                {currentUser.ssoVerified ? 'Doğrulanmış Öğrenci' : 'UniPD Shibboleth'}
-              </span>
-              <span className="text-[10px] text-emerald-600 block mt-0.5 font-medium">Shibboleth IdP Aktif</span>
-            </div>
-
-            {!currentUser.ssoVerified && onVerifySso && (
-              <button
-                type="button"
-                onClick={onVerifySso}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
-              >
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>UniPD SSO ile Doğrula</span>
-              </button>
-            )}
+            <UniPdVerificationCard />
           </div>
         </div>
 
@@ -206,17 +189,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <div className="flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5 text-amber-600" />
               <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
-                Kullanıcı Güvenlik Hash Kodu
+                Kullanıcı Kimliği (UID)
               </span>
             </div>
             <p className="text-[11px] text-stone-500">
-              Yönetici (Admin) yetkisi almak için bu hash kodunu sistem Ana Admin'ine iletebilirsiniz.
+              Yönetici (Admin) yetkisi almak için bu kimliği Ana Admin'e iletebilirsiniz.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <code className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 font-mono text-xs font-bold text-stone-900 select-all tracking-wider shadow-2xs">
-              {currentUser.userHash || 'usr_unipd_master_001'}
+              {currentUser.userHash}
             </code>
             <button
               type="button"

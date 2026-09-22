@@ -52,7 +52,7 @@ interface ListingDetailPageProps {
   isFavorite: boolean;
   onToggleFavorite: (listingId: string) => void;
   onBackToHome: () => void;
-  onOpenChat: (username: string, subject: string) => void;
+  onOpenChat: (username: string, subject: string, listingId?: string) => void;
   onOpenVideoTourModal: (listing: HousingListing) => void;
   onEditListing?: (listing: HousingListing) => void;
   currentUser?: UserProfile;
@@ -125,12 +125,9 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
     setActivePhotoIndex((prev) => (prev - 1 + listing.images.length) % listing.images.length);
   };
 
+  // Sahiplik yalnızca Firebase UID ile belirlenir (kullanıcı adı çakışabilir).
   const isOwner = Boolean(
-    currentUser && (
-      (currentUser.id && (rawListing.userId === currentUser.id || rawListing.poster?.id === currentUser.id)) ||
-      (currentUser.username && rawListing.poster?.username === currentUser.username) ||
-      rawListing.isMyListing
-    )
+    currentUser?.id && (rawListing.userId === currentUser.id || rawListing.poster?.id === currentUser.id)
   );
 
   return (
@@ -270,7 +267,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             </div>
             <span className="text-[11px] text-stone-600 font-medium block mt-0.5">{listing.expenses}</span>
             <button
-              onClick={() => onOpenChat(listing.poster.username, listing.title)}
+              onClick={() => onOpenChat(listing.poster.username, listing.title, listing.id)}
               className="w-full mt-3 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition active:translate-y-0.5"
             >
               <MessageSquare className="w-4 h-4" />
@@ -939,7 +936,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             )}
 
             <button
-              onClick={() => onOpenChat(listing.poster.username, listing.title)}
+              onClick={() => onOpenChat(listing.poster.username, listing.title, listing.id)}
               className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5 shadow-xs"
             >
               <MessageSquare className="w-4 h-4" />
@@ -953,10 +950,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block">
                 {t.flatmatesAndMatch}
               </span>
-              <div className="flex items-baseline justify-between pt-1">
-                <span className="text-2xl font-bold text-emerald-700">%{listing.compatibilityScore}</span>
-                <span className="text-xs font-medium text-stone-600">{t.highCompatibility} ({listing.compatibilityReason})</span>
-              </div>
+              {listing.compatibilityScore > 0 && (
+                <div className="flex items-baseline justify-between pt-1">
+                  <span className="text-2xl font-bold text-emerald-700">%{listing.compatibilityScore}</span>
+                  <span className="text-xs font-medium text-stone-600">{t.highCompatibility} ({listing.compatibilityReason})</span>
+                </div>
+              )}
             </div>
 
             {/* Oda Arkadaşı & Ev Profili Özeti */}
@@ -1062,7 +1061,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
 
           <button
             type="button"
-            onClick={() => onOpenChat(listing.poster.username, listing.title)}
+            onClick={() => onOpenChat(listing.poster.username, listing.title, listing.id)}
             className="flex-1 min-h-[48px] bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs uppercase rounded-xl flex items-center justify-center gap-2 shadow-xs active:translate-y-0.5 cursor-pointer transition"
           >
             <MessageSquare className="w-4 h-4 stroke-[2.5]" />

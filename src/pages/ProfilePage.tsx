@@ -13,18 +13,10 @@ export const ProfilePage: React.FC = () => {
     isLoggedIn,
     setIsProfileSettingsOpen,
     handleOpenAuthModal,
-    handleUpdateProfile,
   } = useApp();
 
   const favoriteListings = listings.filter((l) => favoriteIds.includes(l.id));
 
-  const handleVerifySso = () => {
-    handleUpdateProfile({
-      studentIdVerified: true,
-      ssoVerified: true,
-      ssoProvider: 'UniPD Shibboleth SSO',
-    });
-  };
 
   return (
     <ProfileView
@@ -35,7 +27,6 @@ export const ProfilePage: React.FC = () => {
       currentUser={currentUser}
       isLoggedIn={isLoggedIn}
       onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
-      onVerifySso={handleVerifySso}
       onOpenAuthModal={handleOpenAuthModal}
     />
   );

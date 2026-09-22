@@ -21,7 +21,7 @@ import { TRANSLATIONS } from '../utils/translations';
 import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
 import { uploadProfilePhoto } from '../services/storageService';
 import { updateUserProfilePhoto } from '../services/firebaseService';
-import { auth } from '../lib/firebase';
+import { auth, changePassword, describeAuthError } from '../lib/firebase';
 import { updateProfile } from 'firebase/auth';
 
 interface ProfileSettingsModalProps {
@@ -136,7 +136,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
     try {
       // 1. Upload to Firebase Storage (compressed client-side, returning secure HTTPS URL)
-      const userId = currentUser.id || auth.currentUser?.uid || 'student_' + Date.now();
+      const userId = currentUser.id || auth.currentUser?.uid;
+      if (!userId) throw new Error('Fotoğraf yüklemek için giriş yapmalısınız.');
       const downloadUrl = await uploadProfilePhoto(photoFile, userId, (progress) => {
         setUploadProgress(progress);
       });
@@ -207,7 +208,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
     return { score: 3, label: t.passwordStrengthStrong, color: 'bg-emerald-600' };
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
     setPasswordSuccessMsg(false);
@@ -228,14 +229,17 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
     }
 
     setIsUpdatingPassword(true);
-
-    setTimeout(() => {
-      setIsUpdatingPassword(false);
+    try {
+      await changePassword(currentPassword, newPassword);
       setPasswordSuccessMsg(true);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    }, 700);
+    } catch (err) {
+      setPasswordError(describeAuthError(err));
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleSaveDepartment = (e: React.FormEvent) => {

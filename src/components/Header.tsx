@@ -40,7 +40,7 @@ interface HeaderProps {
   unreadNotificationsCount?: number;
   myListingsCount?: number;
   currentUser?: UserProfile;
-  authorizedAdminHashes?: string[];
+  isAdmin?: boolean;
   onOpenProfileSettings?: () => void;
   onOpenAuthModal?: (mode?: 'login' | 'register' | 'forgot') => void;
   isLoggedIn?: boolean;
@@ -60,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
   unreadNotificationsCount = 0,
   myListingsCount = 0,
   currentUser = CURRENT_USER,
-  authorizedAdminHashes = ['usr_unipd_master_001', 'usr_admin_dii_8421'],
+  isAdmin = false,
   onOpenProfileSettings,
   onOpenAuthModal,
   isLoggedIn = false,
@@ -70,9 +70,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Check if current user is an authorized admin
-  const isSuperAdmin = currentUser.role === 'superadmin' || currentUser.userHash === 'usr_unipd_master_001';
-  const isUserAuthorizedAdmin = isSuperAdmin || authorizedAdminHashes.includes(currentUser.userHash);
+  // Admin durumu AppContext'ten gelir (ana admin e-postası veya Firestore'daki admins kaydı)
+  const isUserAuthorizedAdmin = isAdmin;
 
   // Close user menu when clicking outside
   useEffect(() => {

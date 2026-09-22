@@ -200,7 +200,7 @@ export async function uploadProfilePhoto(
 
 /**
  * Uploads a listing photo to Firebase Storage with canvas compression.
- * Falls back to highly-compressed WebP DataURL (<80KB) if Storage is in demo/offline mode.
+ * Yükleme başarısız olursa hata fırlatır; base64'e düşmez (Firestore belgesi 1 MB sınırını aşar).
  */
 export async function uploadListingPhoto(
   file: File,
@@ -210,7 +210,9 @@ export async function uploadListingPhoto(
   if (!file) {
     throw new Error('Yüklenecek görsel dosyası bulunamadı.');
   }
-
+  if (!userId) {
+    throw new Error('Fotoğraf yüklemek için giriş yapmalısınız.');
+  }
   if (!file.type.startsWith('image/')) {
     throw new Error('Yalnızca görsel dosyaları (PNG, JPG, WEBP) yüklenebilir.');
   }
@@ -218,62 +220,47 @@ export async function uploadListingPhoto(
   // Compress to max 1280x850 at 0.78 quality to keep size small (<90KB)
   const { blob, contentType } = await compressImage(file, 1280, 850, 0.78);
 
-  const cleanUserId = userId ? userId.replace(/[^a-zA-Z0-9_-]/g, '_') : 'guest_user';
-  const timestamp = Date.now();
   const rand = Math.random().toString(36).substring(2, 7);
   const extension = contentType === 'image/webp' ? 'webp' : 'jpg';
-  const filePath = `listing_photos/${cleanUserId}/${timestamp}_${rand}.${extension}`;
+  // Yol, storage.rules'daki listing_photos/{userId}/{fileName} kuralıyla eşleşmeli.
+  const filePath = `listing_photos/${userId}/${Date.now()}_${rand}.${extension}`;
 
   const storageRef = ref(storage, filePath);
   const metadata = {
     contentType,
     customMetadata: {
-      userId: cleanUserId,
+      userId,
       uploadedAt: new Date().toISOString(),
     },
   };
 
-  return new Promise((resolve) => {
-    try {
-      const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
+  return new Promise((resolve, reject) => {
+    const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
 
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          if (onProgress && snapshot.totalBytes > 0) {
-            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            onProgress(progress);
-          }
-        },
-        async (error) => {
-          console.warn('Firebase storage upload failed, converting compressed blob to DataURL fallback:', error);
-          // Safe fallback: convert compressed small blob to data url so user is not blocked
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
-        },
-        async () => {
-          try {
-            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadUrl);
-          } catch {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              resolve(reader.result as string);
-            };
-            reader.readAsDataURL(blob);
-          }
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        if (onProgress && snapshot.totalBytes > 0) {
+          onProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
         }
-      );
-    } catch (e) {
-      console.warn('Storage initiation error, fallback to data URL:', e);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.readAsDataURL(blob);
-    }
+      },
+      (error) => {
+        console.error('Listing photo upload error:', error);
+        reject(
+          new Error(
+            error.code === 'storage/unauthorized'
+              ? 'Fotoğraf yükleme izniniz yok. Giriş yaptığınızdan emin olun.'
+              : `Fotoğraf yüklenemedi: ${error.message}`
+          )
+        );
+      },
+      async () => {
+        try {
+          resolve(await getDownloadURL(uploadTask.snapshot.ref));
+        } catch (urlErr: any) {
+          reject(new Error(`İndirme bağlantısı alınamadı: ${urlErr?.message || urlErr}`));
+        }
+      }
+    );
   });
 }

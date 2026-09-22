@@ -38,6 +38,15 @@ export interface PosterInfo {
   phone?: string;
 }
 
+export type VideoAngleId = 'room' | 'desk' | 'kitchen' | 'view';
+
+export interface VideoAngle {
+  id: VideoAngleId;
+  label: string;
+  videoUrl: string;
+  poster?: string;
+}
+
 export interface HousingListing {
   id: string;
   userId?: string;
@@ -52,16 +61,13 @@ export interface HousingListing {
   roomType: RoomType;
   contractType: ContractType;
   contractStartDate?: string;
+  // YYYY-MM-DD; boşsa "hemen taşınılabilir". Başlangıç tarihi filtresi bunu kullanır.
+  contractStartISO?: string;
   contractDuration?: string;
   hasVideoTour: boolean;
   videoTitle?: string;
   videoUrl?: string;
-  videoAngles?: {
-    id: 'room' | 'desk' | 'kitchen' | 'view';
-    label: string;
-    videoUrl: string;
-    poster?: string;
-  }[];
+  videoAngles?: VideoAngle[];
   isStudentCardVerified: boolean;
   compatibilityScore: number;
   compatibilityReason: string;
@@ -90,8 +96,8 @@ export interface HousingListing {
   poster: PosterInfo;
   images: string[];
   createdAt: string;
+  updatedAt?: string;
   views: number;
-  isMyListing?: boolean;
   lat?: number;
   lng?: number;
   isArchived?: boolean;
@@ -150,7 +156,21 @@ export interface DirectMessage {
   timestamp?: number;
 }
 
+// Firestore'daki /messages belgesi.
+export interface FirestoreMessage {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  participants: string[];
+  text: string;
+  listingId?: string;
+  subject?: string;
+  read: boolean;
+  createdAt: number;
+}
+
 export interface ConversationContact {
+  // Karşı tarafın Firebase UID'si; sohbetler kişi bazında gruplanır.
   id: string;
   username: string;
   name: string;

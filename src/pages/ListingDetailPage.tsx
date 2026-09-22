@@ -62,7 +62,7 @@ export const ListingDetailPage: React.FC = () => {
       isFavorite={isFavorite}
       onToggleFavorite={(listingId) => handleToggleFavorite(undefined, listingId)}
       onBackToHome={() => navigate('/')}
-      onOpenChat={(username, subject) => handleOpenChat(username, subject)}
+      onOpenChat={(username, subject, listingId) => handleOpenChat(username, subject, listingId)}
       onOpenVideoTourModal={(l) => setVideoModalListing(l)}
       onEditListing={(l) => handleOpenEditListingModal(l)}
       currentUser={currentUser}

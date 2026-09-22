@@ -17,7 +17,7 @@ import { MessagesPage } from './pages/MessagesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminPage } from './pages/AdminPage';
 import { NotificationsPage } from './pages/NotificationsPage';
-import { ActiveView } from './types';
+import { ActiveView, HousingListing } from './types';
 
 const VIEW_TO_PATH: Record<ActiveView, string> = {
   home: '/',
@@ -55,7 +55,6 @@ const AppLayout: React.FC = () => {
     unreadMessagesCount,
     unreadNotificationsCount,
     currentUser,
-    authorizedAdminHashes,
     setIsProfileSettingsOpen,
     handleOpenAuthModal,
     isLoggedIn,
@@ -90,6 +89,9 @@ const AppLayout: React.FC = () => {
     favoriteIds,
     handleToggleFavorite,
     handleOpenChat,
+    isAdmin,
+    toast,
+    dismissToast,
   } = useApp();
 
   const handleNavigateView = (view: ActiveView) => {
@@ -97,8 +99,9 @@ const AppLayout: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const onListingCreated = (newListing: any) => {
-    handleAddListing(newListing);
+  // Hata olursa CreateListingModal yakalar ve kullanıcıya gösterir; modal açık kalır.
+  const onListingCreated = async (newListing: HousingListing) => {
+    await handleAddListing(newListing);
     setIsCreateModalOpen(false);
     navigate(`/ilan/${newListing.id}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -120,7 +123,7 @@ const AppLayout: React.FC = () => {
         unreadNotificationsCount={unreadNotificationsCount}
         myListingsCount={myListings.length}
         currentUser={currentUser}
-        authorizedAdminHashes={authorizedAdminHashes}
+        isAdmin={isAdmin}
         onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
         onOpenAuthModal={handleOpenAuthModal}
         isLoggedIn={isLoggedIn}
@@ -149,7 +152,7 @@ const AppLayout: React.FC = () => {
         onFilterChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
         onResetFilters={() => setFilters(DEFAULT_FILTERS)}
         currentLang={currentLang}
-        totalResultsCount={filteredListings.length}
+        filteredCount={filteredListings.length}
       />
 
       {/* Mobile Bottom Navigation Bar */}
@@ -193,9 +196,9 @@ const AppLayout: React.FC = () => {
           setPreviewModalListing(null);
           setVideoModalListing(l);
         }}
-        onOpenChat={(user, subject) => {
+        onOpenChat={(user, subject, listingId) => {
           setPreviewModalListing(null);
-          handleOpenChat(user, subject);
+          handleOpenChat(user, subject, listingId);
         }}
       />
 
@@ -230,18 +233,43 @@ const AppLayout: React.FC = () => {
         initialMode={authModalMode}
         currentLang={currentLang}
         onLoginSuccess={handleLoginSuccess}
-        reason={authModalReason}
+        authReason={authModalReason}
       />
 
-      {isChatOpen && (
+      {isLoggedIn && (
         <ChatWidget
           conversations={conversations}
           activeConversationId={activeConversationId}
           onSelectConversation={setActiveConversationId}
           onSendMessage={handleSendMessage}
-          onClose={() => setIsChatOpen(false)}
+          isOpen={isChatOpen}
+          onToggle={() => setIsChatOpen(!isChatOpen)}
           currentLang={currentLang}
         />
+      )}
+
+      {/* Kısa bilgilendirme / hata mesajı */}
+      {toast && (
+        <div
+          role={toast.type === 'error' ? 'alert' : 'status'}
+          className={`fixed z-[60] left-1/2 -translate-x-1/2 bottom-24 sm:bottom-6 w-[calc(100%-2rem)] max-w-md px-4 py-3 rounded-xl shadow-lg border text-sm flex items-start gap-3 ${
+            toast.type === 'error'
+              ? 'bg-rose-50 border-rose-200 text-rose-900'
+              : toast.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-white border-stone-200 text-stone-800'
+          }`}
+        >
+          <span className="flex-1 leading-snug">{toast.text}</span>
+          <button
+            type="button"
+            onClick={dismissToast}
+            className="text-xs font-bold opacity-60 hover:opacity-100 cursor-pointer"
+            aria-label="Kapat"
+          >
+            ✕
+          </button>
+        </div>
       )}
     </div>
   );

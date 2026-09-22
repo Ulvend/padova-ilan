@@ -404,7 +404,7 @@ export async function translateText(
     return { translatedText: cached, detectedSourceLang: detected };
   }
 
-  // 3. Live translation via Google Gemini AI (@google/genai)
+  // 3. Live translation via Gemini (Firebase AI Logic)
   try {
     const geminiTranslation = await translateWithGemini(trimmed, detected, targetLang);
     if (geminiTranslation && geminiTranslation.trim().length > 0) {

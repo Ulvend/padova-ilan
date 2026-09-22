@@ -23,17 +23,25 @@ import {
 } from 'lucide-react';
 import { Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
-import { signInWithGoogle, signInWithApple } from '../lib/firebase';
-import { syncUserProfile } from '../services/firebaseService';
+import {
+  signInWithGoogle,
+  signInWithApple,
+  signInWithEmail,
+  registerWithEmail,
+  sendResetPasswordEmail,
+  resendVerificationEmail,
+  reloadCurrentUser,
+  isUniPdVerifiedUser,
+  describeAuthError,
+} from '../lib/firebase';
+import { isUniPdEmail } from '../config';
 import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
 
 const AUTH_MODAL_I18N: Record<Language, {
   ssoLoginTitle: string;
   ssoLoginBtn: string;
-  ssoLoginLoading: string;
   ssoRegisterTitle: string;
   ssoRegisterBtn: string;
-  ssoRegisterLoading: string;
   unipdAuthSectionTitle: string;
   googleLogin: string;
   googleRegister: string;
@@ -41,96 +49,98 @@ const AUTH_MODAL_I18N: Record<Language, {
   appleRegister: string;
   orEmailLogin: string;
   orEmailRegister: string;
+  unipdExplainer: string;
+  unipdOnlyHint: string;
 }> = {
   tr: {
-    ssoLoginTitle: 'UniPD Kurumsal SSO (Shibboleth)',
-    ssoLoginBtn: 'UniPD Kurumsal SSO ile Giriş Yap',
-    ssoLoginLoading: 'UniPD SSO Doğrulanıyor...',
-    ssoRegisterTitle: 'UniPD Kurumsal SSO ile Kayıt Ol',
-    ssoRegisterBtn: 'UniPD SSO ile Kayıt Ol',
-    ssoRegisterLoading: 'UniPD Kurumsal Doğrulama Yapılıyor...',
-    unipdAuthSectionTitle: 'UniPD Auth (Kurumsal Giriş & Doğrulama)',
+    ssoLoginTitle: 'UniPD Onaylı Hesap',
+    ssoLoginBtn: 'UniPD e-postamla giriş yap',
+    ssoRegisterTitle: 'UniPD e-postanla kayıt ol',
+    ssoRegisterBtn: 'UniPD e-postamla kayıt ol',
+    unipdAuthSectionTitle: 'UniPD Doğrulaması',
     googleLogin: 'Google ile Giriş',
     googleRegister: 'Google ile Bağlan',
     appleLogin: 'Apple ile Giriş',
     appleRegister: 'Apple ile Bağlan',
     orEmailLogin: 'veya e-posta ve şifre ile',
     orEmailRegister: 'veya manuel kayıt oluştur',
+    unipdExplainer: "@studenti.unipd.it veya @unipd.it adresinle kayıt ol; gelen doğrulama linkine tıklayınca profilin ve ilanların \"UniPD Onaylı\" rozeti alır.",
+    unipdOnlyHint: 'Sadece UniPD adresleri: ad.soyad@studenti.unipd.it',
   },
   en: {
-    ssoLoginTitle: 'UniPD Institutional SSO (Shibboleth)',
-    ssoLoginBtn: 'Log in with UniPD Institutional SSO',
-    ssoLoginLoading: 'Authenticating UniPD SSO...',
-    ssoRegisterTitle: 'Register with UniPD Institutional SSO',
-    ssoRegisterBtn: 'Register with UniPD SSO',
-    ssoRegisterLoading: 'Verifying UniPD Institution...',
-    unipdAuthSectionTitle: 'UniPD Auth (Institutional SSO)',
+    ssoLoginTitle: 'UniPD Verified Account',
+    ssoLoginBtn: 'Sign in with my UniPD email',
+    ssoRegisterTitle: 'Register with your UniPD email',
+    ssoRegisterBtn: 'Register with my UniPD email',
+    unipdAuthSectionTitle: 'UniPD Verification',
     googleLogin: 'Sign in with Google',
     googleRegister: 'Sign up with Google',
     appleLogin: 'Sign in with Apple',
     appleRegister: 'Sign up with Apple',
     orEmailLogin: 'or with email and password',
     orEmailRegister: 'or register manually with email',
+    unipdExplainer: "Sign up with your @studenti.unipd.it or @unipd.it address; after clicking the verification link your profile and listings get the \"UniPD Verified\" badge.",
+    unipdOnlyHint: 'UniPD addresses only: name.surname@studenti.unipd.it',
   },
   it: {
-    ssoLoginTitle: 'UniPD SSO Istituzionale (Shibboleth)',
-    ssoLoginBtn: 'Accedi con SSO Istituzionale UniPD',
-    ssoLoginLoading: 'Autenticazione UniPD SSO in corso...',
-    ssoRegisterTitle: 'Registrati con SSO Istituzionale UniPD',
-    ssoRegisterBtn: 'Registrati con UniPD SSO',
-    ssoRegisterLoading: 'Verifica Istituzionale UniPD in corso...',
-    unipdAuthSectionTitle: 'UniPD Auth (SSO Istituzionale)',
+    ssoLoginTitle: 'Account Verificato UniPD',
+    ssoLoginBtn: 'Accedi con la mia email UniPD',
+    ssoRegisterTitle: 'Registrati con la tua email UniPD',
+    ssoRegisterBtn: 'Registrati con la mia email UniPD',
+    unipdAuthSectionTitle: 'Verifica UniPD',
     googleLogin: 'Accedi con Google',
     googleRegister: 'Registrati con Google',
     appleLogin: 'Accedi con Apple',
     appleRegister: 'Registrati con Apple',
     orEmailLogin: 'oppure con email e password',
     orEmailRegister: 'oppure crea un account manuale',
+    unipdExplainer: "Registrati con il tuo indirizzo @studenti.unipd.it o @unipd.it; dopo aver cliccato il link di verifica profilo e annunci ricevono il badge \"Verificato UniPD\".",
+    unipdOnlyHint: 'Solo indirizzi UniPD: nome.cognome@studenti.unipd.it',
   },
   de: {
-    ssoLoginTitle: 'UniPD Institutionelles SSO (Shibboleth)',
-    ssoLoginBtn: 'Mit UniPD Institutionellem SSO anmelden',
-    ssoLoginLoading: 'UniPD SSO wird überprüft...',
-    ssoRegisterTitle: 'Mit UniPD Institutionellem SSO registrieren',
-    ssoRegisterBtn: 'Mit UniPD SSO registrieren',
-    ssoRegisterLoading: 'UniPD Verifizierung läuft...',
-    unipdAuthSectionTitle: 'UniPD Auth (Institutionelles SSO)',
+    ssoLoginTitle: 'UniPD-verifiziertes Konto',
+    ssoLoginBtn: 'Mit meiner UniPD-E-Mail anmelden',
+    ssoRegisterTitle: 'Mit deiner UniPD-E-Mail registrieren',
+    ssoRegisterBtn: 'Mit meiner UniPD-E-Mail registrieren',
+    unipdAuthSectionTitle: 'UniPD-Verifizierung',
     googleLogin: 'Mit Google anmelden',
     googleRegister: 'Mit Google registrieren',
     appleLogin: 'Mit Apple anmelden',
     appleRegister: 'Mit Apple registrieren',
     orEmailLogin: 'oder mit E-Mail und Passwort',
     orEmailRegister: 'oder manuell registrieren',
+    unipdExplainer: "Registriere dich mit deiner @studenti.unipd.it- oder @unipd.it-Adresse; nach dem Klick auf den Bestätigungslink erhalten Profil und Anzeigen das Abzeichen \"UniPD verifiziert\".",
+    unipdOnlyHint: 'Nur UniPD-Adressen: vorname.nachname@studenti.unipd.it',
   },
   ru: {
-    ssoLoginTitle: 'Корпоративный SSO UniPD (Shibboleth)',
-    ssoLoginBtn: 'Войти через корпоративный SSO UniPD',
-    ssoLoginLoading: 'Проверка UniPD SSO...',
-    ssoRegisterTitle: 'Регистрация через корпоративный SSO UniPD',
-    ssoRegisterBtn: 'Зарегистрироваться через UniPD SSO',
-    ssoRegisterLoading: 'Идет верификация UniPD...',
-    unipdAuthSectionTitle: 'UniPD Auth (Корпоративный SSO)',
+    ssoLoginTitle: 'Аккаунт с подтверждением UniPD',
+    ssoLoginBtn: 'Войти с почтой UniPD',
+    ssoRegisterTitle: 'Регистрация с почтой UniPD',
+    ssoRegisterBtn: 'Зарегистрироваться с почтой UniPD',
+    unipdAuthSectionTitle: 'Подтверждение UniPD',
     googleLogin: 'Войти через Google',
     googleRegister: 'Регистрация через Google',
     appleLogin: 'Войти через Apple',
     appleRegister: 'Регистрация через Apple',
     orEmailLogin: 'или с помощью email и пароля',
     orEmailRegister: 'или зарегистрироваться вручную',
+    unipdExplainer: "Зарегистрируйтесь с адресом @studenti.unipd.it или @unipd.it; после перехода по ссылке подтверждения профиль и объявления получат значок \"UniPD подтверждён\".",
+    unipdOnlyHint: 'Только адреса UniPD: imya.familiya@studenti.unipd.it',
   },
   hi: {
-    ssoLoginTitle: 'UniPD संस्थागत SSO (Shibboleth)',
-    ssoLoginBtn: 'UniPD संस्थागत SSO से लॉगिन करें',
-    ssoLoginLoading: 'UniPD SSO सत्यापित हो रहा है...',
-    ssoRegisterTitle: 'UniPD संस्थागत SSO से पंजीकरण करें',
-    ssoRegisterBtn: 'UniPD SSO से पंजीकरण करें',
-    ssoRegisterLoading: 'UniPD संस्थागत सत्यापन हो रहा है...',
-    unipdAuthSectionTitle: 'UniPD Auth (संस्थागत SSO)',
+    ssoLoginTitle: 'UniPD सत्यापित खाता',
+    ssoLoginBtn: 'मेरे UniPD ईमेल से लॉगिन करें',
+    ssoRegisterTitle: 'अपने UniPD ईमेल से पंजीकरण करें',
+    ssoRegisterBtn: 'मेरे UniPD ईमेल से पंजीकरण करें',
+    unipdAuthSectionTitle: 'UniPD सत्यापन',
     googleLogin: 'Google से लॉगिन करें',
     googleRegister: 'Google से पंजीकरण करें',
     appleLogin: 'Apple से लॉगिन करें',
     appleRegister: 'Apple से पंजीकरण करें',
     orEmailLogin: 'या ईमेल और पासवर्ड से',
     orEmailRegister: 'या मैन्युअल रूप से पंजीकरण करें',
+    unipdExplainer: "अपने @studenti.unipd.it या @unipd.it पते से पंजीकरण करें; सत्यापन लिंक पर क्लिक करने के बाद आपकी प्रोफ़ाइल और विज्ञापनों को \"UniPD सत्यापित\" बैज मिलता है।",
+    unipdOnlyHint: 'केवल UniPD पते: naam.upnaam@studenti.unipd.it',
   },
 };
 
@@ -139,7 +149,6 @@ interface AuthModalProps {
   onClose: () => void;
   initialMode?: 'login' | 'register' | 'forgot';
   currentLang?: Language;
-  userEmail?: string;
   onLoginSuccess?: (userData?: Partial<UserProfile>) => void;
   authReason?: 'chat' | 'createListing' | 'default' | null;
 }
@@ -149,21 +158,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   initialMode = 'login',
   currentLang = 'tr',
-  userEmail = 'cnkborasimsek@gmail.com',
   onLoginSuccess,
   authReason,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const authI18n = AUTH_MODAL_I18N[currentLang] || AUTH_MODAL_I18N.tr;
 
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'sent'>(initialMode);
-  const [email, setEmail] = useState(userEmail);
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'sent' | 'verify'>(initialMode);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [faculty, setFaculty] = useState(UNIPD_DEPARTMENTS[0]?.name || "DEI - Ingegneria dell'Informazione");
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSsoAuthenticating, setIsSsoAuthenticating] = useState(false);
+  const [unipdOnly, setUnipdOnly] = useState(false);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const emailInputRef = React.useRef<HTMLInputElement>(null);
   const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
   const [isAppleAuthenticating, setIsAppleAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -174,47 +184,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
-      setEmail(userEmail);
+      setEmail('');
+      setPassword('');
+      setUnipdOnly(false);
+      setInfoMessage(null);
       setIsSubmitting(false);
-      setIsSsoAuthenticating(false);
       setIsGoogleAuthenticating(false);
       setIsAppleAuthenticating(false);
       setAuthError(null);
     }
-  }, [isOpen, initialMode, userEmail]);
+  }, [isOpen, initialMode]);
+
+  // Başarılı giriş sonrası: oturum durumu AppContext'teki Firebase listener'ından gelir.
+  const finishLogin = () => {
+    if (onLoginSuccess) onLoginSuccess();
+    onClose();
+  };
 
   const handleGoogleAuth = async () => {
     setIsGoogleAuthenticating(true);
     setAuthError(null);
     try {
-      const user = await signInWithGoogle();
-      const isSuper = user.email === 'cnkborasimsek@gmail.com';
-      const profile: Partial<UserProfile> = {
-        id: user.uid,
-        name: user.displayName || user.email?.split('@')[0] || 'Google Student',
-        email: user.email || '',
-        username: user.email ? user.email.split('@')[0] : 'google_student',
-        avatar: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-        faculty: 'Università degli Studi di Padova',
-        studentIdVerified: user.email?.endsWith('@studenti.unipd.it') || user.email?.endsWith('@unipd.it') || isSuper,
-        ssoVerified: true,
-        ssoProvider: 'Google Auth (Firebase)',
-        role: isSuper ? 'superadmin' : 'student',
-        userHash: `usr_google_${user.uid.slice(0, 8)}`,
-      };
-      await syncUserProfile({
-        ...profile,
-        id: user.uid
-      });
-      if (onLoginSuccess) {
-        onLoginSuccess(profile);
-      }
-      onClose();
+      await signInWithGoogle();
+      finishLogin();
     } catch (err: any) {
       console.error('Google Auth Error:', err);
-      // If user closed popup intentionally
       if (err?.code !== 'auth/popup-closed-by-user') {
-        setAuthError(err?.message || 'Google ile giriş başarısız oldu.');
+        setAuthError(describeAuthError(err));
       }
     } finally {
       setIsGoogleAuthenticating(false);
@@ -225,72 +221,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsAppleAuthenticating(true);
     setAuthError(null);
     try {
-      const user = await signInWithApple();
-      const isSuper = user.email === 'cnkborasimsek@gmail.com';
-      const profile: Partial<UserProfile> = {
-        id: user.uid,
-        name: user.displayName || 'Apple Student',
-        email: user.email || '',
-        username: user.email ? user.email.split('@')[0] : `apple_${user.uid.slice(0, 6)}`,
-        avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-        faculty: 'Università degli Studi di Padova',
-        studentIdVerified: user.email?.endsWith('@studenti.unipd.it') || user.email?.endsWith('@unipd.it') || isSuper,
-        ssoVerified: true,
-        ssoProvider: 'Apple ID (Firebase)',
-        role: isSuper ? 'superadmin' : 'student',
-        userHash: `usr_apple_${user.uid.slice(0, 8)}`,
-      };
-      await syncUserProfile({
-        ...profile,
-        id: user.uid
-      });
-      if (onLoginSuccess) {
-        onLoginSuccess(profile);
-      }
-      onClose();
+      await signInWithApple();
+      finishLogin();
     } catch (err: any) {
       console.error('Apple Auth Error:', err);
-      if (err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed')) {
-        setAuthError('Apple Girişi Firebase konsolunda Apple Developer Team ID ile etkinleştirilmelidir. Test için Google Girişini kullanabilirsiniz.');
+      if (err?.code === 'auth/operation-not-allowed') {
+        setAuthError('Apple Girişi Firebase konsolunda Apple Developer Team ID ile etkinleştirilmelidir. Şimdilik Google veya e-posta ile giriş yapabilirsiniz.');
       } else if (err?.code !== 'auth/popup-closed-by-user') {
-        setAuthError(err?.message || 'Apple hesabı ile bağlanma başarısız oldu.');
+        setAuthError(describeAuthError(err));
       }
     } finally {
       setIsAppleAuthenticating(false);
     }
   };
 
+  // "UniPD" butonu: formu yalnızca UniPD adreslerini kabul edecek şekilde açar.
+  // Rozet, adrese gönderilen doğrulama linkine tıklanınca Firebase tarafından onaylanır.
   const handleUniPdSsoAuth = () => {
-    setIsSsoAuthenticating(true);
+    setUnipdOnly(true);
     setAuthError(null);
-    setTimeout(() => {
-      setIsSsoAuthenticating(false);
-      const studentEmail = email.trim() || (fullName.trim() ? `${fullName.trim().toLowerCase().replace(/\s+/g, '.')}@studenti.unipd.it` : 'studente@studenti.unipd.it');
-      const studentName = fullName.trim() || 'UniPD Öğrencisi';
-      const studentUsername = studentEmail.split('@')[0] || 'student';
-      const isSuper = studentEmail === 'cnkborasimsek@gmail.com';
-      
-      if (onLoginSuccess) {
-        onLoginSuccess({
-          name: studentName,
-          email: studentEmail,
-          username: studentUsername,
-          faculty: faculty || UNIPD_DEPARTMENTS[0]?.name || "DEI - Ingegneria dell'Informazione",
-          studentIdVerified: true,
-          ssoVerified: true,
-          ssoProvider: 'UniPD Shibboleth IdP (Kurumsal SSO)',
-          userHash: isSuper ? 'usr_unipd_master_001' : `usr_sso_${Date.now().toString().slice(-6)}`,
-          role: isSuper ? 'superadmin' : 'student',
-        });
-      }
-      onClose();
-    }, 750);
+    if (!isUniPdEmail(email)) setEmail('');
+    setTimeout(() => emailInputRef.current?.focus(), 0);
   };
 
   // Resend countdown timer
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (mode === 'sent' && countdown > 0) {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    if ((mode === 'sent' || mode === 'verify') && countdown > 0) {
       setCanResend(false);
       timer = setInterval(() => {
         setCountdown((prev) => {
@@ -309,40 +266,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
+    if (!email.trim() || !password) {
       setAuthError('Lütfen e-posta ve şifrenizi giriniz.');
+      return;
+    }
+    if (unipdOnly && !isUniPdEmail(email)) {
+      setAuthError('Lütfen @studenti.unipd.it veya @unipd.it uzantılı adresinizi girin.');
       return;
     }
     setIsSubmitting(true);
     setAuthError(null);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const isUniPd = email.trim().endsWith('@studenti.unipd.it') || email.trim().endsWith('@unipd.it');
-      const isSuper = email.trim() === 'cnkborasimsek@gmail.com';
-      const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
-      const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-      
-      if (onLoginSuccess) {
-        onLoginSuccess({
-          email: email.trim(),
-          username: email.split('@')[0] || 'student',
-          name: formattedName || 'Öğrenci',
-          faculty: faculty || UNIPD_DEPARTMENTS[0]?.name || "DEI - Ingegneria dell'Informazione",
-          studentIdVerified: isUniPd || isSuper,
-          ssoVerified: isUniPd,
-          userHash: isSuper ? 'usr_unipd_master_001' : `usr_login_${Date.now().toString().slice(-6)}`,
-          role: isSuper ? 'superadmin' : 'student',
-        });
+    try {
+      const user = await signInWithEmail(email, password);
+      if (!user.emailVerified) {
+        // Doğrulanmamış hesap giriş yapabilir ama ilan/mesaj için doğrulama gerekir.
+        setCountdown(60);
+        setMode('verify');
+        return;
       }
-      onClose();
-    }, 500);
+      finishLogin();
+    } catch (err) {
+      setAuthError(describeAuthError(err));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !fullName.trim() || !password.trim()) {
+    if (!email.trim() || !fullName.trim() || !password) {
       setAuthError('Lütfen ad soyad, e-posta ve şifre alanlarını eksiksiz doldurunuz.');
       return;
     }
@@ -350,53 +304,88 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setAuthError('Şifreniz en az 6 karakter olmalıdır.');
       return;
     }
+    if (unipdOnly && !isUniPdEmail(email)) {
+      setAuthError('UniPD rozeti için @studenti.unipd.it veya @unipd.it uzantılı bir adres gereklidir.');
+      return;
+    }
     setIsSubmitting(true);
     setAuthError(null);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const isUniPd = email.trim().endsWith('@studenti.unipd.it') || email.trim().endsWith('@unipd.it');
-      const isSuper = email.trim() === 'cnkborasimsek@gmail.com';
-      const cleanUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_') || `user_${Date.now().toString().slice(-4)}`;
-      const newHash = isSuper ? 'usr_unipd_master_001' : `usr_reg_${Date.now().toString().slice(-6)}`;
-
+    try {
+      await registerWithEmail(email, password, fullName);
       if (onLoginSuccess) {
-        onLoginSuccess({
-          name: fullName.trim(),
-          email: email.trim(),
-          faculty: faculty.trim() || UNIPD_DEPARTMENTS[0]?.name || "DEI - Ingegneria dell'Informazione",
-          username: cleanUsername,
-          studentIdVerified: isUniPd || isSuper,
-          ssoVerified: isUniPd,
-          ssoProvider: isUniPd ? 'UniPD Kurumsal E-posta Doğrulaması' : 'Standart E-posta Kaydı',
-          userHash: newHash,
-          role: isSuper ? 'superadmin' : 'student',
-        });
+        onLoginSuccess({ name: fullName.trim(), faculty: faculty.trim() });
       }
-      onClose();
-    }, 600);
+      setCountdown(60);
+      setMode('verify');
+    } catch (err) {
+      setAuthError(describeAuthError(err));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleForgotSubmit = (e: React.FormEvent) => {
+  const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     setIsSubmitting(true);
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setMode('sent');
-      setCountdown(60);
-      setCanResend(false);
-    }, 700);
+    setAuthError(null);
+    try {
+      await sendResetPasswordEmail(email);
+    } catch (err: any) {
+      // Hesap var/yok bilgisini sızdırmamak için "kullanıcı bulunamadı" hatası gösterilmez.
+      if (err?.code !== 'auth/user-not-found') {
+        setAuthError(describeAuthError(err));
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    setIsSubmitting(false);
+    setMode('sent');
+    setCountdown(60);
+    setCanResend(false);
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (!canResend) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setAuthError(null);
+    try {
+      if (mode === 'verify') {
+        await resendVerificationEmail();
+      } else {
+        await sendResetPasswordEmail(email);
+      }
       setCountdown(60);
       setCanResend(false);
-    }, 600);
+    } catch (err) {
+      setAuthError(describeAuthError(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Kullanıcı e-postadaki linke tıkladıktan sonra "Doğruladım" der.
+  const handleCheckVerified = async () => {
+    setIsSubmitting(true);
+    setAuthError(null);
+    setInfoMessage(null);
+    try {
+      const user = await reloadCurrentUser();
+      if (!user?.emailVerified) {
+        setAuthError('Henüz doğrulanmamış görünüyor. E-postadaki linke tıkladıktan sonra tekrar deneyin.');
+        return;
+      }
+      setInfoMessage(
+        isUniPdVerifiedUser(user)
+          ? 'E-postanız doğrulandı. UniPD Onaylı rozetiniz aktif!'
+          : 'E-postanız doğrulandı.'
+      );
+      setTimeout(finishLogin, 1200);
+    } catch (err) {
+      setAuthError(describeAuthError(err));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -422,7 +411,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               )}
             </span>
             <span className="font-bold text-sm text-stone-900 tracking-tight">
-              {mode === 'register' ? t.registerNav : mode === 'login' ? t.loginNav : t.forgotPasswordNav}
+              {mode === 'register' ? t.registerNav : mode === 'login' ? t.loginNav : mode === 'verify' ? 'E-posta Doğrulama' : t.forgotPasswordNav}
             </span>
           </div>
           <button
@@ -509,43 +498,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="h-px bg-stone-200 flex-1" />
                 </div>
 
-                {/* UNIPD SHIBBOLETH SSO INSTITUTIONAL AUTH */}
+                {/* UNIPD E-POSTA DOĞRULAMASI (rozet Firebase e-posta doğrulamasıyla verilir) */}
                 <div className="p-3.5 bg-[#fdf2f4] border border-[#f3ccd2] rounded-2xl space-y-2.5 shadow-2xs">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 px-2.5 bg-white border border-[#edd2d6] rounded-xl flex items-center justify-center shadow-2xs">
-                      <img
-                        src="https://shibidp.cca.unipd.it/idp/images/unipd_files/logo.png"
-                        alt="Università degli Studi di Padova"
-                        className="h-7 w-auto object-contain max-w-[130px]"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
+                    <div className="h-10 w-10 bg-white border border-[#edd2d6] rounded-xl flex items-center justify-center shadow-2xs shrink-0">
+                      <GraduationCap className="w-5 h-5 text-[#9b0014]" />
                     </div>
                     <div>
                       <span className="font-bold text-xs sm:text-sm text-[#7a0d1a] block leading-tight">{authI18n.ssoLoginTitle}</span>
-                      <span className="text-[10px] text-[#9b0014]/80">Università degli Studi di Padova</span>
+                      <span className="text-[10px] text-[#9b0014]/80 leading-snug block">{authI18n.unipdExplainer}</span>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={handleUniPdSsoAuth}
-                    disabled={isSsoAuthenticating}
-                    id="btn-auth-unipd-sso-login"
+                    id="btn-auth-unipd-login"
                     className="w-full bg-[#9b0014] hover:bg-[#830011] active:bg-[#68000d] text-white min-h-[44px] rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2.5 shadow-sm cursor-pointer disabled:opacity-50"
                   >
-                    {isSsoAuthenticating ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin text-rose-200" />
-                        <span>{authI18n.ssoLoginLoading}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4 text-rose-200" />
-                        <span>{authI18n.ssoLoginBtn}</span>
-                      </>
-                    )}
+                    <ShieldCheck className="w-4 h-4 text-rose-200" />
+                    <span>{authI18n.ssoLoginBtn}</span>
                   </button>
                 </div>
               </div>
@@ -629,11 +600,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="ad.soyad@studenti.unipd.it"
+                      ref={emailInputRef}
+                      placeholder={unipdOnly ? 'ad.soyad@studenti.unipd.it' : 'ornek@email.com'}
                       className="w-full min-h-[44px] px-3.5 pl-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                     />
                     <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
+                  {unipdOnly && (
+                    <p className="text-[10px] text-[#9b0014] font-semibold">{authI18n.unipdOnlyHint}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -730,43 +705,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="h-px bg-stone-200 flex-1" />
                 </div>
 
-                {/* UNIPD SHIBBOLETH SSO INSTITUTIONAL REGISTRATION */}
+                {/* UNIPD E-POSTA DOĞRULAMASI (rozet Firebase e-posta doğrulamasıyla verilir) */}
                 <div className="p-3.5 bg-[#fdf2f4] border border-[#f3ccd2] rounded-2xl space-y-2.5 shadow-2xs">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 px-2.5 bg-white border border-[#edd2d6] rounded-xl flex items-center justify-center shadow-2xs">
-                      <img
-                        src="https://shibidp.cca.unipd.it/idp/images/unipd_files/logo.png"
-                        alt="Università degli Studi di Padova"
-                        className="h-7 w-auto object-contain max-w-[130px]"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
+                    <div className="h-10 w-10 bg-white border border-[#edd2d6] rounded-xl flex items-center justify-center shadow-2xs shrink-0">
+                      <GraduationCap className="w-5 h-5 text-[#9b0014]" />
                     </div>
                     <div>
                       <span className="font-bold text-xs sm:text-sm text-[#7a0d1a] block leading-tight">{authI18n.ssoRegisterTitle}</span>
-                      <span className="text-[10px] text-[#9b0014]/80">Università degli Studi di Padova</span>
+                      <span className="text-[10px] text-[#9b0014]/80 leading-snug block">{authI18n.unipdExplainer}</span>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={handleUniPdSsoAuth}
-                    disabled={isSsoAuthenticating}
-                    id="btn-auth-unipd-sso-register"
+                    id="btn-auth-unipd-register"
                     className="w-full bg-[#9b0014] hover:bg-[#830011] active:bg-[#68000d] text-white min-h-[44px] rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2.5 shadow-sm cursor-pointer disabled:opacity-50"
                   >
-                    {isSsoAuthenticating ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin text-rose-200" />
-                        <span>{authI18n.ssoRegisterLoading}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4 text-rose-200" />
-                        <span>{authI18n.ssoRegisterBtn}</span>
-                      </>
-                    )}
+                    <ShieldCheck className="w-4 h-4 text-rose-200" />
+                    <span>{authI18n.ssoRegisterBtn}</span>
                   </button>
                 </div>
               </div>
@@ -869,11 +826,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="ad.soyad@studenti.unipd.it"
+                      ref={emailInputRef}
+                      placeholder={unipdOnly ? 'ad.soyad@studenti.unipd.it' : 'ornek@email.com'}
                       className="w-full min-h-[42px] px-3.5 pl-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                     />
                     <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
+                  {unipdOnly && (
+                    <p className="text-[10px] text-[#9b0014] font-semibold">{authI18n.unipdOnlyHint}</p>
+                  )}
                 </div>
 
                 {/* Faculty / UniPD Department Selection */}
@@ -1003,6 +964,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     />
                     <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
+                  {unipdOnly && (
+                    <p className="text-[10px] text-[#9b0014] font-semibold">{authI18n.unipdOnlyHint}</p>
+                  )}
                 </div>
 
                 <button
@@ -1096,6 +1060,84 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {t.closeBtn}
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 5: E-POSTA DOĞRULAMA BEKLENİYOR */}
+          {mode === 'verify' && (
+            <div className="space-y-5 text-center py-2 animate-in fade-in" id="modal-verify-email">
+              <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-600 mx-auto flex items-center justify-center shadow-sm">
+                <Mail className="w-8 h-8" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-bold text-stone-900 tracking-tight">E-postanı doğrula</h3>
+                <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto">
+                  Aşağıdaki adrese bir doğrulama linki gönderdik. Linke tıkladıktan sonra "Doğruladım" butonuna bas.
+                  {isUniPdEmail(email) && ' Doğrulama tamamlanınca hesabın UniPD Onaylı rozetini alır.'}
+                </p>
+              </div>
+
+              {email && (
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-100 border border-stone-200 text-xs font-bold text-stone-800">
+                  <Mail className="w-3.5 h-3.5 text-stone-500" />
+                  <span>{email}</span>
+                </div>
+              )}
+
+              {authError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-800 text-left">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span className="leading-snug">{authError}</span>
+                </div>
+              )}
+              {infoMessage && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 text-left">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="leading-snug">{infoMessage}</span>
+                </div>
+              )}
+
+              <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-left text-[11px] text-amber-800 leading-relaxed">
+                E-posta gelmediyse spam/gereksiz klasörünü kontrol et. Doğrulamadan giriş yapabilirsin ama ilan vermek ve mesaj göndermek için doğrulama gerekir.
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleCheckVerified}
+                  disabled={isSubmitting}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white min-h-[44px] rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  <span>Doğruladım</span>
+                </button>
+
+                <div className="text-xs text-stone-500">
+                  {canResend ? (
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      disabled={isSubmitting}
+                      className="font-bold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer disabled:opacity-50"
+                    >
+                      Doğrulama e-postasını tekrar gönder
+                    </button>
+                  ) : (
+                    <span>
+                      {countdown} {t.resendCountdown}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={finishLogin}
+                  className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 min-h-[42px] rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Daha sonra doğrulayacağım
+                </button>
               </div>
             </div>
           )}

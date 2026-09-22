@@ -157,11 +157,6 @@ export const DISTRICT_BENCHMARKS: Record<string, {
   },
 };
 
-export const INITIAL_AUTHORIZED_ADMIN_HASHES: string[] = [
-  'usr_unipd_master_001', // Cenk B. Şimşek (Ana Admin)
-  'usr_admin_dii_8421',    // Marco Bellini (Yetkili Admin)
-];
-
 export const DEFAULT_GUEST_USER: UserProfile = {
   id: '',
   userHash: 'guest',

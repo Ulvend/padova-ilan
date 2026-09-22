@@ -36,11 +36,12 @@ interface ListingPreviewModalProps {
   onOpenDirectDetailPage?: (listing: HousingListing) => void;
   onOpenVideoTour?: (listing: HousingListing) => void;
   onOpenVideoModal?: (listing: HousingListing) => void;
-  onOpenChat?: (user: string, subject: string) => void;
+  onOpenChat?: (user: string, subject: string, listingId?: string) => void;
   currentLang?: Language;
 }
 
-export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
+// Hook'lar koşulsuz çağrılsın diye içerik yalnızca ilan varken mount edilir.
+const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listing'> & { listing: HousingListing }> = ({
   listing: rawListing,
   isOpen,
   onClose,
@@ -53,7 +54,6 @@ export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
   onOpenChat,
   currentLang = 'tr',
 }) => {
-  if (!rawListing) return null;
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const listing = getLocalizedListing(rawListing, currentLang);
@@ -118,7 +118,7 @@ export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onToggleFavorite(listing.id);
+                onToggleFavorite?.(listing.id);
               }}
               className="p-2 hover:bg-stone-800 text-stone-300 hover:text-white transition rounded-lg cursor-pointer"
               title="Favori"
@@ -210,7 +210,7 @@ export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
                 <button
                   onClick={() => {
                     onClose();
-                    onOpenVideoTour(listing);
+                    onOpenVideoTour?.(listing);
                   }}
                   className="absolute bottom-3 left-3 bg-stone-900/90 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-xl hover:bg-orange-600 transition cursor-pointer shadow-md"
                 >
@@ -256,10 +256,12 @@ export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
               <span className="text-stone-400 block text-[10px] uppercase font-medium">{t.bathroomsCount}</span>
               <strong className="text-stone-900">{listing.bathrooms}</strong>
             </div>
-            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-              <span className="text-stone-400 block text-[10px] uppercase font-medium">{t.compatibilityScore}</span>
-              <strong className="text-emerald-700 font-bold">%{listing.compatibilityScore} {t.compatible}</strong>
-            </div>
+            {listing.compatibilityScore > 0 && (
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                <span className="text-stone-400 block text-[10px] uppercase font-medium">{t.compatibilityScore}</span>
+                <strong className="text-emerald-700 font-bold">%{listing.compatibilityScore} {t.compatible}</strong>
+              </div>
+            )}
           </div>
 
           {/* Contract Start Date & Duration Highlight */}
@@ -357,7 +359,7 @@ export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
             <button
               onClick={() => {
                 onClose();
-                onOpenChat(listing.poster.username, listing.title);
+                onOpenChat?.(listing.poster.username, listing.title, listing.id);
               }}
               className="border border-stone-200 bg-white hover:bg-stone-50 px-3 py-2 font-semibold text-stone-700 rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer active:translate-y-0.5"
             >
@@ -393,3 +395,6 @@ export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({
     </div>
   );
 };
+
+export const ListingDetailModal: React.FC<ListingPreviewModalProps> = ({ listing, ...rest }) =>
+  listing ? <ListingDetailModalContent {...rest} listing={listing} /> : null;

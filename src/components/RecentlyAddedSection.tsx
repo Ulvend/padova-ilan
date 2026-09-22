@@ -10,6 +10,7 @@ import {
   Clock
 } from 'lucide-react';
 import { HousingListing } from '../types';
+import { formatDeviceRelativeDate } from '../utils/deviceTime';
 import { TranslationDictionary } from '../utils/translations';
 
 interface RecentlyAddedSectionProps {
@@ -28,12 +29,12 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Son yüklenen ilanlara sadece son eklenen 8 ilan konulabilsin (strictly max 8 newest listings)
+  const createdMs = (l: HousingListing) => {
+    const ms = Date.parse(l.createdAt);
+    return isNaN(ms) ? 0 : ms;
+  };
   const recentListings = [...listings]
-    .sort((a, b) => {
-      if (a.createdAt === 'Şimdi' && b.createdAt !== 'Şimdi') return -1;
-      if (b.createdAt === 'Şimdi' && a.createdAt !== 'Şimdi') return 1;
-      return 0;
-    })
+    .sort((a, b) => createdMs(b) - createdMs(a))
     .slice(0, 8);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -115,7 +116,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
                 {/* Newly Added Pill */}
                 <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5 bg-stone-900/80 backdrop-blur-xs text-white text-[9px] font-semibold px-1.5 py-0.5 rounded shadow-xs">
                   <Clock className="w-2.5 h-2.5 text-orange-400" />
-                  <span>{listing.createdAt || 'Yeni'}</span>
+                  <span>{createdMs(listing) ? formatDeviceRelativeDate(createdMs(listing)) : 'Yeni'}</span>
                 </div>
 
                 {/* Quick Preview Button */}

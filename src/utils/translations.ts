@@ -53,6 +53,13 @@ export interface TranslationDictionary {
   compatibilityText: string;
   verifiedUniPD: string;
   noListingsFound: string;
+  twoColumnsMode: string;
+  doubleGrid: string;
+  singleColumnMode: string;
+  singleGrid: string;
+  noListingsFoundTitle: string;
+  noListingsFoundSubtitle: string;
+  resetAllFilters: string;
   noListingsSub: string;
   esuWarningTitle: string;
   esuWarningText: string;
@@ -400,6 +407,13 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     compatibilityText: 'SENİNLE UYUMLU',
     verifiedUniPD: 'UniPD Teyitli Öğrenci',
     noListingsFound: 'Aradığınız kriterlere uygun ilan bulunamadı',
+    twoColumnsMode: 'İki sütunlu görünüm',
+    doubleGrid: '2 Sütun',
+    singleColumnMode: 'Tek sütunlu görünüm',
+    singleGrid: 'Tek Sütun',
+    noListingsFoundTitle: 'İlan bulunamadı',
+    noListingsFoundSubtitle: 'Filtreleri değiştirmeyi veya sıfırlamayı deneyin.',
+    resetAllFilters: 'Tüm Filtreleri Sıfırla',
     noListingsSub: 'Filtreleri sıfırlayarak veya bütçe limitini genişleterek tekrar arama yapabilirsiniz.',
     esuWarningTitle: 'ESU & Burs Desteği Uyarısı',
     esuWarningText: 'Padova Üniversitesi (UniPD) öğrencileri için Canone Concordato sözleşmeleri vergi avantajı ve burs haklarının korunmasını sağlar.',
@@ -744,6 +758,13 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     compatibilityText: 'COMPATIBLE WITH YOU',
     verifiedUniPD: 'UniPD Verified Student',
     noListingsFound: 'No housing listings matched your criteria',
+    twoColumnsMode: 'Two-column view',
+    doubleGrid: '2 Columns',
+    singleColumnMode: 'Single-column view',
+    singleGrid: '1 Column',
+    noListingsFoundTitle: 'No listings found',
+    noListingsFoundSubtitle: 'Try changing or resetting your filters.',
+    resetAllFilters: 'Reset All Filters',
     noListingsSub: 'Try adjusting your budget or clearing filters to see more results.',
     esuWarningTitle: 'ESU Scholarship Advisory',
     esuWarningText: 'Canone Concordato registered contracts protect your student rights and tax exemptions.',
@@ -1088,6 +1109,13 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     compatibilityText: 'COMPATIBILE CON TE',
     verifiedUniPD: 'Studente UniPD Verificato',
     noListingsFound: 'Nessun alloggio trovato per i filtri selezionati',
+    twoColumnsMode: 'Vista a due colonne',
+    doubleGrid: '2 Colonne',
+    singleColumnMode: 'Vista a una colonna',
+    singleGrid: '1 Colonna',
+    noListingsFoundTitle: 'Nessun annuncio trovato',
+    noListingsFoundSubtitle: 'Prova a modificare o reimpostare i filtri.',
+    resetAllFilters: 'Reimposta tutti i filtri',
     noListingsSub: 'Prova a modificare il budget o a reimpostare i filtri.',
     esuWarningTitle: 'Avviso Borsa di Studio ESU',
     esuWarningText: 'I contratti a Canone Concordato garantiscono agevolazioni fiscali e requisiti per la borsa.',
@@ -1432,6 +1460,13 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     compatibilityText: 'KOMPATIBEL MIT DIR',
     verifiedUniPD: 'Verifizierter UniPD-Student',
     noListingsFound: 'Keine passenden Angebote gefunden',
+    twoColumnsMode: 'Zweispaltige Ansicht',
+    doubleGrid: '2 Spalten',
+    singleColumnMode: 'Einspaltige Ansicht',
+    singleGrid: '1 Spalte',
+    noListingsFoundTitle: 'Keine Angebote gefunden',
+    noListingsFoundSubtitle: 'Ändere oder setze die Filter zurück.',
+    resetAllFilters: 'Alle Filter zurücksetzen',
     noListingsSub: 'Versuche, deine Filter zurückzusetzen oder das Budget zu erhöhen.',
     esuWarningTitle: 'ESU-Stipendien-Hinweis',
     esuWarningText: 'Offizielle Mietverträge schützen deine Stipendienansprüche und Steuerrechte.',
@@ -1776,6 +1811,13 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     compatibilityText: 'СОВМЕСТИМОСТЬ',
     verifiedUniPD: 'Студент UniPD',
     noListingsFound: 'Объявлений не найдено',
+    twoColumnsMode: 'Две колонки',
+    doubleGrid: '2 колонки',
+    singleColumnMode: 'Одна колонка',
+    singleGrid: '1 колонка',
+    noListingsFoundTitle: 'Объявления не найдены',
+    noListingsFoundSubtitle: 'Попробуйте изменить или сбросить фильтры.',
+    resetAllFilters: 'Сбросить все фильтры',
     noListingsSub: 'Попробуйте сбросить фильтры.',
     esuWarningTitle: 'Уведомление ESU',
     esuWarningText: 'Официальные контракты гарантируют налоговые льготы и стипендии.',
@@ -2120,6 +2162,13 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     compatibilityText: 'आपके अनुकूल',
     verifiedUniPD: 'UniPD सत्यापित छात्र',
     noListingsFound: 'कोई विज्ञापन नहीं मिला',
+    twoColumnsMode: 'दो कॉलम दृश्य',
+    doubleGrid: '2 कॉलम',
+    singleColumnMode: 'एक कॉलम दृश्य',
+    singleGrid: '1 कॉलम',
+    noListingsFoundTitle: 'कोई विज्ञापन नहीं मिला',
+    noListingsFoundSubtitle: 'फ़िल्टर बदलें या रीसेट करें।',
+    resetAllFilters: 'सभी फ़िल्टर रीसेट करें',
     noListingsSub: 'फ़िल्टर रीसेट करें या बजट सीमा बढ़ाएं।',
     esuWarningTitle: 'ESU छात्रवृत्ति सूचना',
     esuWarningText: 'Canone Concordato आधिकारिक अनुबंध छात्रवृत्ति और कर लाभ सुनिश्चित करते हैं।',

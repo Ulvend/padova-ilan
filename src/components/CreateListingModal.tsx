@@ -33,7 +33,7 @@ import {
   Layers,
   Pencil
 } from 'lucide-react';
-import { HousingListing, RoomType, ContractType, DistrictArea, Language, UserProfile } from '../types';
+import { HousingListing, RoomType, ContractType, DistrictArea, Language, UserProfile, VideoAngle } from '../types';
 import { DISTRICT_COORDINATES_MAP, resolveListingCoords } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
 import { 
@@ -44,14 +44,39 @@ import {
   AddressSuggestion 
 } from '../services/geocodingService';
 import { uploadListingPhoto } from '../services/storageService';
+import { evaluateFairPrice } from '../utils/fairPrice';
+
+type AngleForm = { room?: string; desk?: string; kitchen?: string; balcony?: string };
+
+// Formdaki açı alanları ↔ VideoTourModal'ın okuduğu videoAngles dizisi
+const ANGLE_FIELDS: { key: keyof AngleForm; id: VideoAngle['id']; label: string }[] = [
+  { key: 'room', id: 'room', label: 'Oda' },
+  { key: 'desk', id: 'desk', label: 'Çalışma Masası' },
+  { key: 'kitchen', id: 'kitchen', label: 'Mutfak / Ortak Alan' },
+  { key: 'balcony', id: 'view', label: 'Balkon / Manzara' },
+];
+
+const anglesToListing = (form: AngleForm): VideoAngle[] | undefined => {
+  const angles = ANGLE_FIELDS
+    .filter((f) => form[f.key]?.trim())
+    .map((f) => ({ id: f.id, label: f.label, videoUrl: form[f.key]!.trim() }));
+  return angles.length > 0 ? angles : undefined;
+};
+
+const anglesFromListing = (angles: VideoAngle[]): AngleForm =>
+  ANGLE_FIELDS.reduce<AngleForm>((acc, f) => {
+    const match = angles.find((a) => a.id === f.id);
+    if (match) acc[f.key] = match.videoUrl;
+    return acc;
+  }, {});
 import { MiniLocationPicker } from './MiniLocationPicker';
 
 interface CreateListingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddListing?: (listing: HousingListing) => void;
-  onSubmitListing?: (listing: HousingListing) => void;
-  onUpdateListing?: (listingId: string, updates: Partial<HousingListing>) => void;
+  onAddListing?: (listing: HousingListing) => void | Promise<void>;
+  onSubmitListing?: (listing: HousingListing) => void | Promise<void>;
+  onUpdateListing?: (listingId: string, updates: Partial<HousingListing>) => void | Promise<void>;
   initialListing?: HousingListing | null;
   isEditMode?: boolean;
   currentLang?: Language;
@@ -60,7 +85,8 @@ interface CreateListingModalProps {
   onOpenAuthModal?: (mode?: 'login' | 'register' | 'forgot', reason?: any) => void;
 }
 
-export const CreateListingModal: React.FC<CreateListingModalProps> = ({
+// Hook'lar koşulsuz çağrılsın diye içerik yalnızca modal açıkken mount edilir.
+const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
   isOpen,
   onClose,
   onAddListing,
@@ -73,17 +99,8 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   isLoggedIn = false,
   onOpenAuthModal,
 }) => {
-  if (!isOpen) return null;
-
-  const effectiveIsLoggedIn =
-    isLoggedIn ||
-    Boolean(
-      currentUser &&
-      currentUser.id &&
-      currentUser.id !== 'guest' &&
-      currentUser.id !== 'student_guest' &&
-      (currentUser.email || currentUser.username !== 'guest')
-    );
+  // Oturum durumu Firebase Auth'tan gelir (AppContext).
+  const effectiveIsLoggedIn = isLoggedIn;
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const [title, setTitle] = useState('');
@@ -98,37 +115,30 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [isImmediate, setIsImmediate] = useState(false);
   const [contractDuration, setContractDuration] = useState('12 Ay (Akademik Yıl)');
   // Photos States
-  const [images, setImages] = useState<string[]>([
-    'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
-  ]);
+  const [images, setImages] = useState<string[]>([]);
   const [customImageUrl, setCustomImageUrl] = useState('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Video Tour States
-  const [hasVideoTour, setHasVideoTour] = useState(true);
-  const [videoTourUrl, setVideoTourUrl] = useState('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+  const [hasVideoTour, setHasVideoTour] = useState(false);
+  const [videoTourUrl, setVideoTourUrl] = useState('');
   const [showAdvancedVideoAngles, setShowAdvancedVideoAngles] = useState(false);
   const [videoAngles, setVideoAngles] = useState<{
     room?: string;
     desk?: string;
     kitchen?: string;
     balcony?: string;
-  }>({
-    room: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    desk: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    kitchen: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-    balcony: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
-  });
+  }>({});
 
   const [roomM2, setRoomM2] = useState('15');
   const [apartmentM2, setApartmentM2] = useState('95');
   const [bathrooms, setBathrooms] = useState('2');
   const [description, setDescription] = useState('');
-  const [flatmateName, setFlatmateName] = useState('Matteo');
-  const [flatmateFaculty, setFlatmateFaculty] = useState('UniPD Mühendislik');
+  const [flatmateName, setFlatmateName] = useState('');
+  const [flatmateFaculty, setFlatmateFaculty] = useState('');
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Prefill when initialListing is provided (Edit Mode)
   useEffect(() => {
@@ -165,8 +175,12 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         setImages(initialListing.images);
       }
       setHasVideoTour(Boolean(initialListing.hasVideoTour));
-      if (initialListing.videoTourUrl) setVideoTourUrl(initialListing.videoTourUrl);
-      if (initialListing.videoAngles) setVideoAngles(initialListing.videoAngles);
+      if (initialListing.videoUrl) setVideoTourUrl(initialListing.videoUrl);
+      if (initialListing.videoAngles) setVideoAngles(anglesFromListing(initialListing.videoAngles));
+      if (initialListing.currentFlatmates?.[0]) {
+        setFlatmateName(initialListing.currentFlatmates[0].name || '');
+        setFlatmateFaculty(initialListing.currentFlatmates[0].faculty || '');
+      }
     }
   }, [initialListing, isOpen]);
 
@@ -175,11 +189,12 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     if (!files || files.length === 0) return;
     setIsUploadingPhoto(true);
     setUploadProgress(10);
+    setSubmitError(null);
     try {
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const url = await uploadListingPhoto(file, currentUser?.id || 'guest', (p) => {
+        const url = await uploadListingPhoto(file, currentUser?.id || '', (p) => {
           setUploadProgress(Math.round(((i + p / 100) / files.length) * 100));
         });
         if (url) newUrls.push(url);
@@ -187,6 +202,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
       setImages((prev) => [...prev, ...newUrls]);
     } catch (err) {
       console.error('Error uploading photos:', err);
+      setSubmitError((err as Error)?.message || 'Fotoğraf yüklenemedi.');
     } finally {
       setIsUploadingPhoto(false);
       setUploadProgress(0);
@@ -353,7 +369,12 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || isSubmitting) return;
+    if (images.length === 0) {
+      setSubmitError('Lütfen en az bir fotoğraf ekleyin.');
+      return;
+    }
 
+    setSubmitError(null);
     setIsSubmitting(true);
 
     try {
@@ -376,10 +397,14 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
       const address = streetAddress.trim() || 'Via Belzoni, Padova';
       const formattedStartDate = formatDisplayStartDate(contractStartDate, isImmediate);
-      const safeImages = images.length > 0 ? images : [
-        'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
-      ];
+      const safeImages = images;
+      const contractStartISO = isImmediate ? '' : contractStartDate;
+      const videoUrl = hasVideoTour ? (videoTourUrl.trim() || undefined) : undefined;
+      const listingVideoAngles = hasVideoTour ? anglesToListing(videoAngles) : undefined;
+      const fairPrice = evaluateFairPrice(Number(price) || 400, district, roomType);
+      const flatmates = flatmateName.trim()
+        ? [{ name: flatmateName.trim(), age: 22, faculty: flatmateFaculty.trim() || 'UniPD', traits: '', icon: 'grad' }]
+        : [];
 
       if (initialListing) {
         // Edit Mode: update existing listing
@@ -392,16 +417,17 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
           distanceToFaculty: distanceToFaculty || nearestFacultyText || 'Fakülteye yakın',
           price: Number(price) || 400,
           expenses,
-          fairPriceStatus: Number(price) <= 435 ? 'lower' : 'higher',
-          fairPriceText: Number(price) <= 435 ? 'Rayiç Ortalamasında / Uygun' : 'Rayiç Üstü Bildirimi',
+          ...fairPrice,
           roomType,
           contractType,
           contractStartDate: formattedStartDate,
+          contractStartISO,
           contractDuration,
-          hasVideoTour,
-          videoTourUrl: hasVideoTour ? (videoTourUrl.trim() || undefined) : undefined,
-          videoAngles: hasVideoTour && Object.values(videoAngles).some(Boolean) ? videoAngles : undefined,
+          hasVideoTour: hasVideoTour && Boolean(videoUrl || listingVideoAngles?.length),
+          videoUrl,
+          videoAngles: listingVideoAngles,
           videoTitle: hasVideoTour ? (initialListing.videoTitle || '360° Oda ve Ortak Alan Canlı Turu') : undefined,
+          currentFlatmates: flatmates,
           totalHousemates: Number(totalHousemates) || 3,
           genderPreference,
           genderDistribution: genderDistribution.trim() || 'Karma Ev',
@@ -423,7 +449,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
           images: safeImages,
         };
         if (onUpdateListing) {
-          onUpdateListing(initialListing.id, updates);
+          await onUpdateListing(initialListing.id, updates);
         }
         onClose();
         return;
@@ -431,7 +457,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
       // Create Mode: new listing
       const newListing: HousingListing = {
-        id: `PD-${Date.now().toString().slice(-4)}`,
+        id: `PD-${crypto.randomUUID()}`,
         title: title.trim(),
         district,
         streetAddress: address,
@@ -440,28 +466,22 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         distanceToFaculty: distanceToFaculty || nearestFacultyText || 'Fakülteye yakın',
         price: Number(price) || 400,
         expenses,
-        fairPriceStatus: Number(price) <= 435 ? 'lower' : 'higher',
-        fairPriceText: Number(price) <= 435 ? 'Rayiç Ortalamasında / Uygun' : 'Rayiç Üstü Bildirimi',
+        ...fairPrice,
         roomType,
         contractType,
         contractStartDate: formattedStartDate,
+        contractStartISO,
         contractDuration,
-        hasVideoTour,
-        videoTourUrl: hasVideoTour ? (videoTourUrl.trim() || undefined) : undefined,
-        videoAngles: hasVideoTour && Object.values(videoAngles).some(Boolean) ? videoAngles : undefined,
+        hasVideoTour: hasVideoTour && Boolean(videoUrl || listingVideoAngles?.length),
+        videoUrl,
+        videoAngles: listingVideoAngles,
         videoTitle: hasVideoTour ? '360° Oda ve Ortak Alan Canlı Turu' : undefined,
-        isStudentCardVerified: true,
-        compatibilityScore: 92,
-        compatibilityReason: 'UniPD Öğrenci Topluluğu',
-        currentFlatmates: [
-          {
-            name: flatmateName || 'Ev Arkadaşı',
-            age: 22,
-            faculty: flatmateFaculty || 'UniPD',
-            traits: 'Düzenli, Sessiz Saatler',
-            icon: 'grad',
-          },
-        ],
+        // Rozet sunucu tarafında kullanıcının doğrulanmış UniPD e-postasına göre belirlenir (AppContext + kurallar).
+        isStudentCardVerified: Boolean(currentUser?.studentIdVerified),
+        // Uyum skoru henüz hesaplanmıyor; 0 = gösterme.
+        compatibilityScore: 0,
+        compatibilityReason: '',
+        currentFlatmates: flatmates,
         totalHousemates: Number(totalHousemates) || 3,
         genderPreference,
         genderDistribution: genderDistribution.trim() || 'Karma Ev',
@@ -487,23 +507,25 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
           username: currentUser?.username || 'ogrenci',
           name: currentUser?.name || 'UniPD Öğrencisi',
           avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
-          verifiedUniPD: currentUser?.studentIdVerified ?? true,
+          verifiedUniPD: Boolean(currentUser?.studentIdVerified),
           department: currentUser?.faculty || 'UniPD',
-          phone: currentUser?.phone || '+39 340 000 0000',
+          phone: currentUser?.phone || undefined,
         },
         images: safeImages,
-        createdAt: 'Şimdi',
-        views: 1,
-        isMyListing: true,
+        createdAt: new Date().toISOString(),
+        views: 0,
       };
 
       const addFn = onAddListing || onSubmitListing;
       if (addFn) {
-        addFn(newListing);
+        await addFn(newListing);
       }
       onClose();
     } catch (err) {
       console.error('Failed to submit listing:', err);
+      setSubmitError((err as Error)?.message?.startsWith('{')
+        ? 'İlan kaydedilemedi. Yetkiniz olmayabilir veya bağlantı sorunu var.'
+        : (err as Error)?.message || 'İlan kaydedilemedi.');
     } finally {
       setIsSubmitting(false);
     }
@@ -1346,27 +1368,12 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
                     <label className="font-semibold text-stone-700 uppercase text-[10px] tracking-wide">
                       {currentLang === 'tr' ? 'Ana 360° Video URL (MP4 / WebM / Cloud)' : 'URL Video Principale 360°'}
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setVideoTourUrl('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
-                        setVideoAngles({
-                          room: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-                          desk: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-                          kitchen: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-                          balcony: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
-                        });
-                      }}
-                      className="text-[10px] text-purple-700 hover:text-purple-900 font-bold underline cursor-pointer"
-                    >
-                      {currentLang === 'tr' ? 'Örnek 360° Video Ekle' : 'Aggiungi Video Esempio'}
-                    </button>
                   </div>
                   <input
                     type="url"
                     value={videoTourUrl}
                     onChange={(e) => setVideoTourUrl(e.target.value)}
-                    placeholder="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                    placeholder="https://.../oda-turu.mp4"
                     className="w-full border border-purple-200 bg-white rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition min-h-[42px]"
                   />
                 </div>
@@ -1462,6 +1469,12 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             />
           </div>
 
+          {submitError && (
+            <div role="alert" className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+              {submitError}
+            </div>
+          )}
+
           <div className="pt-2">
             <button 
               type="submit" 
@@ -1491,3 +1504,6 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     </div>
   );
 };
+
+export const CreateListingModal: React.FC<CreateListingModalProps> = (props) =>
+  props.isOpen ? <CreateListingModalContent {...props} /> : null;

@@ -37,7 +37,7 @@ interface ListingCardProps {
   onOpenPreviewModal: (listing: HousingListing) => void;
   onOpenVideoModal?: (listing: HousingListing) => void;
   onOpenVideoTour?: (listing: HousingListing) => void;
-  onOpenChat?: (user: string, subject: string) => void;
+  onOpenChat?: (user: string, subject: string, listingId?: string) => void;
   currentLang?: Language;
   layoutMode?: 'single' | 'double';
 }
@@ -76,7 +76,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   };
 
   const handleChat = () => {
-    if (onOpenChat) onOpenChat(listing.poster.username, listing.title);
+    if (onOpenChat) onOpenChat(listing.poster.username, listing.title, listing.id);
   };
 
   return (
@@ -224,11 +224,13 @@ export const ListingCard: React.FC<ListingCardProps> = ({
                   {listing.genderPreference === 'female_only' ? t.genderFemaleOnly : listing.genderPreference === 'male_only' ? t.genderMaleOnly : t.genderAny}
                 </span>
               )}
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                listing.compatibilityScore >= 90 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-              }`}>
-                %{listing.compatibilityScore} {t.compatibilityText}
-              </span>
+              {listing.compatibilityScore > 0 && (
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                  listing.compatibilityScore >= 90 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  %{listing.compatibilityScore} {t.compatibilityText}
+                </span>
+              )}
             </div>
           </div>
 

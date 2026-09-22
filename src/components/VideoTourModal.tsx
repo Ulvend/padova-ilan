@@ -16,7 +16,7 @@ import {
   RefreshCw,
   Eye
 } from 'lucide-react';
-import { HousingListing, Language } from '../types';
+import { HousingListing, Language, VideoAngleId } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
 
@@ -26,36 +26,13 @@ interface VideoTourModalProps {
   currentLang?: Language;
 }
 
-// Curated high-resolution video streams for realistic apartment inspection
-const DEFAULT_VIDEO_ANGLES = [
-  {
-    id: 'room' as const,
-    label: 'Geniş Açı • Oda & Yaşam Alanı',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  },
-  {
-    id: 'desk' as const,
-    label: 'Çalışma Masası & Yatak Köşesi',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-  },
-  {
-    id: 'kitchen' as const,
-    label: 'Mutfak & Ortak Yaşam Alanı',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-  },
-  {
-    id: 'view' as const,
-    label: 'Balkon & Padova Sokak Manzarası',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
-  },
-];
 
-export const VideoTourModal: React.FC<VideoTourModalProps> = ({
+// Hook'lar koşulsuz çağrılsın diye içerik yalnızca ilan varken mount edilir.
+const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { listing: HousingListing }> = ({
   listing: rawListing,
   onClose,
   currentLang = 'tr',
 }) => {
-  if (!rawListing) return null;
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const listing = getLocalizedListing(rawListing, currentLang);
@@ -79,35 +56,31 @@ export const VideoTourModal: React.FC<VideoTourModalProps> = ({
   const dragStartX = useRef(0);
   const dragStartPan = useRef(0);
 
-  // Video angles from listing or defaults
-  const cameraAngles = [
-    { 
-      id: 'room' as const, 
-      label: t.videoAngleWide || 'Geniş Açı Oda', 
-      videoUrl: rawListing.videoAngles?.find(a => a.id === 'room')?.videoUrl || rawListing.videoUrl || DEFAULT_VIDEO_ANGLES[0].videoUrl,
-      poster: listing.images[0]
-    },
-    { 
-      id: 'desk' as const, 
-      label: t.videoAngleDesk || 'Çalışma Masası', 
-      videoUrl: rawListing.videoAngles?.find(a => a.id === 'desk')?.videoUrl || DEFAULT_VIDEO_ANGLES[1].videoUrl,
-      poster: listing.images[1] || listing.images[0]
-    },
-    { 
-      id: 'kitchen' as const, 
-      label: t.videoAngleShared || 'Mutfak / Ortak', 
-      videoUrl: rawListing.videoAngles?.find(a => a.id === 'kitchen')?.videoUrl || DEFAULT_VIDEO_ANGLES[2].videoUrl,
-      poster: listing.images[2] || listing.images[0]
-    },
-    { 
-      id: 'view' as const, 
-      label: 'Balkon / Manzara', 
-      videoUrl: rawListing.videoAngles?.find(a => a.id === 'view')?.videoUrl || DEFAULT_VIDEO_ANGLES[3].videoUrl,
-      poster: listing.images[3] || listing.images[0]
-    },
-  ];
+  // Yalnızca ilan sahibinin eklediği videolar gösterilir (örnek videolara düşülmez).
+  const angleLabels: Record<VideoAngleId, string> = {
+    room: t.videoAngleWide || 'Geniş Açı Oda',
+    desk: t.videoAngleDesk || 'Çalışma Masası',
+    kitchen: t.videoAngleShared || 'Mutfak / Ortak',
+    view: 'Balkon / Manzara',
+  };
+  const angleOrder: VideoAngleId[] = ['room', 'desk', 'kitchen', 'view'];
+  const cameraAngles = angleOrder
+    .map((id, idx) => ({
+      id,
+      label: angleLabels[id],
+      videoUrl: rawListing.videoAngles?.find(a => a.id === id)?.videoUrl || (id === 'room' ? rawListing.videoUrl : undefined) || '',
+      poster: listing.images[idx] || listing.images[0],
+    }))
+    .filter(angle => angle.videoUrl);
 
   const currentAngle = cameraAngles.find(c => c.id === activeCamera) || cameraAngles[0];
+
+  // İlk mevcut açıya geç (örn. yalnızca mutfak videosu eklenmişse)
+  useEffect(() => {
+    if (cameraAngles.length > 0 && !cameraAngles.some(c => c.id === activeCamera)) {
+      setActiveCamera(cameraAngles[0].id);
+    }
+  }, [cameraAngles.length]);
 
   // Auto-pan effect simulating 360 camera swing
   useEffect(() => {
@@ -205,6 +178,23 @@ export const VideoTourModal: React.FC<VideoTourModalProps> = ({
   const handleTouchEnd = () => {
     setIsDragging(false);
   };
+
+  if (!currentAngle) {
+    return (
+      <div className="fixed inset-0 z-50 bg-stone-950/80 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center space-y-3" onClick={(e) => e.stopPropagation()}>
+          <p className="text-sm font-bold text-stone-900">Bu ilan için video tur eklenmemiş.</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+          >
+            Kapat
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -508,3 +498,6 @@ export const VideoTourModal: React.FC<VideoTourModalProps> = ({
     </div>
   );
 };
+
+export const VideoTourModal: React.FC<VideoTourModalProps> = ({ listing, ...rest }) =>
+  listing ? <VideoTourModalContent {...rest} listing={listing} /> : null;

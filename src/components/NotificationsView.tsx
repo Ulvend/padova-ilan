@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDeviceRelativeDate } from '../utils/deviceTime';
 import { 
   Bell, 
   CheckCheck, 
@@ -273,7 +274,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                       {getTypeLabel(notif.type)}
                     </span>
                     <span className="text-[11px] text-stone-400 font-medium">
-                      {notif.createdAt}
+                      {notif.timestamp ? formatDeviceRelativeDate(notif.timestamp, currentLang) : notif.createdAt}
                     </span>
                     {!notif.read && (
                       <span className="w-2 h-2 rounded-full bg-orange-600 animate-pulse"></span>
