@@ -13,6 +13,7 @@ import {
   doc, 
   getDocFromServer 
 } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App
@@ -20,6 +21,9 @@ export const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore with exact database ID
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Initialize Firebase Storage
+export const storage = getStorage(app);
 
 // Initialize Firebase Auth
 export const auth = getAuth(app);

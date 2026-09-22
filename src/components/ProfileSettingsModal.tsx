@@ -19,6 +19,10 @@ import {
 import { Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
+import { uploadProfilePhoto } from '../services/storageService';
+import { updateUserProfilePhoto } from '../services/firebaseService';
+import { auth } from '../lib/firebase';
+import { updateProfile } from 'firebase/auth';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -58,8 +62,18 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [photoSuccessMsg, setPhotoSuccessMsg] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+
+  // Cleanup object URLs to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewPhoto && previewPhoto.startsWith('blob:')) {
+        URL.revokeObjectURL(previewPhoto);
+      }
+    };
+  }, [previewPhoto]);
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -74,7 +88,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Handle image file selection
+  // Handle image file selection (uses lightweight blob URL instead of memory-heavy Base64)
   const handleFileChange = (file: File | null) => {
     setPhotoError(null);
     setPhotoSuccessMsg(false);
@@ -86,20 +100,20 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       return;
     }
 
-    // 5MB limit
-    if (file.size > 5 * 1024 * 1024) {
-      setPhotoError('Görsel boyutu 5 MB\'tan küçük olmalıdır.');
+    // 10MB limit before client compression
+    if (file.size > 10 * 1024 * 1024) {
+      setPhotoError('Görsel boyutu 10 MB\'tan küçük olmalıdır.');
       return;
     }
 
+    // Clean up previous blob URL
+    if (previewPhoto && previewPhoto.startsWith('blob:')) {
+      URL.revokeObjectURL(previewPhoto);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
     setPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (typeof e.target?.result === 'string') {
-        setPreviewPhoto(e.target.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    setPreviewPhoto(objectUrl);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -110,24 +124,70 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
     }
   };
 
-  const handleSavePhoto = () => {
-    if (!previewPhoto) return;
+  const handleSavePhoto = async () => {
+    if (!photoFile) {
+      setPhotoError('Lütfen önce bir fotoğraf seçin.');
+      return;
+    }
+
     setIsSavingPhoto(true);
     setPhotoError(null);
+    setUploadProgress(0);
 
-    setTimeout(() => {
-      onUpdateProfile({ avatar: previewPhoto });
-      setIsSavingPhoto(false);
+    try {
+      // 1. Upload to Firebase Storage (compressed client-side, returning secure HTTPS URL)
+      const userId = currentUser.id || auth.currentUser?.uid || 'student_' + Date.now();
+      const downloadUrl = await uploadProfilePhoto(photoFile, userId, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      // 2. Update local state and app state with HTTPS URL (never Base64)
+      onUpdateProfile({ avatar: downloadUrl, photoURL: downloadUrl });
+
+      // 3. Update Firestore user document if user has an ID
+      if (currentUser.id || auth.currentUser?.uid) {
+        const targetId = currentUser.id || auth.currentUser!.uid;
+        await updateUserProfilePhoto(targetId, downloadUrl).catch((err) => {
+          console.warn('Firestore profile photo sync warning:', err);
+        });
+      }
+
+      // 4. Update Firebase Auth user profile photoURL if logged in
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { photoURL: downloadUrl }).catch((err) => {
+          console.warn('Firebase Auth photoURL update warning:', err);
+        });
+      }
+
+      // 5. Cleanup preview blob
+      if (previewPhoto && previewPhoto.startsWith('blob:')) {
+        URL.revokeObjectURL(previewPhoto);
+      }
+
       setPhotoSuccessMsg(true);
+      setPreviewPhoto(null);
       setPhotoFile(null);
-    }, 600);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err: any) {
+      console.error('Failed to upload profile photo:', err);
+      setPhotoError(err.message || 'Fotoğraf yüklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setIsSavingPhoto(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleClearPhotoSelection = () => {
+    if (previewPhoto && previewPhoto.startsWith('blob:')) {
+      URL.revokeObjectURL(previewPhoto);
+    }
     setPreviewPhoto(null);
     setPhotoFile(null);
     setPhotoError(null);
     setPhotoSuccessMsg(false);
+    setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -509,7 +569,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     {isSavingPhoto ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>{t.savingPhoto}</span>
+                        <span>{uploadProgress > 0 ? `%${uploadProgress} ${t.savingPhoto}` : t.savingPhoto}</span>
                       </>
                     ) : (
                       <>
@@ -518,6 +578,22 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                       </>
                     )}
                   </button>
+                </div>
+              )}
+
+              {/* Upload Progress Bar */}
+              {isSavingPhoto && uploadProgress > 0 && (
+                <div className="p-3 bg-orange-50/70 border border-orange-200/60 rounded-xl space-y-1.5 animate-in fade-in">
+                  <div className="flex items-center justify-between text-xs text-orange-900 font-semibold">
+                    <span>Bulut Depolamaya Aktarılıyor (Firebase Storage)...</span>
+                    <span>%{uploadProgress}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-orange-600 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
                 </div>
               )}
             </div>

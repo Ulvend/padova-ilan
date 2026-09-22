@@ -24,6 +24,12 @@ export async function syncUserProfile(user: Partial<UserProfile> & { id: string 
     const userRef = doc(db, 'users', user.id);
     const existingSnap = await getDoc(userRef);
 
+    let safePhotoURL = user.avatar || user.photoURL || '';
+    if (safePhotoURL.startsWith('data:') || safePhotoURL.length > 2048) {
+      console.warn('Base64 photo detected! Discarding to protect Firestore 1MB document limit.');
+      safePhotoURL = existingSnap.exists() ? (existingSnap.data()?.photoURL || '') : '';
+    }
+
     const baseData = {
       id: user.id,
       email: user.email || '',
@@ -32,7 +38,7 @@ export async function syncUserProfile(user: Partial<UserProfile> & { id: string 
       faculty: user.faculty || 'Università degli Studi di Padova',
       bio: user.bio || '',
       phone: user.phone || '',
-      photoURL: user.avatar || user.photoURL || '',
+      photoURL: safePhotoURL,
       studentIdVerified: user.studentIdVerified ?? false,
       ssoVerified: user.ssoVerified ?? false,
       role: user.role || 'user',
@@ -50,6 +56,23 @@ export async function syncUserProfile(user: Partial<UserProfile> & { id: string 
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function updateUserProfilePhoto(userId: string, photoURL: string): Promise<void> {
+  if (!photoURL.startsWith('https://') && !photoURL.startsWith('http://')) {
+    throw new Error('Geçersiz profil fotoğrafı bağlantısı. Yalnızca HTTPS web bağlantıları kaydedilebilir.');
+  }
+  const path = `users/${userId}`;
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      photoURL,
+      avatar: photoURL,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
   }
 }
 

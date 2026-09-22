@@ -55,6 +55,13 @@ export interface HousingListing {
   contractDuration?: string;
   hasVideoTour: boolean;
   videoTitle?: string;
+  videoUrl?: string;
+  videoAngles?: {
+    id: 'room' | 'desk' | 'kitchen' | 'view';
+    label: string;
+    videoUrl: string;
+    poster?: string;
+  }[];
   isStudentCardVerified: boolean;
   compatibilityScore: number;
   compatibilityReason: string;

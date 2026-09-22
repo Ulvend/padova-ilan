@@ -26,7 +26,9 @@
         },
         "photoURL": {
           "type": "string",
-          "description": "Avatar photo URL"
+          "format": "uri",
+          "maxLength": 2048,
+          "description": "Avatar photo HTTPS URL (stored in Firebase Storage or Cloudinary)"
         },
         "faculty": {
           "type": "string",

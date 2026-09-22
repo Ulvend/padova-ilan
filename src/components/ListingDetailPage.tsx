@@ -134,15 +134,42 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Share button */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* WhatsApp Direct Share */}
+          <button
+            type="button"
+            onClick={() => {
+              const text = `${listing.title} - Padova Öğrenci İlanı:\n${window.location.href}`;
+              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+            }}
+            className="border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 min-h-[42px] px-3 py-2 text-xs font-semibold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5"
+            title="WhatsApp ile Paylaş"
+          >
+            <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </button>
+
+          {/* Facebook Direct Share */}
+          <button
+            type="button"
+            onClick={() => {
+              window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank');
+            }}
+            className="border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-800 min-h-[42px] px-3 py-2 text-xs font-semibold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5"
+            title="Facebook Grubunda Paylaş"
+          >
+            <Share2 className="w-3.5 h-3.5 text-blue-600" />
+            <span className="hidden sm:inline">Facebook</span>
+          </button>
+
+          {/* Copy Link button */}
           <button
             onClick={handleShare}
             className="border border-stone-200 bg-white hover:bg-stone-50 min-h-[42px] px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5 text-stone-700"
             title={t.share}
           >
-            {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
-            <span>{copiedLink ? t.copied : t.share}</span>
+            {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedLink ? t.copied : 'Linki Kopyala'}</span>
           </button>
 
           {/* Favorite button */}

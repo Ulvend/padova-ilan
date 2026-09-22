@@ -1,4 +1,5 @@
 import { Language } from '../types';
+import { translateWithGemini } from '../services/geminiService';
 
 export interface LanguageOption {
   code: Language;
@@ -403,38 +404,18 @@ export async function translateText(
     return { translatedText: cached, detectedSourceLang: detected };
   }
 
-  // 3. Live translation via MyMemory API
+  // 3. Live translation via Google Gemini AI (@google/genai)
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500);
-
-    const langPair = `${detected}|${targetLang}`;
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=${langPair}`;
-
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.responseData?.translatedText) {
-        let cleanResult = decodeHtmlEntities(data.responseData.translatedText);
-        
-        // Remove known MyMemory warning prefix if returned
-        if (cleanResult.startsWith('MYMEMORY WARNING:')) {
-          cleanResult = cleanResult.replace(/^MYMEMORY WARNING:.*?\n/, '');
-        }
-
-        cleanResult = cleanResult.trim();
-
-        // Ensure the API actually translated something (not returned identical source text)
-        if (cleanResult.length > 0 && cleanResult.toLowerCase() !== trimmed.toLowerCase()) {
-          setCachedTranslation(trimmed, targetLang, cleanResult);
-          return { translatedText: cleanResult, detectedSourceLang: detected };
-        }
+    const geminiTranslation = await translateWithGemini(trimmed, detected, targetLang);
+    if (geminiTranslation && geminiTranslation.trim().length > 0) {
+      const cleanResult = geminiTranslation.trim();
+      if (cleanResult.toLowerCase() !== trimmed.toLowerCase()) {
+        setCachedTranslation(trimmed, targetLang, cleanResult);
+        return { translatedText: cleanResult, detectedSourceLang: detected };
       }
     }
   } catch (err) {
-    console.warn('MyMemory translate API network notice:', err);
+    console.warn('Gemini translation notice:', err);
   }
 
   // 4. Secondary fallback: Smart Padova housing vocabulary replacement

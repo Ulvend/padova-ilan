@@ -15,7 +15,8 @@ import { MiniLocationPicker } from './MiniLocationPicker';
 interface CreateListingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddListing: (listing: HousingListing) => void;
+  onAddListing?: (listing: HousingListing) => void;
+  onSubmitListing?: (listing: HousingListing) => void;
   currentLang?: Language;
   currentUser?: UserProfile;
   isLoggedIn?: boolean;
@@ -26,12 +27,23 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   isOpen,
   onClose,
   onAddListing,
+  onSubmitListing,
   currentLang = 'tr',
   currentUser,
   isLoggedIn = false,
   onOpenAuthModal,
 }) => {
   if (!isOpen) return null;
+
+  const effectiveIsLoggedIn =
+    isLoggedIn ||
+    Boolean(
+      currentUser &&
+      currentUser.id &&
+      currentUser.id !== 'guest' &&
+      currentUser.id !== 'student_guest' &&
+      (currentUser.email || currentUser.username !== 'guest')
+    );
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const [title, setTitle] = useState('');
@@ -277,7 +289,10 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
       isMyListing: true,
     };
 
-      onAddListing(newListing);
+      const addFn = onAddListing || onSubmitListing;
+      if (addFn) {
+        addFn(newListing);
+      }
       onClose();
     } catch (err) {
       console.error('Failed to submit listing:', err);
@@ -286,7 +301,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     }
   };
 
-  if (!isLoggedIn) {
+  if (!effectiveIsLoggedIn) {
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
         <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200 overflow-hidden my-auto shadow-2xl animate-in fade-in zoom-in-95">
