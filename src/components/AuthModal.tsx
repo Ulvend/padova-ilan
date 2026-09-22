@@ -141,7 +141,7 @@ interface AuthModalProps {
   currentLang?: Language;
   userEmail?: string;
   onLoginSuccess?: (userData?: Partial<UserProfile>) => void;
-  authReason?: 'chat' | 'default' | null;
+  authReason?: 'chat' | 'createListing' | 'default' | null;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -460,6 +460,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
           
+          {/* Create Listing Notice if triggered by creating a listing without being logged in */}
+          {authReason === 'createListing' && (
+            <div className="p-3.5 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3 text-xs text-orange-950 animate-in fade-in duration-200">
+              <div className="p-2 bg-orange-100 rounded-lg text-orange-700 shrink-0">
+                <UserPlus className="w-4 h-4" />
+              </div>
+              <div className="space-y-0.5">
+                <strong className="block font-bold text-orange-900">
+                  {currentLang === 'tr' ? 'İlan Oluşturmak İçin Kayıt Olmalısınız' :
+                   currentLang === 'it' ? 'Registrazione Richiesta per Creare un Annuncio' :
+                   currentLang === 'de' ? 'Registrierung erforderlich, um ein Inserat zu erstellen' :
+                   currentLang === 'ru' ? 'Для создания объявления требуется регистрация' :
+                   currentLang === 'hi' ? 'विज्ञापन बनाने के लिए पंजीकरण आवश्यक है' :
+                   'Registration Required to Create a Listing'}
+                </strong>
+                <p className="text-[11px] text-orange-800 leading-snug">
+                  {currentLang === 'tr' ? 'Padova güvenli öğrenci ağına yeni bir oda veya ev ilanı ekleyebilmek için lütfen kayıt olun veya hesabınıza giriş yapın.' :
+                   currentLang === 'it' ? 'Per aggiungere un nuovo annuncio di stanza o alloggio nella rete studentesca di Padova, registrati o accedi con il tuo account.' :
+                   currentLang === 'de' ? 'Um ein neues Zimmer- oder Wohnungsangebot im Paduaner Studentennetzwerk aufzugeben, registrieren Sie sich bitte oder melden Sie sich an.' :
+                   currentLang === 'ru' ? 'Чтобы добавить новое объявление о комнате или квартире в сеть студентов Падуи, пожалуйста, зарегистрируйтесь или войдите в систему.' :
+                   currentLang === 'hi' ? 'पदुवा छात्र नेटवर्क में नया कमरा या आवास विज्ञापन जोड़ने के लिए, कृपया पंजीकरण करें या लॉगिन करें।' :
+                   'To publish a new room or housing listing in the Padova student network, please register or sign in to your account.'}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* VIEW 1: LOGIN */}
           {mode === 'login' && (
             <div className="space-y-4">

@@ -27,9 +27,13 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Take the most recently added listings (sorted by ID descending)
+  // Son yüklenen ilanlara sadece son eklenen 8 ilan konulabilsin (strictly max 8 newest listings)
   const recentListings = [...listings]
-    .sort((a, b) => b.id.localeCompare(a.id))
+    .sort((a, b) => {
+      if (a.createdAt === 'Şimdi' && b.createdAt !== 'Şimdi') return -1;
+      if (b.createdAt === 'Şimdi' && a.createdAt !== 'Şimdi') return 1;
+      return 0;
+    })
     .slice(0, 8);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -57,7 +61,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
               {t.recentlyAddedTitle}
             </h2>
             <span className="bg-orange-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-              {t.recentlyAddedBadge}
+              {t.recentlyAddedBadge} ({recentListings.length}/8)
             </span>
           </div>
         </div>

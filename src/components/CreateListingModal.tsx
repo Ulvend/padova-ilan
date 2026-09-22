@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, ShieldCheck, Video, Building2, Send, Calendar, Clock, Users, Flame, Wind, Wifi, Bike, Car, Cigarette, Dog, Sparkles } from 'lucide-react';
+import { X, Plus, ShieldCheck, Video, Building2, Send, Calendar, Clock, Users, Flame, Wind, Wifi, Bike, Car, Cigarette, Dog, Sparkles, UserPlus, LogIn, Lock } from 'lucide-react';
 import { HousingListing, RoomType, ContractType, DistrictArea, Language, UserProfile } from '../types';
 import { resolveListingCoords } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
@@ -10,6 +10,8 @@ interface CreateListingModalProps {
   onAddListing: (listing: HousingListing) => void;
   currentLang?: Language;
   currentUser?: UserProfile;
+  isLoggedIn?: boolean;
+  onOpenAuthModal?: (mode?: 'login' | 'register' | 'forgot', reason?: any) => void;
 }
 
 export const CreateListingModal: React.FC<CreateListingModalProps> = ({
@@ -18,6 +20,8 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   onAddListing,
   currentLang = 'tr',
   currentUser,
+  isLoggedIn = false,
+  onOpenAuthModal,
 }) => {
   if (!isOpen) return null;
 
@@ -118,7 +122,6 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
           name: flatmateName || 'Ev Arkadaşı',
           age: 22,
           faculty: flatmateFaculty || 'UniPD',
-          year: '2. Sınıf',
           traits: 'Düzenli, Sessiz Saatler',
           icon: 'grad',
         },
@@ -150,7 +153,6 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
         verifiedUniPD: currentUser?.studentIdVerified ?? true,
         department: currentUser?.faculty || 'UniPD',
-        year: currentUser?.year || 'Öğrenci',
         phone: currentUser?.phone || '+39 340 000 0000',
       },
       images: [
@@ -165,6 +167,86 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     onAddListing(newListing);
     onClose();
   };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200 overflow-hidden my-auto shadow-2xl animate-in fade-in zoom-in-95">
+          {/* Modal Header */}
+          <div className="bg-stone-900 text-white px-5 py-3.5 flex items-center justify-between border-b border-stone-800">
+            <div className="flex items-center gap-2">
+              <span className="bg-orange-600 px-2.5 py-0.5 font-bold uppercase text-[10px] rounded-full">UniPD Housing</span>
+              <h3 className="font-bold text-sm">
+                {currentLang === 'tr' ? 'Kayıt Olmanız Gerekiyor' :
+                 currentLang === 'it' ? 'Registrazione Richiesta' :
+                 currentLang === 'de' ? 'Registrierung erforderlich' :
+                 currentLang === 'ru' ? 'Требуется регистрация' :
+                 currentLang === 'hi' ? 'पंजीकरण आवश्यक है' :
+                 'Registration Required'}
+              </h3>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="p-1.5 hover:bg-stone-800 text-stone-300 hover:text-white rounded-lg transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="p-6 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center mx-auto shadow-sm">
+              <UserPlus className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h4 className="text-lg font-bold text-stone-900">
+                {currentLang === 'tr' ? 'İlan Oluşturmak İçin Kayıt Olmalısınız' :
+                 currentLang === 'it' ? 'Registrazione Richiesta per Pubblicare' :
+                 currentLang === 'de' ? 'Registrierung erforderlich zum Inserieren' :
+                 currentLang === 'ru' ? 'Для публикации требуется регистрация' :
+                 currentLang === 'hi' ? 'विज्ञापन पोस्ट करने के लिए पंजीकरण आवश्यक है' :
+                 'Registration Required to Post a Listing'}
+              </h4>
+              <p className="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
+                {currentLang === 'tr' ? 'Padova güvenli öğrenci konaklama ağında yeni bir ev veya oda ilanı oluşturabilmek için lütfen kayıt olun ya da mevcut hesabınıza giriş yapın.' :
+                 currentLang === 'it' ? 'Per pubblicare una stanza o un alloggio nella rete per studenti di Padova, registrati o accedi con il tuo account.' :
+                 currentLang === 'de' ? 'Um ein Zimmer oder eine Wohnung im Paduaner Studentennetzwerk anzubieten, registrieren Sie sich bitte oder melden Sie sich an.' :
+                 currentLang === 'ru' ? 'Чтобы опубликовать объявление в сети студентов Падуи, пожалуйста, зарегистрируйтесь или войдите в систему.' :
+                 currentLang === 'hi' ? 'पदुवा छात्र नेटवर्क में कमरा या आवास सूची पोस्ट करने के लिए, कृपया पंजीकरण करें या लॉगिन करें।' :
+                 'To post a room or housing listing in the Padova student network, please register or log in to your account.'}
+              </p>
+            </div>
+
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onOpenAuthModal) onOpenAuthModal('register', 'createListing');
+                }}
+                className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>{t.registerNav}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onOpenAuthModal) onOpenAuthModal('login', 'createListing');
+                }}
+                className="w-full py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <LogIn className="w-4 h-4 text-stone-500" />
+                <span>{t.loginNav}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">

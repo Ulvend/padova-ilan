@@ -15,7 +15,7 @@ import { PadovaMap } from './components/PadovaMap';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileFilterDrawer } from './components/MobileFilterDrawer';
 import { RecentlyAddedSection } from './components/RecentlyAddedSection';
-import { Map, MapPin, ChevronDown, ChevronUp, Grid2X2, List, Filter, Search, MessageSquare, X, Video, Star, GraduationCap, DoorClosed, CircleDollarSign, Bell } from 'lucide-react';
+import { Map, MapPin, ChevronDown, ChevronUp, Grid2X2, List, Filter, Search, MessageSquare, X, Video, Star, GraduationCap, DoorClosed, CircleDollarSign, Bell, Plus } from 'lucide-react';
 
 import { ActiveView, FilterState, HousingListing, Language, ConversationContact, DirectMessage, UserProfile, UserNotification } from './types';
 import { 
@@ -56,6 +56,16 @@ const DEFAULT_FILTERS: FilterState = {
   sortBy: 'relevance',
 };
 
+const MOCK_LISTING_IDS = new Set([
+  'PD-FORC-101',
+  'PD-PORT-102',
+  'PD-BEAT-103',
+  'PD-PRATO-104',
+  'PD-ARC-105',
+  'PD-GUIZ-106',
+  'PD-PAST-001',
+]);
+
 export const App: React.FC = () => {
   // Navigation State
   const [currentView, setCurrentView] = useState<ActiveView>('home');
@@ -78,7 +88,9 @@ export const App: React.FC = () => {
       try {
         const parsed: HousingListing[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((item, idx) => {
+          // Filter out mock listings so user can create and test manually
+          const userOnly = parsed.filter((item) => !MOCK_LISTING_IDS.has(item.id));
+          return userOnly.map((item, idx) => {
             const [lat, lng] = resolveListingCoords(item, idx);
             return {
               ...item,
@@ -142,7 +154,8 @@ export const App: React.FC = () => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const userOnly = parsed.filter((item: HousingListing) => !MOCK_LISTING_IDS.has(item.id));
+          return userOnly;
         }
       } catch (e) {
         console.error('Failed to parse archived listings', e);
@@ -232,7 +245,8 @@ export const App: React.FC = () => {
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'forgot'>('login');
-  const [authModalReason, setAuthModalReason] = useState<'chat' | 'default' | null>(null);
+  const [authModalReason, setAuthModalReason] = useState<'chat' | 'createListing' | 'default' | null>(null);
+  const [pendingCreateListingAfterAuth, setPendingCreateListingAfterAuth] = useState(false);
 
   const handleUpdateProfile = (updated: Partial<UserProfile>) => {
     setCurrentUser((prev) => {
@@ -246,10 +260,19 @@ export const App: React.FC = () => {
     });
   };
 
-  const handleOpenAuthModal = (mode: 'login' | 'register' | 'forgot' = 'login', reason: 'chat' | 'default' | null = null) => {
+  const handleOpenAuthModal = (mode: 'login' | 'register' | 'forgot' = 'login', reason: 'chat' | 'createListing' | 'default' | null = null) => {
     setAuthModalMode(mode);
     setAuthModalReason(reason);
     setIsAuthModalOpen(true);
+  };
+
+  const handleOpenCreateListingModal = () => {
+    if (!isLoggedIn) {
+      setPendingCreateListingAfterAuth(true);
+      handleOpenAuthModal('register', 'createListing');
+      return;
+    }
+    setIsCreateModalOpen(true);
   };
 
   const handleLoginSuccess = (userData?: Partial<UserProfile>) => {
@@ -269,6 +292,10 @@ export const App: React.FC = () => {
       localStorage.setItem('padova_is_logged_in_v2', 'true');
     } catch (e) {
       console.error(e);
+    }
+    if (pendingCreateListingAfterAuth) {
+      setPendingCreateListingAfterAuth(false);
+      setIsCreateModalOpen(true);
     }
   };
 
@@ -312,6 +339,11 @@ export const App: React.FC = () => {
         };
         setCurrentUser((prev) => ({ ...prev, ...profileUpdate }));
 
+        if (pendingCreateListingAfterAuth) {
+          setPendingCreateListingAfterAuth(false);
+          setIsCreateModalOpen(true);
+        }
+
         try {
           const remoteProfile = await getUserProfile(firebaseUser.uid);
           if (remoteProfile?.savedListingIds && remoteProfile.savedListingIds.length > 0) {
@@ -323,16 +355,17 @@ export const App: React.FC = () => {
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [pendingCreateListingAfterAuth]);
 
   // Firestore Real-Time Listings Synchronization
   useEffect(() => {
     const unsubListings = subscribeToListings((firestoreListings) => {
-      if (firestoreListings && firestoreListings.length > 0) {
+      if (firestoreListings) {
         setListings((prev) => {
-          const firestoreIds = new Set(firestoreListings.map((l) => l.id));
-          const existingNonFirestore = prev.filter((l) => !firestoreIds.has(l.id));
-          return [...firestoreListings, ...existingNonFirestore];
+          const cleanFirestore = firestoreListings.filter((l) => !MOCK_LISTING_IDS.has(l.id));
+          const firestoreIds = new Set(cleanFirestore.map((l) => l.id));
+          const existingNonFirestore = prev.filter((l) => !firestoreIds.has(l.id) && !MOCK_LISTING_IDS.has(l.id));
+          return [...cleanFirestore, ...existingNonFirestore];
         });
       }
     });
@@ -674,7 +707,7 @@ export const App: React.FC = () => {
 
   // Filter & Sort Logic
   const filteredListings = useMemo(() => {
-    return listings.filter((item) => {
+    const filtered = listings.filter((item) => {
       // Tab filter
       if (filters.categoryTab === 'video' && !item.hasVideoTour) return false;
       if (filters.categoryTab === 'transitorio' && !item.contractType.includes('Transitorio')) return false;
@@ -748,14 +781,31 @@ export const App: React.FC = () => {
       }
 
       return true;
-    }).sort((a, b) => {
-      if (filters.categoryTab === 'newest') return b.id.localeCompare(a.id);
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (filters.categoryTab === 'newest') {
+        if (a.createdAt === 'Şimdi' && b.createdAt !== 'Şimdi') return -1;
+        if (b.createdAt === 'Şimdi' && a.createdAt !== 'Şimdi') return 1;
+        return 0;
+      }
       if (filters.sortBy === 'price-asc') return a.price - b.price;
       if (filters.sortBy === 'price-desc') return b.price - a.price;
       if (filters.sortBy === 'compatibility-desc') return b.compatibilityScore - a.compatibilityScore;
-      if (filters.sortBy === 'newest') return b.id.localeCompare(a.id);
+      if (filters.sortBy === 'newest') {
+        if (a.createdAt === 'Şimdi' && b.createdAt !== 'Şimdi') return -1;
+        if (b.createdAt === 'Şimdi' && a.createdAt !== 'Şimdi') return 1;
+        return 0;
+      }
       return 0; // relevance
     });
+
+    // Son yüklenen ilanlara sadece son eklenen 8 ilan konulabilsin
+    if (filters.categoryTab === 'newest') {
+      return sorted.slice(0, 8);
+    }
+
+    return sorted;
   }, [listings, filters]);
 
   // Derived user-specific listings
@@ -798,7 +848,7 @@ export const App: React.FC = () => {
         onFilterChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
         currentLang={currentLang}
         onLangChange={setCurrentLang}
-        onOpenCreateModal={() => setIsCreateModalOpen(true)}
+        onOpenCreateModal={handleOpenCreateListingModal}
         totalListingsCount={filteredListings.length}
         unreadMessagesCount={conversations.reduce((acc, c) => acc + c.unreadCount, 0)}
         unreadNotificationsCount={unreadNotificationsCount}
@@ -1014,6 +1064,16 @@ export const App: React.FC = () => {
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
                     <span>{filteredListings.length} {t.activeStudentListings}</span>
                   </span>
+                  {filters.categoryTab === 'newest' && (
+                    <span className="text-[10px] bg-orange-100 border border-orange-300 px-2 py-0.5 text-orange-900 font-bold rounded-full">
+                      {currentLang === 'tr' ? 'Son Eklenen 8 İlan' :
+                       currentLang === 'it' ? 'Ultimi 8 Annunci' :
+                       currentLang === 'de' ? 'Neueste 8 Inserate' :
+                       currentLang === 'ru' ? 'Последние 8 объявлений' :
+                       currentLang === 'hi' ? 'नवीनतम 8 विज्ञापन' :
+                       'Latest 8 Listings'}
+                    </span>
+                  )}
                   {filters.district !== 'all' && (
                     <span className="text-[10px] bg-orange-50 border border-orange-200 px-2 py-0.5 text-orange-950 font-medium rounded-full">
                       {filters.district}
@@ -1058,16 +1118,46 @@ export const App: React.FC = () => {
                   <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto text-stone-400">
                     <Search className="w-6 h-6" />
                   </div>
-                  <h3 className="font-bold text-base text-zinc-900">{t.noListingsFound}</h3>
+                  <h3 className="font-bold text-base text-zinc-900">
+                    {listings.length === 0
+                      ? (currentLang === 'tr' ? 'Henüz Yayınlanmış İlan Bulunmuyor' :
+                         currentLang === 'it' ? 'Nessun annuncio pubblicato finora' :
+                         currentLang === 'de' ? 'Noch keine Inserate vorhanden' :
+                         currentLang === 'ru' ? 'Пока нет опубликованных объявлений' :
+                         currentLang === 'hi' ? 'अभी तक कोई विज्ञापन प्रकाशित नहीं हुआ है' :
+                         'No Listings Published Yet')
+                      : t.noListingsFound}
+                  </h3>
                   <p className="text-xs text-zinc-600 max-w-md mx-auto">
-                    {t.noListingsSub}
+                    {listings.length === 0
+                      ? (currentLang === 'tr' ? 'Tüm mock/örnek ilanlar kaldırıldı. Kendi ilanınızı ekleyip akışı manuel olarak test etmek için aşağıdaki butona tıklayın.' :
+                         currentLang === 'it' ? 'Gli annunci di esempio sono stati rimossi. Fai clic sul pulsante qui sotto per aggiungere il tuo annuncio e testarlo manualmente.' :
+                         currentLang === 'de' ? 'Beispielinserate wurden entfernt. Klicken Sie auf die Schaltfläche unten, um Ihr eigenes Inserat hinzuzufügen und manuell zu testen.' :
+                         currentLang === 'ru' ? 'Примеры объявлений удалены. Нажмите кнопку ниже, чтобы добавить свое объявление и протестировать его вручную.' :
+                         currentLang === 'hi' ? 'नमूना विज्ञापन हटा दिए गए हैं। अपना विज्ञापन जोड़ने और मैन्युअल रूप से परीक्षण करने के लिए नीचे दिए गए बटन पर क्लिक करें।' :
+                         'Mock listings have been removed. Click the button below to post your own listing and test manually.')
+                      : t.noListingsSub}
                   </p>
-                  <button
-                    onClick={() => setFilters(DEFAULT_FILTERS)}
-                    className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider min-h-[44px] transition cursor-pointer shadow-xs"
-                  >
-                    {t.resetFilters}
-                  </button>
+                  <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
+                    {listings.length === 0 ? (
+                      <button
+                        type="button"
+                        onClick={handleOpenCreateListingModal}
+                        className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider min-h-[44px] transition cursor-pointer shadow-xs flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>{t.postAdBtn}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setFilters(DEFAULT_FILTERS)}
+                        className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider min-h-[44px] transition cursor-pointer shadow-xs"
+                      >
+                        {t.resetFilters}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className={gridLayout === 'double' ? 'grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch' : 'space-y-4'}>
@@ -1122,7 +1212,7 @@ export const App: React.FC = () => {
           <MyListingsView
             myListings={myListings}
             archivedListings={archivedListings}
-            onOpenCreateModal={() => setIsCreateModalOpen(true)}
+            onOpenCreateModal={handleOpenCreateListingModal}
             onSelectListing={handleOpenDetailPage}
             onOpenVideoTour={setVideoModalListing}
             onDeleteListing={handleDeleteListing}
@@ -1272,6 +1362,8 @@ export const App: React.FC = () => {
         onAddListing={handleAddListing}
         currentLang={currentLang}
         currentUser={currentUser}
+        isLoggedIn={isLoggedIn}
+        onOpenAuthModal={handleOpenAuthModal}
       />
 
       {/* Mobile Filter Bottom Drawer */}
@@ -1305,7 +1397,7 @@ export const App: React.FC = () => {
           setCurrentView(view);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        onOpenCreateModal={() => setIsCreateModalOpen(true)}
+        onOpenCreateModal={handleOpenCreateListingModal}
         onToggleMapSection={() => setIsMapSectionOpen((prev) => !prev)}
         isMapOpen={isMapSectionOpen}
         unreadMessagesCount={conversations.reduce((acc, c) => acc + c.unreadCount, 0)}
