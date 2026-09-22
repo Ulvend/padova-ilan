@@ -1,0 +1,6 @@
+{
+  "name": "Padova Student Housing & Room Network",
+  "description": "Padova güvenli öğrenci ev ve oda ağı: Fiyat endeksi denetimi, doğrulanmış video tur, uyum skoru algoritması ve modern ilan altyapısı.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

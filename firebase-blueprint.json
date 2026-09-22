@@ -1,0 +1,224 @@
+{
+  "entities": {
+    "user": {
+      "title": "User Profile",
+      "description": "User profile in Padova Student Housing",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User UID matching auth.uid"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary email address"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Full display name"
+        },
+        "username": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Unique username handle"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar photo URL"
+        },
+        "faculty": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Enrolled faculty or department"
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Brief student biography"
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Contact telephone number"
+        },
+        "studentIdVerified": {
+          "type": "boolean",
+          "description": "Whether student card is verified"
+        },
+        "ssoVerified": {
+          "type": "boolean",
+          "description": "Whether authenticated via UniPD SSO"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin", "superadmin"],
+          "description": "User role authorization level"
+        },
+        "savedListingIds": {
+          "type": "array",
+          "description": "List of favorite listing IDs"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of account creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last account update"
+        }
+      },
+      "required": ["email", "name"]
+    },
+    "listing": {
+      "title": "Housing Listing",
+      "description": "Housing room or apartment listing",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique listing identifier"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Author UID who created the listing"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Listing headline title"
+        },
+        "price": {
+          "type": "number",
+          "description": "Monthly rent in Euros"
+        },
+        "district": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Neighborhood or district in Padova"
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Street address of the property"
+        },
+        "roomType": {
+          "type": "string",
+          "description": "Room type (Singola, Doppia, etc.)"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2500,
+          "description": "Detailed description of the room and apartment"
+        },
+        "expenses": {
+          "type": "string",
+          "description": "Expenses breakdown or inclusion status"
+        },
+        "hasVideoTour": {
+          "type": "boolean",
+          "description": "Whether 360 virtual tour is available"
+        },
+        "isStudentCardVerified": {
+          "type": "boolean",
+          "description": "Whether poster is UniPD verified"
+        },
+        "compatibilityScore": {
+          "type": "number",
+          "description": "Student roommate compatibility score"
+        },
+        "images": {
+          "type": "array",
+          "description": "Array of image URLs"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["userId", "title", "price", "roomType"]
+    },
+    "message": {
+      "title": "Direct Message",
+      "description": "Chat message between students and flatmates",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique message identifier"
+        },
+        "senderId": {
+          "type": "string",
+          "description": "UID of sender"
+        },
+        "recipientId": {
+          "type": "string",
+          "description": "UID or username of recipient"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 1500,
+          "description": "Message body"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["senderId", "recipientId", "text"]
+    },
+    "notification": {
+      "title": "User Notification",
+      "description": "In-app notifications",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Notification identifier"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Target user UID"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Notification title"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Notification content"
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Read status"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["userId", "title", "message"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "User profiles"
+    },
+    "/listings/{listingId}": {
+      "schema": "listing",
+      "description": "Housing listings collection"
+    },
+    "/messages/{messageId}": {
+      "schema": "message",
+      "description": "Direct messages collection"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "notification",
+      "description": "Notifications collection"
+    }
+  }
+}

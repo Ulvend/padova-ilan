@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1c1917;
+    background-color: #faf8f5;
+  }
+}
+
+@layer utilities {
+  .font-retro-title {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .font-mono-chivo {
+    font-family: 'Chivo Mono', monospace;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .touch-pan-x {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.retro-box {
+  background-color: #ffffff;
+  border: 1px solid #e7e5e0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.retro-box-hover:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  border-color: #d6d3cd;
+  transform: translateY(-2px);
+}
+
+.retro-btn {
+  background-color: #ea580c;
+  color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.retro-btn:hover {
+  background-color: #d94806;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.retro-btn:active {
+  transform: scale(0.98);
+}
+
+.retro-badge {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d6d3cd;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-track {
+  background: #faf8f5;
+}
+
+/* Leaflet Custom Marker Overrides */
+.leaflet-div-icon,
+.custom-leaflet-pin,
+.custom-landmark-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+

@@ -1,0 +1,666 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  X, 
+  Upload, 
+  Lock, 
+  User, 
+  Check, 
+  Eye, 
+  EyeOff, 
+  Camera, 
+  ShieldCheck, 
+  AlertCircle,
+  Sparkles,
+  RefreshCw,
+  GraduationCap,
+  ChevronDown,
+  BookOpen
+} from 'lucide-react';
+import { Language, UserProfile } from '../types';
+import { TRANSLATIONS } from '../utils/translations';
+import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
+
+interface ProfileSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentUser: UserProfile;
+  onUpdateProfile: (updated: Partial<UserProfile>) => void;
+  currentLang?: Language;
+}
+
+export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
+  isOpen,
+  onClose,
+  currentUser,
+  onUpdateProfile,
+  currentLang = 'tr',
+}) => {
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeTab, setActiveTab] = useState<'department' | 'photo' | 'password'>('department');
+
+  // UniPD Department state
+  const [selectedDepartment, setSelectedDepartment] = useState<string>(
+    currentUser.faculty || UNIPD_DEPARTMENTS[0]?.name || ''
+  );
+  const [isSavingDepartment, setIsSavingDepartment] = useState(false);
+  const [departmentSuccessMsg, setDepartmentSuccessMsg] = useState(false);
+
+  useEffect(() => {
+    if (currentUser.faculty) {
+      setSelectedDepartment(currentUser.faculty);
+    }
+  }, [currentUser.faculty, isOpen]);
+
+  // Photo state
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [photoSuccessMsg, setPhotoSuccessMsg] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  // Password state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordSuccessMsg, setPasswordSuccessMsg] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  // Handle image file selection
+  const handleFileChange = (file: File | null) => {
+    setPhotoError(null);
+    setPhotoSuccessMsg(false);
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Lütfen geçerli bir görsel dosyası seçin (PNG, JPG, WEBP).');
+      return;
+    }
+
+    // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Görsel boyutu 5 MB\'tan küçük olmalıdır.');
+      return;
+    }
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (typeof e.target?.result === 'string') {
+        setPreviewPhoto(e.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleSavePhoto = () => {
+    if (!previewPhoto) return;
+    setIsSavingPhoto(true);
+    setPhotoError(null);
+
+    setTimeout(() => {
+      onUpdateProfile({ avatar: previewPhoto });
+      setIsSavingPhoto(false);
+      setPhotoSuccessMsg(true);
+      setPhotoFile(null);
+    }, 600);
+  };
+
+  const handleClearPhotoSelection = () => {
+    setPreviewPhoto(null);
+    setPhotoFile(null);
+    setPhotoError(null);
+    setPhotoSuccessMsg(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Password strength helper
+  const getPasswordStrength = (pass: string): { score: number; label: string; color: string } => {
+    if (!pass) return { score: 0, label: '', color: 'bg-stone-200' };
+    let score = 0;
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+
+    if (score <= 1) return { score: 1, label: t.passwordStrengthWeak, color: 'bg-rose-500' };
+    if (score <= 3) return { score: 2, label: t.passwordStrengthMedium, color: 'bg-amber-500' };
+    return { score: 3, label: t.passwordStrengthStrong, color: 'bg-emerald-600' };
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccessMsg(false);
+
+    if (!currentPassword.trim()) {
+      setPasswordError(t.passwordCurrentRequired);
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError(t.passwordMinLengthError);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t.passwordMismatchError);
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+
+    setTimeout(() => {
+      setIsUpdatingPassword(false);
+      setPasswordSuccessMsg(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    }, 700);
+  };
+
+  const handleSaveDepartment = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingDepartment(true);
+    setDepartmentSuccessMsg(false);
+
+    setTimeout(() => {
+      onUpdateProfile({ faculty: selectedDepartment });
+      setIsSavingDepartment(false);
+      setDepartmentSuccessMsg(true);
+      setTimeout(() => {
+        setDepartmentSuccessMsg(false);
+      }, 4000);
+    }, 500);
+  };
+
+  const passStrength = getPasswordStrength(newPassword);
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white w-full max-w-xl rounded-2xl border border-stone-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+        onClick={(e) => e.stopPropagation()}
+        id="modal-profile-settings"
+      >
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-stone-50/50">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-stone-900 tracking-tight">
+              {t.profileSettingsTitle}
+            </h3>
+            <p className="text-xs text-stone-500 mt-0.5">
+              {t.profileSettingsSubtitle}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+            aria-label={t.closeBtn}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex border-b border-stone-200 bg-stone-50/70 p-1.5 gap-1.5 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('department');
+              setPhotoSuccessMsg(false);
+              setPasswordSuccessMsg(false);
+              setDepartmentSuccessMsg(false);
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer ${
+              activeTab === 'department'
+                ? 'bg-white text-orange-600 shadow-xs font-bold border border-stone-200'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/70'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>{t.profileTabDepartment}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('photo');
+              setPhotoSuccessMsg(false);
+              setPasswordSuccessMsg(false);
+              setDepartmentSuccessMsg(false);
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer ${
+              activeTab === 'photo'
+                ? 'bg-white text-orange-600 shadow-xs font-bold border border-stone-200'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/70'
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            <span>{t.profileTabPhoto}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('password');
+              setPhotoSuccessMsg(false);
+              setPasswordSuccessMsg(false);
+              setDepartmentSuccessMsg(false);
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer ${
+              activeTab === 'password'
+                ? 'bg-white text-orange-600 shadow-xs font-bold border border-stone-200'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/70'
+            }`}
+          >
+            <Lock className="w-4 h-4" />
+            <span>{t.profileTabPassword}</span>
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+          
+          {/* TAB: UniPD Departman & Fakülte Seçimi */}
+          {activeTab === 'department' && (
+            <form onSubmit={handleSaveDepartment} className="space-y-5">
+              {/* Current Department Status */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-stone-50 border border-stone-200">
+                <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-xs">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-stone-900">Mevcut Departman:</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                      UniPD
+                    </span>
+                  </div>
+                  <p className="text-xs text-orange-600 font-semibold truncate">
+                    {currentUser.faculty || 'Seçilmemiş'}
+                  </p>
+                  <p className="text-[11px] text-stone-500 truncate">
+                    @{currentUser.username} • {currentUser.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Success Notification */}
+              {departmentSuccessMsg && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 animate-in fade-in">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">
+                    Padova Üniversitesi departmanınız başarıyla güncellendi! Profilinizde ve ilanlarınızda hemen yansıtıldı.
+                  </span>
+                </div>
+              )}
+
+              {/* Department Dropdown Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide">
+                    Padova Üniversitesi Resmi Departmanı (32 Seçenek)
+                  </label>
+                  <span className="text-[11px] text-stone-400 font-medium">8 Fakülte / Okul</span>
+                </div>
+
+                <div className="relative">
+                  <select
+                    id="select-profile-department"
+                    value={selectedDepartment}
+                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    className="w-full min-h-[48px] px-3.5 pl-10 pr-9 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer shadow-2xs font-medium"
+                  >
+                    {Array.from(new Set(UNIPD_DEPARTMENTS.map((d) => d.school))).map((school) => (
+                      <optgroup key={school} label={`🏛️ ${school}`}>
+                        {UNIPD_DEPARTMENTS.filter((d) => d.school === school).map((dep) => (
+                          <option key={dep.code} value={dep.name}>
+                            {dep.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <BookOpen className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-4 h-4 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                {/* Selected Department Details Card */}
+                {(() => {
+                  const currentObj = UNIPD_DEPARTMENTS.find(d => d.name === selectedDepartment);
+                  if (!currentObj) return null;
+                  return (
+                    <div className="p-3 bg-orange-50/50 border border-orange-200/70 rounded-xl text-xs space-y-1 mt-2">
+                      <div className="flex items-center justify-between text-orange-950 font-bold">
+                        <span>{currentObj.school}</span>
+                        <span className="bg-orange-200/80 text-orange-900 px-2 py-0.5 rounded-md text-[10px] uppercase font-mono">
+                          Kod: {currentObj.code}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-600">
+                        {currentObj.englishName}
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                <p className="text-[11px] text-stone-400 leading-relaxed pt-1">
+                  Seçtiğiniz departman, diğer UniPD öğrencileriyle olan eşleşme yüzdelerinizi (Uyumluluk Analizi) ve fakülteye olan yürüme mesafesi hesaplamalarını otomatik olarak optimize eder.
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-3 border-t border-stone-100 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSavingDepartment || selectedDepartment === currentUser.faculty}
+                  className="bg-orange-600 hover:bg-orange-500 text-white min-h-[44px] px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isSavingDepartment ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Kaydediliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Departmanı Güncelle</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* TAB 1: Profil Fotoğrafı */}
+          {activeTab === 'photo' && (
+            <div className="space-y-5">
+              
+              {/* Current Photo & Student Info */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-stone-50 border border-stone-200">
+                <div className="relative">
+                  <img
+                    src={previewPhoto || currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-orange-500 shadow-sm"
+                  />
+                  <span className="absolute -bottom-1 -right-1 bg-emerald-600 text-white p-1 rounded-full border-2 border-white shadow-xs" title="Doğrulanmış Profil">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-stone-900 truncate">{currentUser.name}</h4>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                      UniPD
+                    </span>
+                  </div>
+                  <p className="text-xs text-orange-600 font-medium">@{currentUser.username}</p>
+                  <p className="text-[11px] text-stone-500 truncate">{currentUser.email}</p>
+                </div>
+              </div>
+
+              {/* Photo Success Banner */}
+              {photoSuccessMsg && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 animate-in fade-in">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">{t.photoUpdatedSuccess}</span>
+                </div>
+              )}
+
+              {/* Photo Error Banner */}
+              {photoError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs text-rose-800">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{photoError}</span>
+                </div>
+              )}
+
+              {/* Upload Drag & Drop Area */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 ${
+                  isDragOver 
+                    ? 'border-orange-500 bg-orange-50/50' 
+                    : 'border-stone-300 hover:border-stone-400 bg-stone-50/30'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleFileChange(e.target.files[0]);
+                    }
+                  }}
+                />
+                <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shadow-xs">
+                  <Upload className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs sm:text-sm font-bold text-stone-800">
+                    {t.uploadNewPhotoBtn}
+                  </p>
+                  <p className="text-xs text-stone-500">
+                    {t.dragDropPhotoHint}
+                  </p>
+                  <p className="text-[11px] text-stone-400 font-medium">
+                    {t.photoFormatHint}
+                  </p>
+                </div>
+              </div>
+
+              {/* Preview & Action Buttons */}
+              {previewPhoto && (
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-stone-700">{t.newPhotoPreview}:</span>
+                    <img
+                      src={previewPhoto}
+                      alt="Yeni fotoğraf"
+                      className="w-9 h-9 rounded-full object-cover border border-stone-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleClearPhotoSelection}
+                      className="text-xs text-stone-500 hover:text-stone-800 underline ml-2 cursor-pointer"
+                    >
+                      {t.removeSelection}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSavePhoto}
+                    disabled={isSavingPhoto}
+                    className="bg-orange-600 hover:bg-orange-500 text-white min-h-[42px] px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isSavingPhoto ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>{t.savingPhoto}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>{t.savePhotoBtn}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: Şifre Değiştirme */}
+          {activeTab === 'password' && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              
+              {/* Password Success Banner */}
+              {passwordSuccessMsg && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 animate-in fade-in">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">{t.passwordUpdatedSuccess}</span>
+                </div>
+              )}
+
+              {/* Password Error Banner */}
+              {passwordError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs text-rose-800">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              {/* Current Password Field */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-stone-800">
+                  {t.currentPasswordLabel} <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPass ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder={t.currentPasswordPlaceholder}
+                    required
+                    className="w-full min-h-[44px] px-3.5 pr-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 cursor-pointer"
+                  >
+                    {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password Field */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-stone-800">
+                  {t.newPasswordLabel} <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder={t.newPasswordPlaceholder}
+                    required
+                    minLength={8}
+                    className="w-full min-h-[44px] px-3.5 pr-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 cursor-pointer"
+                  >
+                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Password Strength Meter */}
+                {newPassword && (
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-stone-500">Güvenlik Seviyesi:</span>
+                      <span className="font-bold text-stone-700">{passStrength.label}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-stone-200 rounded-full overflow-hidden flex gap-1">
+                      <div className={`h-full flex-1 rounded-full ${passStrength.score >= 1 ? passStrength.color : 'bg-transparent'}`} />
+                      <div className={`h-full flex-1 rounded-full ${passStrength.score >= 2 ? passStrength.color : 'bg-transparent'}`} />
+                      <div className={`h-full flex-1 rounded-full ${passStrength.score >= 3 ? passStrength.color : 'bg-transparent'}`} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm New Password Field */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-stone-800">
+                  {t.confirmPasswordLabel} <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPass ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder={t.confirmPasswordPlaceholder}
+                    required
+                    minLength={8}
+                    className="w-full min-h-[44px] px-3.5 pr-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 cursor-pointer"
+                  >
+                    {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-stone-400 leading-relaxed">
+                {t.passwordHint}
+              </p>
+
+              {/* Submit Button */}
+              <div className="pt-3 border-t border-stone-100 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isUpdatingPassword}
+                  className="bg-stone-900 hover:bg-stone-800 text-white min-h-[44px] px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isUpdatingPassword ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>{t.updatingPassword}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>{t.updatePasswordBtn}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
