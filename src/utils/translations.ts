@@ -178,6 +178,7 @@ export interface TranslationDictionary {
   contractStartDatePlaceholder: string;
   contractStartImmediate: string;
   contractDurationLabel: string;
+  contractEndDateLabel: string;
   roommateProfileTitle: string;
   totalOccupants: string;
   peopleUnit: string;
@@ -533,7 +534,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractStartDateLabel: 'Kontrat Başlangıç Tarihi',
     contractStartDatePlaceholder: 'Örn: 1 Ekim 2026 veya Hemen',
     contractStartImmediate: 'Hemen / Anında Taşınmaya Uygun',
-    contractDurationLabel: 'Sözleşme Süresi',
+    contractDurationLabel: 'Sözleşme Aralığı',
+    contractEndDateLabel: 'Bitiş Tarihi',
     roommateProfileTitle: 'Oda Arkadaşı & Ev Profili',
     totalOccupants: 'Evde Kalan Kişi Sayısı',
     peopleUnit: 'Kişi',
@@ -887,7 +889,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractStartDateLabel: 'Contract Start Date',
     contractStartDatePlaceholder: 'e.g. October 1, 2026 or Immediate',
     contractStartImmediate: 'Available Immediately',
-    contractDurationLabel: 'Contract Duration',
+    contractDurationLabel: 'Contract Range',
+    contractEndDateLabel: 'End Date',
     roommateProfileTitle: 'Roommate & Flat Profile',
     totalOccupants: 'Total Flatmates',
     peopleUnit: 'People',
@@ -1241,7 +1244,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractStartDateLabel: 'Data Inizio Contratto',
     contractStartDatePlaceholder: 'es. 1 Ottobre 2026 o Subito',
     contractStartImmediate: 'Disponibile da subito',
-    contractDurationLabel: 'Durata Contratto',
+    contractDurationLabel: 'Intervallo Contratto',
+    contractEndDateLabel: 'Data di Fine',
     roommateProfileTitle: 'Profilo Coinquilini & Casa',
     totalOccupants: 'Numero Totale Coinquilini',
     peopleUnit: 'Persone',
@@ -1595,7 +1599,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractStartDateLabel: 'Mietbeginn / Vertragsstart',
     contractStartDatePlaceholder: 'z.B. 1. Oktober 2026 oder Sofort',
     contractStartImmediate: 'Sofort verfügbar',
-    contractDurationLabel: 'Vertragslaufzeit',
+    contractDurationLabel: 'Vertragszeitraum',
+    contractEndDateLabel: 'Enddatum',
     roommateProfileTitle: 'Mitbewohner- & Wohnprofil',
     totalOccupants: 'Gesamtanzahl Mitbewohner',
     peopleUnit: 'Personen',
@@ -1949,7 +1954,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractStartDateLabel: 'Дата начала контракта',
     contractStartDatePlaceholder: 'напр. 1 октября 2026 или Сразу',
     contractStartImmediate: 'Доступно немедленно',
-    contractDurationLabel: 'Срок договора',
+    contractDurationLabel: 'Срок аренды',
+    contractEndDateLabel: 'Дата окончания',
     roommateProfileTitle: 'Профиль соседей и квартиры',
     totalOccupants: 'Всего жильцов в квартире',
     peopleUnit: 'Человек',
@@ -2303,7 +2309,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractStartDateLabel: 'अनुबंध प्रारंभ तिथि',
     contractStartDatePlaceholder: 'उदा: 1 अक्टूबर 2026 या तुरंत',
     contractStartImmediate: 'तुरंत उपलब्ध',
-    contractDurationLabel: 'अनुबंध अवधि',
+    contractDurationLabel: 'अनुबंध अवधि सीमा',
+    contractEndDateLabel: 'समाप्ति तिथि',
     roommateProfileTitle: 'रूममेट और फ्लैट प्रोफ़ाइल',
     totalOccupants: 'फ्लैटमेट्स की कुल संख्या',
     peopleUnit: 'लोग',

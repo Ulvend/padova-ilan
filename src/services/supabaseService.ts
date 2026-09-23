@@ -277,7 +277,8 @@ interface ListingRow {
   contract_type: string;
   contract_start_date: string | null;
   contract_start_iso: string | null;
-  contract_duration: string | null;
+  contract_end_date: string | null;
+  contract_end_iso: string | null;
   has_video_tour: boolean;
   video_title: string | null;
   video_url: string | null;
@@ -335,7 +336,8 @@ const listingFromRow = (row: ListingRow): HousingListing => ({
   contractType: row.contract_type as HousingListing['contractType'],
   contractStartDate: row.contract_start_date || undefined,
   contractStartISO: row.contract_start_iso || undefined,
-  contractDuration: row.contract_duration || undefined,
+  contractEndDate: row.contract_end_date || undefined,
+  contractEndISO: row.contract_end_iso || undefined,
   hasVideoTour: row.has_video_tour,
   videoTitle: row.video_title || undefined,
   videoUrl: row.video_url || undefined,
@@ -395,7 +397,8 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
     contractType: 'contract_type',
     contractStartDate: 'contract_start_date',
     contractStartISO: 'contract_start_iso',
-    contractDuration: 'contract_duration',
+    contractEndDate: 'contract_end_date',
+    contractEndISO: 'contract_end_iso',
     hasVideoTour: 'has_video_tour',
     videoTitle: 'video_title',
     videoUrl: 'video_url',

@@ -63,7 +63,10 @@ export interface HousingListing {
   contractStartDate?: string;
   // YYYY-MM-DD; boşsa "hemen taşınılabilir". Başlangıç tarihi filtresi bunu kullanır.
   contractStartISO?: string;
-  contractDuration?: string;
+  // Biçimlendirilmiş görüntüleme metni (ör. "1 Ekim 2027"), contractStartDate ile aynı desende.
+  contractEndDate?: string;
+  // YYYY-MM-DD ham değer; düzenleme formunda takvime geri yüklemek için kullanılır.
+  contractEndISO?: string;
   hasVideoTour: boolean;
   videoTitle?: string;
   videoUrl?: string;

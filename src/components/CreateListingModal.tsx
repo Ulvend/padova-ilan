@@ -111,9 +111,9 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
   const [expenses, setExpenses] = useState('+€40 Giderler');
   const [roomType, setRoomType] = useState<RoomType>('Singola');
   const [contractType, setContractType] = useState<ContractType>('Contratto per Studenti (Canone Concordato)');
-  const [contractStartDate, setContractStartDate] = useState('2026-10-01');
+  const [contractStartDate, setContractStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [isImmediate, setIsImmediate] = useState(false);
-  const [contractDuration, setContractDuration] = useState('12 Ay (Akademik Yıl)');
+  const [contractEndDateInput, setContractEndDateInput] = useState('');
   // Photos States
   const [images, setImages] = useState<string[]>([]);
   const [customImageUrl, setCustomImageUrl] = useState('');
@@ -182,6 +182,18 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
         setFlatmateName(initialListing.currentFlatmates[0].name || '');
         setFlatmateFaculty(initialListing.currentFlatmates[0].faculty || '');
       }
+      if (initialListing.contractStartISO) {
+        setContractStartDate(initialListing.contractStartISO);
+        setIsImmediate(false);
+      } else {
+        setIsImmediate(true);
+      }
+      setContractEndDateInput(initialListing.contractEndISO || '');
+    } else if (isOpen) {
+      // Yeni ilan: sözleşme başlangıcı her açılışta o günün tarihine sıfırlanır.
+      setContractStartDate(new Date().toISOString().slice(0, 10));
+      setIsImmediate(false);
+      setContractEndDateInput('');
     }
   }, [initialListing, isOpen]);
 
@@ -401,6 +413,7 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
       const formattedStartDate = formatDisplayStartDate(contractStartDate, isImmediate);
       const safeImages = images;
       const contractStartISO = isImmediate ? '' : contractStartDate;
+      const formattedEndDate = contractEndDateInput ? formatDisplayStartDate(contractEndDateInput, false) : undefined;
       const videoUrl = hasVideoTour ? (videoTourUrl.trim() || undefined) : undefined;
       const listingVideoAngles = hasVideoTour ? anglesToListing(videoAngles) : undefined;
       const fairPrice = evaluateFairPrice(Number(price) || 400, district, roomType);
@@ -424,7 +437,8 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
           contractType,
           contractStartDate: formattedStartDate,
           contractStartISO,
-          contractDuration,
+          contractEndDate: formattedEndDate,
+          contractEndISO: contractEndDateInput || undefined,
           hasVideoTour: hasVideoTour && Boolean(videoUrl || listingVideoAngles?.length),
           videoUrl,
           videoAngles: listingVideoAngles,
@@ -474,7 +488,8 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
         contractType,
         contractStartDate: formattedStartDate,
         contractStartISO,
-        contractDuration,
+        contractEndDate: formattedEndDate,
+        contractEndISO: contractEndDateInput || undefined,
         hasVideoTour: hasVideoTour && Boolean(videoUrl || listingVideoAngles?.length),
         videoUrl,
         videoAngles: listingVideoAngles,
@@ -905,23 +920,17 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
 
               <div>
                 <label className="text-[10px] text-stone-600 block mb-1 font-semibold uppercase">
-                  {t.contractDurationLabel}:
+                  {t.contractEndDateLabel}:
                 </label>
-                <select
-                  value={contractDuration}
-                  onChange={(e) => setContractDuration(e.target.value)}
-                  className="w-full border border-stone-200 bg-white rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-orange-500 transition min-h-[42px]"
-                >
-                  <option value="12 Ay (Akademik Yıl)">12 Ay (Akademik Yıl 2026-2027)</option>
-                  <option value="6 Ay (Tek Dönem)">6 Ay (Tek Dönem)</option>
-                  <option value="1 - 18 Ay (Transitorio)">1 - 18 Ay (Geçici Transitorio)</option>
-                  <option value="Standart 3+2 / 4+4 Yıl">Standart 3+2 / 4+4 Yıl</option>
-                </select>
+                <input
+                  type="date"
+                  value={contractEndDateInput}
+                  onChange={(e) => setContractEndDateInput(e.target.value)}
+                  min={!isImmediate && contractStartDate ? contractStartDate : undefined}
+                  className="w-full border border-stone-200 bg-white rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition min-h-[42px]"
+                />
               </div>
             </div>
-            <p className="text-[10px] text-stone-500 leading-tight">
-              *UniPD öğrencileri için kontrat başlangıçları çoğunlukla 1 Ekim (Güz Dönemi) veya 1 Şubat (Bahar Dönemi) olarak düzenlenir.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">

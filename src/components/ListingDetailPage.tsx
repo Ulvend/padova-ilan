@@ -849,10 +849,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                       <span>{listing.contractStartDate || t.contractStartImmediate}</span>
                     </td>
                   </tr>
-                  {listing.contractDuration && (
+                  {listing.contractEndDate && (
                     <tr className="border-b border-stone-100">
                       <td className="py-2.5 text-stone-400 font-medium uppercase">{t.contractDurationLabel}</td>
-                      <td className="py-2.5 font-semibold text-stone-800">{listing.contractDuration}</td>
+                      <td className="py-2.5 font-semibold text-stone-800">
+                        {listing.contractStartDate || t.contractStartImmediate} – {listing.contractEndDate}
+                      </td>
                     </tr>
                   )}
                   <tr className="border-b border-stone-100">
