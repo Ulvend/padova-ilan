@@ -1,5 +1,4 @@
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 
 export interface UploadProgressCallback {
   (percentage: number): void;
@@ -95,8 +94,36 @@ export async function compressImage(
   });
 }
 
+async function uploadToBucket(
+  bucket: string,
+  filePath: string,
+  blob: Blob,
+  contentType: string,
+  onProgress?: UploadProgressCallback
+): Promise<string> {
+  // supabase-js storage upload has no native progress callback; report start/end.
+  onProgress?.(0);
+  const { error } = await supabase.storage.from(bucket).upload(filePath, blob, {
+    contentType,
+    upsert: false,
+  });
+  if (error) {
+    throw new Error(
+      /row-level security|not authorized|unauthorized/i.test(error.message)
+        ? 'Fotoğraf yükleme izniniz bulunmuyor (Oturum açık olmayabilir).'
+        : `Fotoğraf yüklenemedi: ${error.message}`
+    );
+  }
+  onProgress?.(100);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  if (!data.publicUrl.startsWith('http')) {
+    throw new Error('Dönen indirme adresi geçerli bir web adresi değil.');
+  }
+  return data.publicUrl;
+}
+
 /**
- * Uploads a profile image to Cloudinary (if configured) or Firebase Storage.
+ * Uploads a profile image to Cloudinary (if configured) or Supabase Storage.
  * Always returns a secure HTTPS download URL.
  * NEVER returns raw Base64 strings.
  */
@@ -142,65 +169,22 @@ export async function uploadProfilePhoto(
         return data.secure_url;
       }
     } catch (cloudErr) {
-      console.warn('Cloudinary upload failed, falling back to Firebase Storage:', cloudErr);
+      console.warn('Cloudinary upload failed, falling back to Supabase Storage:', cloudErr);
     }
   }
 
-  // 4. Firebase Storage Upload (Standard Production Pipeline)
+  // 4. Supabase Storage Upload (Standard Production Pipeline)
   const cleanUserId = userId ? userId.replace(/[^a-zA-Z0-9_-]/g, '_') : 'guest_user';
   const timestamp = Date.now();
   const extension = contentType === 'image/webp' ? 'webp' : 'jpg';
-  const filePath = `profile_photos/${cleanUserId}/${timestamp}_avatar.${extension}`;
+  const filePath = `${cleanUserId}/${timestamp}_avatar.${extension}`;
 
-  const storageRef = ref(storage, filePath);
-  const metadata = {
-    contentType,
-    customMetadata: {
-      userId: cleanUserId,
-      uploadedAt: new Date().toISOString(),
-    },
-  };
-
-  return new Promise((resolve, reject) => {
-    const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
-
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        if (onProgress && snapshot.totalBytes > 0) {
-          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          onProgress(progress);
-        }
-      },
-      (error) => {
-        console.error('Firebase Storage upload error:', error);
-        reject(
-          new Error(
-            error.code === 'storage/unauthorized'
-              ? 'Fotoğraf yükleme izniniz bulunmuyor (Oturum açık olmayabilir).'
-              : `Fotoğraf yüklenemedi: ${error.message}`
-          )
-        );
-      },
-      async () => {
-        try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          if (!downloadUrl.startsWith('https://') && !downloadUrl.startsWith('http://')) {
-            throw new Error('Dönen indirme adresi geçerli bir web adresi değil.');
-          }
-          resolve(downloadUrl);
-        } catch (urlErr: any) {
-          console.error('Failed to get download URL:', urlErr);
-          reject(new Error(`İndirme bağlantısı alınamadı: ${urlErr?.message || urlErr}`));
-        }
-      }
-    );
-  });
+  return uploadToBucket('profile_photos', filePath, blob, contentType, onProgress);
 }
 
 /**
- * Uploads a listing photo to Firebase Storage with canvas compression.
- * Yükleme başarısız olursa hata fırlatır; base64'e düşmez (Firestore belgesi 1 MB sınırını aşar).
+ * Uploads a listing photo to Supabase Storage with canvas compression.
+ * Yükleme başarısız olursa hata fırlatır; base64'e düşmez.
  */
 export async function uploadListingPhoto(
   file: File,
@@ -222,45 +206,8 @@ export async function uploadListingPhoto(
 
   const rand = Math.random().toString(36).substring(2, 7);
   const extension = contentType === 'image/webp' ? 'webp' : 'jpg';
-  // Yol, storage.rules'daki listing_photos/{userId}/{fileName} kuralıyla eşleşmeli.
-  const filePath = `listing_photos/${userId}/${Date.now()}_${rand}.${extension}`;
+  // Yol, Supabase Storage RLS politikasındaki listing_photos bucket'ının {userId}/{fileName} kuralıyla eşleşmeli.
+  const filePath = `${userId}/${Date.now()}_${rand}.${extension}`;
 
-  const storageRef = ref(storage, filePath);
-  const metadata = {
-    contentType,
-    customMetadata: {
-      userId,
-      uploadedAt: new Date().toISOString(),
-    },
-  };
-
-  return new Promise((resolve, reject) => {
-    const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
-
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        if (onProgress && snapshot.totalBytes > 0) {
-          onProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
-        }
-      },
-      (error) => {
-        console.error('Listing photo upload error:', error);
-        reject(
-          new Error(
-            error.code === 'storage/unauthorized'
-              ? 'Fotoğraf yükleme izniniz yok. Giriş yaptığınızdan emin olun.'
-              : `Fotoğraf yüklenemedi: ${error.message}`
-          )
-        );
-      },
-      async () => {
-        try {
-          resolve(await getDownloadURL(uploadTask.snapshot.ref));
-        } catch (urlErr: any) {
-          reject(new Error(`İndirme bağlantısı alınamadı: ${urlErr?.message || urlErr}`));
-        }
-      }
-    );
-  });
+  return uploadToBucket('listing_photos', filePath, blob, contentType, onProgress);
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AdminPanel } from '../components/AdminPanel';
-import { PublicUserProfile, subscribeToVerifiedUsers } from '../services/firebaseService';
+import { PublicUserProfile, subscribeToVerifiedUsers } from '../services/supabaseService';
 
 export const AdminPage: React.FC = () => {
   const navigate = useNavigate();

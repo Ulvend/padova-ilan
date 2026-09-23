@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, GraduationCap, Mail, RefreshCw, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { describeAuthError } from '../lib/firebase';
+import { describeAuthError } from '../lib/supabase';
 import { isUniPdEmail } from '../config';
 
 /**

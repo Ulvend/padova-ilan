@@ -1,9 +1,0 @@
-{
-  "firestore": {
-    "database": "ai-studio-padovastudenthou-80fe5316-2e6b-4c9a-a6c7-5b6df20267ac",
-    "rules": "firestore.rules"
-  },
-  "storage": {
-    "rules": "storage.rules"
-  }
-}

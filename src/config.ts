@@ -13,6 +13,3 @@ export const isUniPdEmail = (email?: string | null): boolean =>
 
 export const isSuperAdminEmail = (email?: string | null): boolean =>
   Boolean(email && SUPERADMIN_EMAILS.includes(email.trim().toLowerCase()));
-
-// Firebase AI Logic üzerinden kullanılan Gemini modeli.
-export const GEMINI_MODEL = 'gemini-2.5-flash';

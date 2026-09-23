@@ -20,9 +20,8 @@ import { Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
 import { uploadProfilePhoto } from '../services/storageService';
-import { updateUserProfilePhoto } from '../services/firebaseService';
-import { auth, changePassword, describeAuthError } from '../lib/firebase';
-import { updateProfile } from 'firebase/auth';
+import { updateUserProfilePhoto } from '../services/supabaseService';
+import { supabase, changePassword, describeAuthError } from '../lib/supabase';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -135,8 +134,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
     setUploadProgress(0);
 
     try {
-      // 1. Upload to Firebase Storage (compressed client-side, returning secure HTTPS URL)
-      const userId = currentUser.id || auth.currentUser?.uid;
+      // 1. Upload to Supabase Storage (compressed client-side, returning secure HTTPS URL)
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userId = currentUser.id || authUser?.id;
       if (!userId) throw new Error('Fotoğraf yüklemek için giriş yapmalısınız.');
       const downloadUrl = await uploadProfilePhoto(photoFile, userId, (progress) => {
         setUploadProgress(progress);
@@ -145,18 +145,15 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       // 2. Update local state and app state with HTTPS URL (never Base64)
       onUpdateProfile({ avatar: downloadUrl, photoURL: downloadUrl });
 
-      // 3. Update Firestore user document if user has an ID
-      if (currentUser.id || auth.currentUser?.uid) {
-        const targetId = currentUser.id || auth.currentUser!.uid;
-        await updateUserProfilePhoto(targetId, downloadUrl).catch((err) => {
-          console.warn('Firestore profile photo sync warning:', err);
-        });
-      }
+      // 3. Update profile row
+      await updateUserProfilePhoto(userId, downloadUrl).catch((err) => {
+        console.warn('Profile photo sync warning:', err);
+      });
 
-      // 4. Update Firebase Auth user profile photoURL if logged in
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { photoURL: downloadUrl }).catch((err) => {
-          console.warn('Firebase Auth photoURL update warning:', err);
+      // 4. Update Supabase Auth user metadata photoURL if logged in
+      if (authUser) {
+        await supabase.auth.updateUser({ data: { avatar_url: downloadUrl } }).catch((err) => {
+          console.warn('Supabase Auth avatar_url update warning:', err);
         });
       }
 
@@ -589,7 +586,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
               {isSavingPhoto && uploadProgress > 0 && (
                 <div className="p-3 bg-orange-50/70 border border-orange-200/60 rounded-xl space-y-1.5 animate-in fade-in">
                   <div className="flex items-center justify-between text-xs text-orange-900 font-semibold">
-                    <span>Bulut Depolamaya Aktarılıyor (Firebase Storage)...</span>
+                    <span>Bulut Depolamaya Aktarılıyor...</span>
                     <span>%{uploadProgress}</span>
                   </div>
                   <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">

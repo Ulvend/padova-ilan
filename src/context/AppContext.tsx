@@ -18,15 +18,14 @@ import { formatDeviceTime } from '../utils/deviceTime';
 import { evaluateFairPrice } from '../utils/fairPrice';
 import { isSuperAdminEmail } from '../config';
 import {
-  auth,
+  supabase,
   logOut,
   isUniPdVerifiedUser,
   requestUniPdEmailVerification,
   resendVerificationEmail,
   reloadCurrentUser,
   describeAuthError,
-} from '../lib/firebase';
-import { onIdTokenChanged } from 'firebase/auth';
+} from '../lib/supabase';
 import {
   getUserProfile,
   getPublicUserProfile,
@@ -48,7 +47,7 @@ import {
   grantAdmin,
   revokeAdmin,
   PublicUserProfile,
-} from '../services/firebaseService';
+} from '../services/supabaseService';
 
 export const DEFAULT_FILTERS: FilterState = {
   categoryTab: 'all',
@@ -92,8 +91,8 @@ const safeStorageSet = (key: string, value: string) => {
   }
 };
 
-// Firebase kullanıcısının render'ı tetikleyecek anlık görüntüsü.
-// (auth.currentUser aynı nesne olarak değiştiği için doğrudan state'e konamaz.)
+// Supabase kullanıcısının render'ı tetikleyecek anlık görüntüsü.
+// (session.user aynı nesne olarak değiştiği için doğrudan state'e konamaz.)
 interface AuthSnapshot {
   uid: string;
   email: string;
@@ -356,13 +355,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     safeStorageSet(FAVORITES_KEY, JSON.stringify(favoriteIds));
   }, [favoriteIds]);
 
-  // Firebase Auth listener. onIdTokenChanged; giriş/çıkışta ve token yenilendiğinde
-  // (örn. e-posta doğrulandıktan sonra) tetiklenir.
+  // Supabase Auth listener. onAuthStateChange; giriş/çıkışta ve oturum yenilendiğinde
+  // (örn. e-posta doğrulandıktan sonra USER_UPDATED ile) tetiklenir.
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setAuthReady(true);
+      const user = session?.user || null;
 
-      if (!firebaseUser) {
+      if (!user) {
         setAuthUser(null);
         setProfileExtras({});
         setHasAdminGrant(false);
@@ -371,12 +371,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const snapshot: AuthSnapshot = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        emailVerified: firebaseUser.emailVerified,
-        displayName: firebaseUser.displayName || '',
-        photoURL: firebaseUser.photoURL || '',
-        unipdVerified: isUniPdVerifiedUser(firebaseUser),
+        uid: user.id,
+        email: user.email || '',
+        emailVerified: Boolean(user.email_confirmed_at),
+        displayName: (user.user_metadata?.display_name as string) || '',
+        photoURL: (user.user_metadata?.avatar_url as string) || '',
+        unipdVerified: isUniPdVerifiedUser(user),
       };
       setAuthUser(snapshot);
 
@@ -386,7 +386,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       lastSyncedKey.current = syncKey;
 
       try {
-        const remote = await getUserProfile(firebaseUser.uid);
+        const remote = await getUserProfile(user.id);
         const extras: Partial<UserProfile> = remote
           ? {
               name: remote.name,
@@ -420,7 +420,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Could not sync user profile:', e);
       }
     });
-    return () => unsubscribe();
+    return () => subscription.subscription.unsubscribe();
   }, []);
 
   // Giriş sonrası bekleyen "ilan ver" isteğini aç

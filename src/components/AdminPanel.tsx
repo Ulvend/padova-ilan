@@ -28,7 +28,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
-import type { PublicUserProfile } from '../services/firebaseService';
+import type { PublicUserProfile } from '../services/supabaseService';
 
 
 interface AdminPanelProps {
