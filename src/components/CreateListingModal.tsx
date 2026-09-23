@@ -107,8 +107,8 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
   const [district, setDistrict] = useState<DistrictArea>('Policlinico / Tıp Fakültesi (< 500m)');
   const [streetAddress, setStreetAddress] = useState('');
   const [distanceToFaculty, setDistanceToFaculty] = useState('Fakülteye 5 dk yürüme');
-  const [price, setPrice] = useState('420');
-  const [expenses, setExpenses] = useState('+€40 Giderler');
+  const [price, setPrice] = useState('');
+  const [expenses, setExpenses] = useState('');
   const [roomType, setRoomType] = useState<RoomType>('Singola');
   const [contractType, setContractType] = useState<ContractType>('Contratto per Studenti (Canone Concordato)');
   const [contractStartDate, setContractStartDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -766,10 +766,11 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
             <div>
               <label className="font-semibold text-stone-700 block mb-1.5 uppercase text-[11px] tracking-wide">{t.monthlyRentLabel} *</label>
               <input 
-                type="number" 
+                type="number"
                 required
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
+                placeholder="420"
                 className="w-full border border-stone-200 rounded-xl p-3 bg-stone-50/50 outline-none focus:bg-white focus:border-orange-500 transition font-bold min-h-[44px]"
               />
             </div>
@@ -834,67 +835,19 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
               </span>
             </div>
 
-            {/* Hızlı Dönem Seçim Butonları */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Hemen Taşınılabilir Anahtarı */}
+            <div>
               <button
                 type="button"
-                onClick={() => setIsImmediate(true)}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs transition border cursor-pointer flex items-center justify-center gap-1.5 ${
+                onClick={() => setIsImmediate(!isImmediate)}
+                className={`py-2 px-3.5 rounded-xl font-bold text-xs transition border cursor-pointer inline-flex items-center justify-center gap-1.5 ${
                   isImmediate
                     ? 'bg-orange-600 text-white border-orange-600 shadow-xs ring-2 ring-orange-400/40'
                     : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
                 }`}
               >
                 <span>⚡</span>
-                <span className="truncate">{t.contractStartImmediate.split(' ')[0]}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsImmediate(false);
-                  setContractStartDate('2026-10-01');
-                }}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs transition border cursor-pointer flex items-center justify-center gap-1.5 ${
-                  !isImmediate && contractStartDate === '2026-10-01'
-                    ? 'bg-orange-600 text-white border-orange-600 shadow-xs ring-2 ring-orange-400/40'
-                    : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-                }`}
-              >
-                <span>🎓</span>
-                <span className="truncate">1 Ekim 2026</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsImmediate(false);
-                  setContractStartDate('2026-11-01');
-                }}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs transition border cursor-pointer flex items-center justify-center gap-1.5 ${
-                  !isImmediate && contractStartDate === '2026-11-01'
-                    ? 'bg-orange-600 text-white border-orange-600 shadow-xs ring-2 ring-orange-400/40'
-                    : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-                }`}
-              >
-                <span>🍂</span>
-                <span className="truncate">1 Kasım 2026</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsImmediate(false);
-                  setContractStartDate('2027-02-01');
-                }}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs transition border cursor-pointer flex items-center justify-center gap-1.5 ${
-                  !isImmediate && contractStartDate === '2027-02-01'
-                    ? 'bg-orange-600 text-white border-orange-600 shadow-xs ring-2 ring-orange-400/40'
-                    : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-                }`}
-              >
-                <span>🌸</span>
-                <span className="truncate">1 Şubat 2027</span>
+                <span className="truncate">{t.contractStartImmediate}</span>
               </button>
             </div>
 
@@ -1122,7 +1075,6 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
                   }`}
                 >
                   <p className="font-bold">{t.heatingAutonomo}</p>
-                  <p className="text-[10px] text-stone-500 mt-0.5">Kullanım kadar yakılır</p>
                 </button>
                 <button
                   type="button"
@@ -1134,7 +1086,6 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
                   }`}
                 >
                   <p className="font-bold">{t.heatingCentralizzato}</p>
-                  <p className="text-[10px] text-stone-500 mt-0.5">Bina yönetimi kontrolünde</p>
                 </button>
               </div>
             </div>
