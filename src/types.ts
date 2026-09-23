@@ -75,7 +75,10 @@ export interface HousingListing {
   // Roommate & Flat Profile
   totalHousemates?: number;
   genderPreference?: 'female_only' | 'male_only' | 'any';
-  genderDistribution?: string;
+  // Ev sakinlerinin cinsiyet dağılımı; serbest metin değil, dil değişince otomatik yeniden
+  // biçimlendirilebilsin diye yapılandırılmış sayı alanları olarak tutulur.
+  femaleCount?: number;
+  maleCount?: number;
   occupantType?: 'students_only' | 'workers_only' | 'mixed';
   smokingAllowed?: boolean;
   petsAllowed?: boolean;

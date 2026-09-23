@@ -156,7 +156,8 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
       setDescription(initialListing.description || '');
       if (initialListing.totalHousemates) setTotalHousemates(String(initialListing.totalHousemates));
       if (initialListing.genderPreference) setGenderPreference(initialListing.genderPreference);
-      if (initialListing.genderDistribution) setGenderDistribution(initialListing.genderDistribution);
+      if (initialListing.femaleCount !== undefined) setFemaleCount(String(initialListing.femaleCount));
+      if (initialListing.maleCount !== undefined) setMaleCount(String(initialListing.maleCount));
       if (initialListing.occupantType) setOccupantType(initialListing.occupantType);
       setSmokingAllowed(Boolean(initialListing.smokingAllowed));
       setPetsAllowed(Boolean(initialListing.petsAllowed));
@@ -330,7 +331,8 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
   // Roommate & Flat Profile States
   const [totalHousemates, setTotalHousemates] = useState('3');
   const [genderPreference, setGenderPreference] = useState<'female_only' | 'male_only' | 'any'>('any');
-  const [genderDistribution, setGenderDistribution] = useState('2 Erkek, 1 Kız (Karma)');
+  const [femaleCount, setFemaleCount] = useState('1');
+  const [maleCount, setMaleCount] = useState('2');
   const [occupantType, setOccupantType] = useState<'students_only' | 'workers_only' | 'mixed'>('students_only');
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [petsAllowed, setPetsAllowed] = useState(false);
@@ -430,7 +432,8 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
           currentFlatmates: flatmates,
           totalHousemates: Number(totalHousemates) || 3,
           genderPreference,
-          genderDistribution: genderDistribution.trim() || 'Karma Ev',
+          femaleCount: Number(femaleCount) || 0,
+          maleCount: Number(maleCount) || 0,
           occupantType,
           smokingAllowed,
           petsAllowed,
@@ -484,7 +487,8 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
         currentFlatmates: flatmates,
         totalHousemates: Number(totalHousemates) || 3,
         genderPreference,
-        genderDistribution: genderDistribution.trim() || 'Karma Ev',
+        femaleCount: Number(femaleCount) || 0,
+        maleCount: Number(maleCount) || 0,
         occupantType,
         smokingAllowed,
         petsAllowed,
@@ -991,18 +995,41 @@ const CreateListingModalContent: React.FC<CreateListingModalProps> = ({
                 </select>
               </div>
 
-              {/* Cinsiyet Dağılımı */}
+              {/* Cinsiyet Dağılımı: serbest metin yerine sayı alanları, her dilde doğru biçimlenebilsin diye */}
               <div>
                 <label className="text-[11px] font-semibold text-stone-700 block mb-1">
                   {t.genderDistributionLabel}
                 </label>
-                <input
-                  type="text"
-                  value={genderDistribution}
-                  onChange={(e) => setGenderDistribution(e.target.value)}
-                  placeholder="Örn: 2 Kız, 1 Erkek veya Sadece Kızlar"
-                  className="w-full border border-stone-200 bg-white rounded-xl p-2.5 text-xs text-stone-900 outline-none focus:border-amber-500 transition min-h-[40px]"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={femaleCount}
+                      onChange={(e) => setFemaleCount(e.target.value)}
+                      aria-label={t.genderCountFemale}
+                      className="w-full border border-stone-200 bg-white rounded-xl p-2.5 pr-16 text-xs text-stone-900 outline-none focus:border-amber-500 transition min-h-[40px]"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-stone-400 font-semibold pointer-events-none">
+                      {t.genderCountFemale}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={maleCount}
+                      onChange={(e) => setMaleCount(e.target.value)}
+                      aria-label={t.genderCountMale}
+                      className="w-full border border-stone-200 bg-white rounded-xl p-2.5 pr-16 text-xs text-stone-900 outline-none focus:border-amber-500 transition min-h-[40px]"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-stone-400 font-semibold pointer-events-none">
+                      {t.genderCountMale}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Ev Sakinleri Profili */}

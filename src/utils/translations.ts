@@ -180,7 +180,10 @@ export interface TranslationDictionary {
   contractDurationLabel: string;
   roommateProfileTitle: string;
   totalOccupants: string;
+  peopleUnit: string;
   genderDistributionLabel: string;
+  genderCountFemale: string;
+  genderCountMale: string;
   genderPrefLabel: string;
   genderFemaleOnly: string;
   genderMaleOnly: string;
@@ -533,7 +536,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractDurationLabel: 'Sözleşme Süresi',
     roommateProfileTitle: 'Oda Arkadaşı & Ev Profili',
     totalOccupants: 'Evde Kalan Kişi Sayısı',
+    peopleUnit: 'Kişi',
     genderDistributionLabel: 'Cinsiyet Dağılımı',
+    genderCountFemale: 'Kadın',
+    genderCountMale: 'Erkek',
     genderPrefLabel: 'Cinsiyet Tercihi',
     genderFemaleOnly: 'Sadece Kadın',
     genderMaleOnly: 'Sadece Erkek',
@@ -884,7 +890,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractDurationLabel: 'Contract Duration',
     roommateProfileTitle: 'Roommate & Flat Profile',
     totalOccupants: 'Total Flatmates',
+    peopleUnit: 'People',
     genderDistributionLabel: 'Gender Distribution',
+    genderCountFemale: 'Female',
+    genderCountMale: 'Male',
     genderPrefLabel: 'Gender Preference',
     genderFemaleOnly: 'Female Only',
     genderMaleOnly: 'Male Only',
@@ -1235,7 +1244,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractDurationLabel: 'Durata Contratto',
     roommateProfileTitle: 'Profilo Coinquilini & Casa',
     totalOccupants: 'Numero Totale Coinquilini',
+    peopleUnit: 'Persone',
     genderDistributionLabel: 'Distribuzione di Genere',
+    genderCountFemale: 'Ragazze',
+    genderCountMale: 'Ragazzi',
     genderPrefLabel: 'Preferenza di Genere',
     genderFemaleOnly: 'Solo Ragazze',
     genderMaleOnly: 'Solo Ragazzi',
@@ -1586,7 +1598,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractDurationLabel: 'Vertragslaufzeit',
     roommateProfileTitle: 'Mitbewohner- & Wohnprofil',
     totalOccupants: 'Gesamtanzahl Mitbewohner',
+    peopleUnit: 'Personen',
     genderDistributionLabel: 'Geschlechterverteilung',
+    genderCountFemale: 'Frauen',
+    genderCountMale: 'Männer',
     genderPrefLabel: 'Geschlechterpräferenz',
     genderFemaleOnly: 'Nur Frauen / Studentinnen',
     genderMaleOnly: 'Nur Männer / Studenten',
@@ -1937,7 +1952,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractDurationLabel: 'Срок договора',
     roommateProfileTitle: 'Профиль соседей и квартиры',
     totalOccupants: 'Всего жильцов в квартире',
+    peopleUnit: 'Человек',
     genderDistributionLabel: 'Распределение по полу',
+    genderCountFemale: 'Девушки',
+    genderCountMale: 'Парни',
     genderPrefLabel: 'Предпочтение по полу',
     genderFemaleOnly: 'Только девушки',
     genderMaleOnly: 'Только парни',
@@ -2288,7 +2306,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     contractDurationLabel: 'अनुबंध अवधि',
     roommateProfileTitle: 'रूममेट और फ्लैट प्रोफ़ाइल',
     totalOccupants: 'फ्लैटमेट्स की कुल संख्या',
+    peopleUnit: 'लोग',
     genderDistributionLabel: 'लिंग वितरण',
+    genderCountFemale: 'महिलाएँ',
+    genderCountMale: 'पुरुष',
     genderPrefLabel: 'लिंग वरीयता',
     genderFemaleOnly: 'केवल महिलाएँ',
     genderMaleOnly: 'केवल पुरुष',

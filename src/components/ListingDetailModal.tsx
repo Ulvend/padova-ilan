@@ -25,6 +25,7 @@ import {
 import { HousingListing, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
+import { formatGenderDistribution } from '../utils/genderDistribution';
 
 interface ListingPreviewModalProps {
   listing: HousingListing | null;
@@ -280,7 +281,9 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
             <div className="flex items-center justify-between">
               <span className="font-semibold text-stone-700 flex items-center gap-1">
                 <Users className="w-3.5 h-3.5 text-stone-500" />
-                <span>{listing.totalHousemates || 3} Kişilik Ev • {listing.genderDistribution || 'Karma'}</span>
+                <span>
+                  {listing.totalHousemates || 3} {t.peopleUnit} • {formatGenderDistribution(listing.femaleCount, listing.maleCount, t)}
+                </span>
               </span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                 listing.genderPreference === 'female_only'
@@ -309,13 +312,13 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
               {listing.heatingType && (
                 <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
                   <Flame className="w-3 h-3 text-rose-600" />
-                  <span>{listing.heatingType === 'autonomo' ? 'Otonom Kombi' : 'Merkezi Isıtma'}</span>
+                  <span>{listing.heatingType === 'autonomo' ? t.heatingAutonomo : t.heatingCentralizzato}</span>
                 </span>
               )}
               {listing.hasAirConditioning && (
                 <span className="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
                   <Wind className="w-3 h-3 text-sky-600" />
-                  <span>Klima</span>
+                  <span>{t.airConditioningLabel}</span>
                 </span>
               )}
               {listing.hasWashingMachine && (

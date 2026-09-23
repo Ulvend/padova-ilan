@@ -25,6 +25,7 @@ import {
 import { HousingListing, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
+import { formatGenderDistribution } from '../utils/genderDistribution';
 import { FlatmateIcon } from './FlatmateIcon';
 
 interface ListingCardProps {
@@ -235,11 +236,11 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </div>
 
           {/* Gender distribution & Occupant Profile info pill */}
-          {(listing.genderDistribution || listing.occupantType) && (
+          {((listing.femaleCount || listing.maleCount) || listing.occupantType) && (
             <div className="flex items-center gap-1.5 text-[11px] text-stone-600 bg-white px-2 py-1 rounded-lg border border-stone-150 flex-wrap">
-              {listing.genderDistribution && (
+              {(listing.femaleCount || listing.maleCount) && (
                 <span className="font-medium text-stone-800">
-                  👥 {listing.genderDistribution}
+                  👥 {formatGenderDistribution(listing.femaleCount, listing.maleCount, t)}
                 </span>
               )}
               {listing.occupantType && (

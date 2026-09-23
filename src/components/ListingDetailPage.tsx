@@ -44,6 +44,7 @@ import { HousingListing, Language, UserProfile } from '../types';
 import { DISTRICT_BENCHMARKS } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
+import { formatGenderDistribution } from '../utils/genderDistribution';
 import { PadovaMap } from './PadovaMap';
 import { FlatmateIcon } from './FlatmateIcon';
 
@@ -962,12 +963,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-stone-500 font-medium">{t.totalOccupants}:</span>
-                <span className="font-bold text-stone-900">{listing.totalHousemates || 3} Kişi</span>
+                <span className="font-bold text-stone-900">{listing.totalHousemates || 3} {t.peopleUnit}</span>
               </div>
-              {listing.genderDistribution && (
+              {(listing.femaleCount || listing.maleCount) && (
                 <div className="flex items-center justify-between">
                   <span className="text-stone-500 font-medium">{t.genderDistributionLabel}:</span>
-                  <span className="font-semibold text-stone-800">{listing.genderDistribution}</span>
+                  <span className="font-semibold text-stone-800">
+                    {formatGenderDistribution(listing.femaleCount, listing.maleCount, t)}
+                  </span>
                 </div>
               )}
               {listing.genderPreference && (
