@@ -13,10 +13,13 @@ export const ProfilePage: React.FC = () => {
     isLoggedIn,
     setIsProfileSettingsOpen,
     handleOpenAuthModal,
+    authReady,
   } = useApp();
 
   const favoriteListings = listings.filter((l) => favoriteIds.includes(l.id));
 
+
+  if (!authReady) return null;
 
   return (
     <ProfileView

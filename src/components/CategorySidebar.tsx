@@ -1,4 +1,5 @@
 import React from 'react';
+import { MAX_PRICE_UNLIMITED } from '../context/AppContext';
 import { RotateCcw, ShieldCheck, Video, Zap, Search, ArrowUpDown, Filter, X, Calendar } from 'lucide-react';
 import { FilterState, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
@@ -206,14 +207,14 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
           <div className="flex justify-between items-center mb-1.5">
             <label className="font-semibold uppercase tracking-wide text-stone-600 text-[11px]">{t.budgetLabel}</label>
             <span className="font-bold text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-md text-xs border border-orange-200">
-              {t.maxBudgetPrefix} €{filters.maxPrice}
+              {t.maxBudgetPrefix} €{filters.maxPrice}{filters.maxPrice >= MAX_PRICE_UNLIMITED ? '+' : ''}
             </span>
           </div>
           <input 
             id="slider-max-price"
             type="range" 
             min="200" 
-            max="900" 
+            max={MAX_PRICE_UNLIMITED} 
             step="25" 
             value={filters.maxPrice}
             onChange={(e) => onFilterChange({ maxPrice: Number(e.target.value) })}

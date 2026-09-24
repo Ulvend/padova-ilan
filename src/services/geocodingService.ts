@@ -80,7 +80,6 @@ export const searchAddressSuggestions = async (query: string): Promise<AddressSu
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'PadovaStudentHousingApp/2.0',
       },
     });
 
@@ -156,7 +155,6 @@ export const geocodeAddress = async (
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'PadovaStudentHousingApp/2.0',
       },
     });
 
@@ -229,7 +227,6 @@ export const reverseGeocode = async (
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'PadovaStudentHousingApp/2.0',
       },
     });
 

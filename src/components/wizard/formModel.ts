@@ -343,7 +343,6 @@ export const buildListing = (
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
       verifiedUniPD: Boolean(user?.studentIdVerified),
       department: user?.faculty || 'UniPD',
-      phone: user?.phone || undefined,
     },
     images: f.photos.map((p) => p.url),
     createdAt: existing?.createdAt ?? new Date().toISOString(),

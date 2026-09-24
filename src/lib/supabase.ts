@@ -42,12 +42,16 @@ export const signInWithApple = async () => {
   }
 };
 
-export const registerWithEmail = async (email: string, password: string, displayName: string) => {
+export const registerWithEmail = async (email: string, password: string, displayName: string, faculty?: string, username?: string) => {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
     options: {
-      data: { display_name: displayName.trim() },
+      data: {
+        display_name: displayName.trim(),
+        ...(faculty ? { faculty } : {}),
+        ...(username ? { username } : {}),
+      },
       emailRedirectTo: redirectTo(),
     },
   });

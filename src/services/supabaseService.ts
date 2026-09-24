@@ -1,6 +1,7 @@
 import { supabase, handleDbError, OperationType } from '../lib/supabase';
 import { HousingListing, UserProfile, FirestoreMessage, UserNotification, PosterInfo, Flatmate, VideoAngle } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { defaultUsername } from '../utils/username';
 
 /**
  * 1. User Profile Management
@@ -55,10 +56,35 @@ const profileFromRow = (row: ProfileRow): PublicUserProfile => ({
   updatedAt: row.updated_at,
 });
 
+// Postgres benzersizlik ihlali (profiles.username üzerindeki unique index).
+const isUniqueViolation = (error: { code?: string } | null | undefined): boolean => error?.code === '23505';
+
+/** Kullanıcı adı boşta mı? Kayıt sırasında (oturum yokken) da çalışır. Ağ/sunucu hatasında fırlatır. */
+export async function isUsernameAvailable(username: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('is_username_available', { p_username: username });
+  if (error) throw error;
+  return Boolean(data);
+}
+
+/** Kullanıcı adını değiştirir; başkası almışsa 'taken' döner. */
+export async function updateUsername(userId: string, username: string): Promise<'ok' | 'taken'> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ username, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (isUniqueViolation(error)) return 'taken';
+  if (error) throw error;
+  return 'ok';
+}
+
+/**
+ * Profili senkronize eder ve kaydedilen kullanıcı adını döner. İstenen ad bu arada başkasınca alındıysa
+ * (kayıtta seçilen ad ile e-posta doğrulaması arasında) e-postadan bağımsız bir varsayılan ada düşer.
+ */
 export async function syncUserProfile(
   user: Partial<UserProfile> & { id: string },
   unipdVerified: boolean
-): Promise<void> {
+): Promise<string> {
   const path = `profiles/${user.id}`;
   try {
     const { data: existing } = await supabase.from('profiles').select('created_at').eq('id', user.id).maybeSingle();
@@ -70,17 +96,25 @@ export async function syncUserProfile(
     }
 
     const now = new Date().toISOString();
-    const { error: profileError } = await supabase.from('profiles').upsert({
-      id: user.id,
-      name: (user.name || user.username || 'UniPD Student').slice(0, 100),
-      username: (user.username || user.email?.split('@')[0] || 'student').slice(0, 50),
-      faculty: (user.faculty || 'Università degli Studi di Padova').slice(0, 150),
-      bio: (user.bio || '').slice(0, 500),
-      photo_url: safePhotoURL,
-      unipd_verified: unipdVerified,
-      created_at: existing?.created_at || now,
-      updated_at: now,
-    });
+    const upsertProfile = (username: string) =>
+      supabase.from('profiles').upsert({
+        id: user.id,
+        name: (user.name || user.username || 'UniPD Student').slice(0, 100),
+        username: username.slice(0, 50),
+        faculty: (user.faculty || 'Università degli Studi di Padova').slice(0, 150),
+        bio: (user.bio || '').slice(0, 500),
+        photo_url: safePhotoURL,
+        unipd_verified: unipdVerified,
+        created_at: existing?.created_at || now,
+        updated_at: now,
+      });
+
+    let savedUsername = user.username || defaultUsername(user.name || '', user.id);
+    let { error: profileError } = await upsertProfile(savedUsername);
+    if (isUniqueViolation(profileError)) {
+      savedUsername = defaultUsername(user.name || '', user.id);
+      ({ error: profileError } = await upsertProfile(savedUsername));
+    }
     if (profileError) throw profileError;
 
     const { error: privateError } = await supabase.from('profile_private').upsert({
@@ -90,8 +124,10 @@ export async function syncUserProfile(
       updated_at: now,
     });
     if (privateError) throw privateError;
+    return savedUsername;
   } catch (error) {
     handleDbError(error, OperationType.WRITE, path);
+    throw error;
   }
 }
 
@@ -719,3 +755,23 @@ export async function deleteNotificationFromFirestore(id: string): Promise<void>
 }
 
 export type { RealtimeChannel };
+
+/**
+ * Görüntülenme sayacı. Sayaç listings tablosundan ayrıdır (her artış tüm istemcilerde liste yenilemesi
+ * tetiklemesin diye); sunucu ilan sahibinin kendi görüntülemesini ve arşivli ilanları saymaz.
+ */
+export async function recordListingView(listingId: string): Promise<void> {
+  const { error } = await supabase.rpc('record_listing_view', { p_listing_id: listingId });
+  if (error) console.warn('Could not record listing view:', error);
+}
+
+/** İlan sahibi (ve admin) için ilan başına görüntülenme sayıları. */
+export async function getListingViewCounts(listingIds: string[]): Promise<Record<string, number>> {
+  if (listingIds.length === 0) return {};
+  const { data, error } = await supabase.from('listing_stats').select('listing_id, views').in('listing_id', listingIds);
+  if (error) {
+    console.warn('Could not load listing view counts:', error);
+    return {};
+  }
+  return Object.fromEntries((data as { listing_id: string; views: number }[]).map((r) => [r.listing_id, r.views]));
+}

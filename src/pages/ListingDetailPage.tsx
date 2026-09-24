@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ListingDetailPage as ListingDetailComponent } from '../components/ListingDetailPage';
+import { recordListingView } from '../services/supabaseService';
+import { shouldCountView } from '../utils/viewTracking';
 import { ArrowLeft, Home, Building2, Share2, Check } from 'lucide-react';
 
 export const ListingDetailPage: React.FC = () => {
@@ -18,6 +20,8 @@ export const ListingDetailPage: React.FC = () => {
     currentUser,
     isLoggedIn,
     currentLang,
+    listingsLoaded,
+    authReady,
     t
   } = useApp();
 
@@ -28,6 +32,20 @@ export const ListingDetailPage: React.FC = () => {
 
   // Find listing by ID from active listings or archived listings
   const listing = listings.find((l) => l.id === id) || archivedListings.find((l) => l.id === id);
+
+  // Görüntülenme sayacı: oturum netleştikten sonra (sahibin kendi bakışı sunucuda elenir) 24 saatte bir sayılır.
+  const listingId = listing?.id;
+  const isCountable = Boolean(listing && !listing.isArchived);
+  const isOwnListing = Boolean(
+    listing && currentUser?.id && (listing.userId === currentUser.id || listing.poster?.id === currentUser.id)
+  );
+  useEffect(() => {
+    if (!listingId || !authReady || !isCountable || isOwnListing) return;
+    if (shouldCountView(listingId)) recordListingView(listingId);
+  }, [listingId, authReady, isCountable, isOwnListing]);
+
+  // Liste henüz gelmediyse (paylaşılan link, boş önbellek) "bulunamadı" yerine boş bırak.
+  if (!listing && (!listingsLoaded || !authReady)) return null;
 
   if (!listing) {
     return (

@@ -1,3 +1,4 @@
+import { useModalBehavior } from '../utils/useModalBehavior';
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, 
@@ -36,6 +37,8 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const listing = getLocalizedListing(rawListing, currentLang);
+
+  useModalBehavior(true, onClose);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

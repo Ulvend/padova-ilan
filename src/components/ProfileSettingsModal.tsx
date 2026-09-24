@@ -1,3 +1,4 @@
+import { useModalBehavior } from '../utils/useModalBehavior';
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, 
@@ -22,12 +23,15 @@ import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
 import { uploadProfilePhoto, describeUploadError } from '../services/storageService';
 import { updateUserProfilePhoto } from '../services/supabaseService';
 import { supabase, changePassword, describeAuthError } from '../lib/supabase';
+import { UsernameField, UsernameStatus } from './UsernameField';
+import { normalizeUsername } from '../utils/username';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: UserProfile;
   onUpdateProfile: (updated: Partial<UserProfile>) => void;
+  onChangeUsername: (username: string) => Promise<'ok' | 'taken' | 'invalid'>;
   currentLang?: Language;
 }
 
@@ -36,12 +40,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   onClose,
   currentUser,
   onUpdateProfile,
+  onChangeUsername,
   currentLang = 'tr',
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<'department' | 'photo' | 'password'>('department');
+  const [activeTab, setActiveTab] = useState<'department' | 'username' | 'photo' | 'password'>('department');
 
   // UniPD Department state
   const [selectedDepartment, setSelectedDepartment] = useState<string>(
@@ -55,6 +60,21 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       setSelectedDepartment(currentUser.faculty);
     }
   }, [currentUser.faculty, isOpen]);
+
+  // Username state
+  const [usernameInput, setUsernameInput] = useState(currentUser.username);
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('unchanged');
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [usernameSuccessMsg, setUsernameSuccessMsg] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setUsernameInput(currentUser.username);
+      setUsernameSuccessMsg(false);
+      setUsernameError(null);
+    }
+  }, [currentUser.username, isOpen]);
 
   // Photo state
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
@@ -84,6 +104,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordSuccessMsg, setPasswordSuccessMsg] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  useModalBehavior(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -174,6 +196,24 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
     } finally {
       setIsSavingPhoto(false);
       setUploadProgress(0);
+    }
+  };
+
+  const handleSaveUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSavingUsername || usernameStatus !== 'available') return;
+    setIsSavingUsername(true);
+    setUsernameError(null);
+    setUsernameSuccessMsg(false);
+    try {
+      const result = await onChangeUsername(normalizeUsername(usernameInput));
+      if (result === 'ok') setUsernameSuccessMsg(true);
+      else setUsernameError(result === 'taken' ? t.usernameTaken : t.usernameInvalid);
+    } catch (err) {
+      console.warn('Could not save username:', err);
+      setUsernameError(t.usernameSaveFail);
+    } finally {
+      setIsSavingUsername(false);
     }
   };
 
@@ -303,6 +343,24 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
           >
             <GraduationCap className="w-4 h-4" />
             <span>{t.profileTabDepartment}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('username');
+              setPhotoSuccessMsg(false);
+              setPasswordSuccessMsg(false);
+              setDepartmentSuccessMsg(false);
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer ${
+              activeTab === 'username'
+                ? 'bg-white text-orange-600 shadow-xs font-bold border border-stone-200'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/70'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>{t.profileTabUsername}</span>
           </button>
 
           <button
@@ -453,6 +511,45 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   )}
                 </button>
               </div>
+            </form>
+          )}
+
+          {/* TAB: Kullanıcı Adı */}
+          {activeTab === 'username' && (
+            <form onSubmit={handleSaveUsername} className="space-y-4">
+              {usernameSuccessMsg && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 animate-in fade-in">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">{t.usernameSaved}</span>
+                </div>
+              )}
+              {usernameError && (
+                <div role="alert" className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs text-rose-800">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="font-semibold">{usernameError}</span>
+                </div>
+              )}
+              <UsernameField
+                id="input-profile-username"
+                value={usernameInput}
+                onChange={(v) => {
+                  setUsernameInput(v);
+                  setUsernameSuccessMsg(false);
+                  setUsernameError(null);
+                }}
+                status={usernameStatus}
+                onStatusChange={setUsernameStatus}
+                t={t}
+                currentUsername={currentUser.username}
+              />
+              <p className="text-[11px] text-stone-500">{t.usernameChangeNote}</p>
+              <button
+                type="submit"
+                disabled={isSavingUsername || usernameStatus !== 'available'}
+                className="w-full min-h-[46px] bg-orange-600 hover:bg-orange-500 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition cursor-pointer"
+              >
+                {t.usernameSaveBtn}
+              </button>
             </form>
           )}
 

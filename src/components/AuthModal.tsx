@@ -1,3 +1,4 @@
+import { useModalBehavior } from '../utils/useModalBehavior';
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
@@ -36,6 +37,8 @@ import {
 } from '../lib/supabase';
 import { isUniPdEmail } from '../config';
 import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
+import { UsernameField, UsernameStatus } from './UsernameField';
+import { normalizeUsername } from '../utils/username';
 
 // Google/Apple sign-in temporarily disabled — email/password is the only auth method for now.
 const SHOW_SOCIAL_LOGIN = false;
@@ -171,7 +174,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [faculty, setFaculty] = useState(UNIPD_DEPARTMENTS[0]?.name || "DEI - Ingegneria dell'Informazione");
+  const [username, setUsername] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('empty');
+  // Bölüm seçimi isteğe bağlıdır; kullanıcı seçmeden ilk bölüm kendiliğinden atanmaz.
+  const [faculty, setFaculty] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [unipdOnly, setUnipdOnly] = useState(false);
@@ -262,16 +268,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     return () => clearInterval(timer);
   }, [mode, countdown]);
 
+  useModalBehavior(isOpen, onClose);
+
   if (!isOpen) return null;
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setAuthError('Lütfen e-posta ve şifrenizi giriniz.');
+      setAuthError(t.errFillEmailPassword);
       return;
     }
     if (unipdOnly && !isUniPdEmail(email)) {
-      setAuthError('Lütfen @studenti.unipd.it veya @unipd.it uzantılı adresinizi girin.');
+      setAuthError(t.errUnipdDomain);
       return;
     }
     setIsSubmitting(true);
@@ -302,21 +310,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !fullName.trim() || !password) {
-      setAuthError('Lütfen ad soyad, e-posta ve şifre alanlarını eksiksiz doldurunuz.');
+      setAuthError(t.errFillRegister);
+      return;
+    }
+    if (usernameStatus === 'invalid' || usernameStatus === 'empty') {
+      setAuthError(t.usernameInvalid);
+      return;
+    }
+    if (usernameStatus === 'taken') {
+      setAuthError(t.usernameTaken);
+      return;
+    }
+    if (usernameStatus === 'checking') {
+      setAuthError(t.usernameChecking);
       return;
     }
     if (password.length < 6) {
-      setAuthError('Şifreniz en az 6 karakter olmalıdır.');
+      setAuthError(t.errPasswordShort);
       return;
     }
     if (unipdOnly && !isUniPdEmail(email)) {
-      setAuthError('UniPD rozeti için @studenti.unipd.it veya @unipd.it uzantılı bir adres gereklidir.');
+      setAuthError(t.errUnipdDomain);
       return;
     }
     setIsSubmitting(true);
     setAuthError(null);
     try {
-      await registerWithEmail(email, password, fullName);
+      await registerWithEmail(email, password, fullName, faculty || undefined, normalizeUsername(username));
       // Supabase, e-posta doğrulaması açıkken signUp sonrası oturum döndürmez (Firebase'in aksine);
       // bu yüzden modalı kapatmıyoruz, kullanıcı linke tıklayıp giriş yapana kadar doğrulama ekranı açık kalır.
       setCountdown(60);
@@ -374,7 +394,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       const user = await reloadCurrentUser();
       if (!user?.email_confirmed_at) {
-        setAuthError('Henüz doğrulanmamış görünüyor. E-postadaki linke tıkladıktan sonra tekrar deneyin.');
+        setAuthError(t.errNotVerifiedYet);
         return;
       }
       setInfoMessage(
@@ -825,6 +845,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 </div>
 
+                {/* Username */}
+                <UsernameField
+                  id="input-register-username"
+                  value={username}
+                  onChange={setUsername}
+                  status={usernameStatus}
+                  onStatusChange={setUsernameStatus}
+                  t={t}
+                  required
+                />
+
                 {/* Email */}
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-stone-700">
@@ -862,6 +893,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       onChange={(e) => setFaculty(e.target.value)}
                       className="w-full min-h-[42px] px-3.5 pl-10 pr-9 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 appearance-none cursor-pointer"
                     >
+                      <option value="">—</option>
                       {Array.from(new Set(UNIPD_DEPARTMENTS.map((d) => d.school))).map((school) => (
                         <optgroup key={school} label={`🏛️ ${school}`}>
                           {UNIPD_DEPARTMENTS.filter((d) => d.school === school).map((dep) => (

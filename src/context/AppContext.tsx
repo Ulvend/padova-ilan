@@ -17,6 +17,8 @@ import { TRANSLATIONS } from '../utils/translations';
 import { LANG_LOCALE } from '../utils/wizardText';
 import { formatDeviceTime } from '../utils/deviceTime';
 import { evaluateFairPrice } from '../utils/fairPrice';
+import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/username';
+import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
 import { isSuperAdminEmail } from '../config';
 import {
   supabase,
@@ -33,6 +35,7 @@ import {
   syncUserProfile,
   updateUserFavorites,
   saveListingToFirestore,
+  updateUsername,
   updateListingInFirestore,
   deleteListingFromFirestore,
   subscribeToListings,
@@ -50,12 +53,29 @@ import {
   PublicUserProfile,
 } from '../services/supabaseService';
 
+// Bütçe filtresinin en üst değeri "€900+" anlamına gelir: bu değerde fiyat sınırı uygulanmaz.
+// Kayıt sırasında metadata'ya yazılan kullanıcı adı geçerli değilse yok sayılır.
+const normalizeMetadataUsername = (value: unknown): string | undefined => {
+  const username = typeof value === 'string' ? normalizeUsername(value) : '';
+  return isValidUsername(username) ? username : undefined;
+};
+
+export const MAX_PRICE_UNLIMITED = 900;
+
+// Arama karşılaştırması: büyük/küçük harf, aksan ve noktasız ı farkı yok sayılır.
+const normalizeSearch = (value: string): string =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ı/g, 'i');
+
 export const DEFAULT_FILTERS: FilterState = {
   categoryTab: 'all',
   searchQuery: '',
   contractType: 'all',
   district: 'all',
-  maxPrice: 900,
+  maxPrice: MAX_PRICE_UNLIMITED,
   onlyVideoTour: false,
   onlyStudentVerified: false,
   onlyHighCompatibility: false,
@@ -99,6 +119,9 @@ interface AuthSnapshot {
   email: string;
   emailVerified: boolean;
   displayName: string;
+  faculty?: string;
+  // Kayıtta seçilen kullanıcı adı (ilk profil senkronizasyonunda kullanılır).
+  username?: string;
   photoURL: string;
   unipdVerified: boolean;
 }
@@ -115,12 +138,15 @@ interface AppContextType {
   currentUser: UserProfile;
   isLoggedIn: boolean;
   authReady: boolean;
+  // İlk ilan listesi sunucudan geldi (ya da yüklenemedi); bundan önce "ilan bulunamadı" denmemeli.
+  listingsLoaded: boolean;
   emailVerified: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   handleLoginSuccess: (userData?: Partial<UserProfile>) => void;
   handleLogout: () => void;
   handleUpdateProfile: (updated: Partial<UserProfile>) => void;
+  handleChangeUsername: (username: string) => Promise<'ok' | 'taken' | 'invalid'>;
   handleRequestUniPdVerification: (unipdEmail: string) => Promise<void>;
   handleResendVerificationEmail: () => Promise<void>;
   handleRefreshVerification: () => Promise<boolean>;
@@ -130,6 +156,8 @@ interface AppContextType {
 
   // Listings & Favorites
   listings: HousingListing[];
+  // Sözleşme aralığı bitmemiş, herkese açık akışta gösterilecek ilanlar.
+  publicListings: HousingListing[];
   archivedListings: HousingListing[];
   favoriteIds: string[];
   filters: FilterState;
@@ -233,6 +261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 2. Auth & User Profile State (tek doğruluk kaynağı Firebase Auth'tur)
   const [authUser, setAuthUser] = useState<AuthSnapshot | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [listingsLoaded, setListingsLoaded] = useState(false);
   const [profileExtras, setProfileExtras] = useState<Partial<UserProfile>>({});
   const [hasAdminGrant, setHasAdminGrant] = useState(false);
   const lastSyncedKey = useRef<string>('');
@@ -249,8 +278,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: authUser.uid,
       userHash: authUser.uid,
       email: authUser.email,
-      name: profileExtras.name || authUser.displayName || authUser.email.split('@')[0] || t.defaultStudentName,
-      username: profileExtras.username || authUser.email.split('@')[0] || 'student',
+      name: profileExtras.name || authUser.displayName || t.defaultStudentName,
+      username: resolveUsername(profileExtras.username, profileExtras.name || authUser.displayName, authUser.uid),
       avatar: profileExtras.avatar || authUser.photoURL || DEFAULT_GUEST_USER.avatar,
       studentIdVerified: authUser.unipdVerified,
       ssoVerified: authUser.unipdVerified,
@@ -378,6 +407,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         email: user.email || '',
         emailVerified: Boolean(user.email_confirmed_at),
         displayName: (user.user_metadata?.display_name as string) || '',
+        faculty: (user.user_metadata?.faculty as string) || undefined,
+        username: normalizeMetadataUsername(user.user_metadata?.username),
         photoURL: (user.user_metadata?.avatar_url as string) || '',
         unipdVerified: isUniPdVerifiedUser(user),
       };
@@ -406,19 +437,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setFavoriteIds((prev) => Array.from(new Set([...prev, ...remote.savedListingIds!])));
         }
 
-        await syncUserProfile(
+        const savedUsername = await syncUserProfile(
           {
             id: snapshot.uid,
             email: snapshot.email,
             name: extras.name || snapshot.displayName,
-            username: extras.username || snapshot.email.split('@')[0],
-            faculty: extras.faculty,
+            username: resolveUsername(extras.username || snapshot.username, extras.name || snapshot.displayName, snapshot.uid),
+            faculty: extras.faculty || snapshot.faculty,
             bio: extras.bio,
             phone: extras.phone,
             avatar: extras.avatar || snapshot.photoURL,
           },
           snapshot.unipdVerified
         );
+        setProfileExtras((prev) => ({ ...prev, username: savedUsername }));
       } catch (e) {
         console.warn('Could not sync user profile:', e);
       }
@@ -452,8 +484,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Firestore Real-Time Listings Synchronization
   useEffect(() => {
     return subscribeToListings(
-      (firestoreListings) => setAllListings(firestoreListings.map((l, idx) => withCoords(l, idx))),
-      () => showToast(t.toastListingsLoadFail)
+      (firestoreListings) => {
+        setAllListings(firestoreListings.map((l, idx) => withCoords(l, idx)));
+        setListingsLoaded(true);
+      },
+      () => {
+        setListingsLoaded(true);
+        showToast(t.toastListingsLoadFail);
+      }
     );
   }, [showToast]);
 
@@ -565,6 +603,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const handleChangeUsername = async (input: string): Promise<'ok' | 'taken' | 'invalid'> => {
+    const username = normalizeUsername(input);
+    if (!authUser || !isValidUsername(username)) return 'invalid';
+    if (username === currentUser.username) return 'ok';
+    const result = await updateUsername(authUser.uid, username);
+    if (result === 'ok') setProfileExtras((prev) => ({ ...prev, username }));
+    return result;
+  };
+
   const handleRequestUniPdVerification = async (unipdEmail: string) => {
     await requestUniPdEmailVerification(unipdEmail);
   };
@@ -594,13 +641,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleToggleFavorite = (e?: React.MouseEvent, listingId?: string) => {
     if (e) e.stopPropagation();
     if (!listingId) return;
-    setFavoriteIds((prev) => {
-      const next = prev.includes(listingId) ? prev.filter((id) => id !== listingId) : [...prev, listingId];
-      if (authUser) {
-        updateUserFavorites(authUser.uid, next).catch((err) => console.warn('Favorite sync error:', err));
-      }
-      return next;
-    });
+    // Ağ çağrısı state güncelleyicisinin içinde değil, dışında yapılır (StrictMode'da çift çalışmasın).
+    const next = favoriteIds.includes(listingId) ? favoriteIds.filter((id) => id !== listingId) : [...favoriteIds, listingId];
+    setFavoriteIds(next);
+    if (authUser) {
+      updateUserFavorites(authUser.uid, next).catch((err) => console.warn('Favorite sync error:', err));
+    }
   };
 
   // ---- Mesajlaşma ----
@@ -943,6 +989,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const listings = useMemo(() => allListings.filter((l) => !l.isArchived), [allListings]);
 
+  // Sözleşme aralığı bitmiş ilanlar herkese açık akışlarda gösterilmez (sahibi kendi listesinde görmeye devam eder).
+  const publicListings = useMemo(() => {
+    const today = new Date();
+    const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return listings.filter((l) => !l.contractEndISO || l.contractEndISO >= todayIso);
+  }, [listings]);
+
   const isMine = useCallback(
     (l: HousingListing) => Boolean(authUser && (l.userId === authUser.uid || l.poster?.id === authUser.uid)),
     [authUser]
@@ -955,13 +1008,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const filteredListings = useMemo(() => {
-    const result = listings.filter((l) => {
+    const result = publicListings.filter((l) => {
       if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
+        const query = normalizeSearch(filters.searchQuery.trim());
+        // Kullanıcı kartta gördüğü (çevrilmiş) ilçe adıyla da arayabilmeli.
+        const localizedDistrict = DISTRICT_TRANSLATIONS[currentLang]?.[l.district] || l.district;
         const matches =
-          l.title.toLowerCase().includes(query) ||
-          l.district.toLowerCase().includes(query) ||
-          (l.streetAddress || '').toLowerCase().includes(query);
+          normalizeSearch(l.title).includes(query) ||
+          normalizeSearch(l.district).includes(query) ||
+          normalizeSearch(localizedDistrict).includes(query) ||
+          normalizeSearch(l.streetAddress || '').includes(query);
         if (!matches) return false;
       }
       switch (filters.categoryTab) {
@@ -981,7 +1037,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (filters.district !== 'all' && l.district !== filters.district) return false;
       if (filters.contractType !== 'all' && l.contractType !== filters.contractType) return false;
       if (filters.roomType !== 'all' && l.roomType !== filters.roomType) return false;
-      if (l.price > filters.maxPrice) return false;
+      if (filters.maxPrice < MAX_PRICE_UNLIMITED && l.price > filters.maxPrice) return false;
       if (filters.onlyVideoTour && !l.hasVideoTour) return false;
       if (filters.onlyStudentVerified && !l.isStudentCardVerified) return false;
       if (filters.onlyHighCompatibility && (l.compatibilityScore || 0) < 85) return false;
@@ -1023,7 +1079,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       default:
         return result;
     }
-  }, [listings, filters]);
+  }, [publicListings, filters, currentLang]);
 
   const myListings = useMemo(() => listings.filter(isMine), [listings, isMine]);
 
@@ -1042,12 +1098,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     currentUser,
     isLoggedIn,
     authReady,
+    listingsLoaded,
     emailVerified: Boolean(authUser?.emailVerified),
     isAdmin,
     isSuperAdmin,
     handleLoginSuccess,
     handleLogout,
     handleUpdateProfile,
+    handleChangeUsername,
     handleRequestUniPdVerification,
     handleResendVerificationEmail,
     handleRefreshVerification,
@@ -1055,6 +1113,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleGrantAdminHash,
     handleRevokeAdminHash,
     listings,
+    publicListings,
     archivedListings,
     favoriteIds,
     filters,

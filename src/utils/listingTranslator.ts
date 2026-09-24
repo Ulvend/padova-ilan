@@ -7,10 +7,20 @@ import { LANG_LOCALE } from './wizardText';
 
 // Kullanıcının yazdığı gider metni ("+€40 Giderler" / "Giderler dahil") kullanıcının diline çevrilir.
 // Kayıtlı teyit süresi metinleri sabit üç değerden biri olduğunda kullanıcının diline çevrilir.
-const localizeConfirmation = (value: string, lang: Language): string => {
+// "3 Gün Teyitli" ilanın yayınlanmasından itibaren 72 saat geçerlidir: kalan süre yayın zamanından hesaplanır,
+// süre dolduysa boş döner (arayüz boş metni göstermez).
+const CONFIRMATION_WINDOW_HOURS = 72;
+
+const localizeConfirmation = (value: string, lang: Language, createdAt?: string): string => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  if (value === TRANSLATIONS.tr.confirmed3Days) {
+    const createdMs = createdAt ? Date.parse(createdAt) : NaN;
+    if (Number.isNaN(createdMs)) return '';
+    const hoursLeft = Math.ceil(CONFIRMATION_WINDOW_HOURS - (Date.now() - createdMs) / 3_600_000);
+    if (hoursLeft <= 0) return '';
+    return t.confirmed3Days.replace(String(CONFIRMATION_WINDOW_HOURS), String(Math.min(hoursLeft, CONFIRMATION_WINDOW_HOURS)));
+  }
   const known: Record<string, string> = {
-    [TRANSLATIONS.tr.confirmed3Days]: t.confirmed3Days,
     [TRANSLATIONS.tr.confirmed48h]: t.confirmed48h,
     [TRANSLATIONS.tr.confirmedArchived]: t.confirmedArchived,
   };
@@ -556,7 +566,7 @@ function localizeListingBase(listing: HousingListing, lang: Language): HousingLi
       ...listing,
       fairPriceText: localizedFairPriceText(listing, lang),
       expenses: localizeExpenses(listing.expenses, lang),
-      confirmationTimeLeft: localizeConfirmation(listing.confirmationTimeLeft, lang),
+      confirmationTimeLeft: localizeConfirmation(listing.confirmationTimeLeft, lang, listing.createdAt),
       // Konum biliniyorsa yürüme süresi metni kullanıcının diliyle yeniden üretilir.
       distanceToFaculty:
         typeof listing.lat === 'number' && typeof listing.lng === 'number'

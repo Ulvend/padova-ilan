@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { MyListingsView } from '../components/MyListingsView';
+import { LoginRequired } from '../components/LoginRequired';
+import { getListingViewCounts } from '../services/supabaseService';
 
 export const MyListingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,7 +18,27 @@ export const MyListingsPage: React.FC = () => {
     handleReactivateListing,
     currentLang,
     currentUser,
+    isLoggedIn,
+    authReady,
   } = useApp();
+
+  // Görüntülenme sayaçları listings'ten ayrı tutulur; sayfa açılınca ve ilan listesi değişince çekilir.
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+  const listingIdsKey = [...myListings, ...archivedListings].map((l) => l.id).sort().join(',');
+  useEffect(() => {
+    if (!isLoggedIn || !listingIdsKey) return;
+    let cancelled = false;
+    getListingViewCounts(listingIdsKey.split(',')).then((counts) => {
+      if (!cancelled) setViewCounts(counts);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, listingIdsKey]);
+
+  // Oturum yüklenirken giriş kapısı yanıp sönmesin.
+  if (!authReady) return null;
+  if (!isLoggedIn) return <LoginRequired />;
 
   return (
     <MyListingsView
@@ -32,6 +54,7 @@ export const MyListingsPage: React.FC = () => {
       onBackToHome={() => navigate('/')}
       currentLang={currentLang}
       currentUser={currentUser}
+      viewCounts={viewCounts}
     />
   );
 };

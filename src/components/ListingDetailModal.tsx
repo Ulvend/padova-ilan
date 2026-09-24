@@ -1,3 +1,4 @@
+import { useModalBehavior } from '../utils/useModalBehavior';
 import React, { useEffect, useState } from 'react';
 import { X, Heart, Share2, MapPin, Video, Check, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
 import { HousingListing, Language } from '../types';
@@ -38,6 +39,8 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
   const listing = getLocalizedListing(rawListing, currentLang);
+  // Escape bu bileşenin kendi klavye işleyicisinde ele alınır; burada yalnızca kaydırma kilidi.
+  useModalBehavior(Boolean(isOpen ?? true), onClose, false);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [copied, setCopied] = useState(false);
   const imageCount = listing.images?.length || 0;

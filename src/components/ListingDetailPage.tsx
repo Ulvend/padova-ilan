@@ -27,9 +27,7 @@ import {
   Camera,
   Video,
   FileText,
-  VolumeX,
   Ban,
-  Users,
   ClipboardList,
   Map,
   Bike,
@@ -45,6 +43,8 @@ import { DISTRICT_BENCHMARKS } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { formatGenderDistribution } from '../utils/genderDistribution';
+import { formatPercent } from '../utils/format';
+import { marketTrendLabel } from '../utils/marketTrendText';
 import { PadovaMap } from './PadovaMap';
 import { FlatmateIcon } from './FlatmateIcon';
 
@@ -88,18 +88,18 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const [videoProgress, setVideoProgress] = useState(12);
 
   // Benchmarks & District Calculation
-  const benchmark = DISTRICT_BENCHMARKS[listing.district] || {
-    avgPriceSingola: 435,
-    avgPriceDoppia: 310,
-    canoneConcordatoRange: '€380 - €460',
-    districtLabel: listing.district,
-    marketTrend: t.marketTrendDefault,
-  };
-
-  const isDoppia = listing.roomType === 'Doppia' || listing.roomType === 'Posto Letto';
-  const regionalAverage = isDoppia ? benchmark.avgPriceDoppia : benchmark.avgPriceSingola;
+  // Karşılaştırma tablosu özgün (çevrilmemiş) ilçe ve oda tipiyle aranır; yerelleştirilmiş değerler anahtarla eşleşmez.
+  const benchmark = DISTRICT_BENCHMARKS[rawListing.district];
+  const isDoppia = rawListing.roomType === 'Doppia' || rawListing.roomType === 'Posto Letto';
+  const hasRoomBenchmark = isDoppia || rawListing.roomType === 'Singola';
+  const showPriceRadar = Boolean(benchmark) && hasRoomBenchmark;
+  const regionalAverage = benchmark ? (isDoppia ? benchmark.avgPriceDoppia : benchmark.avgPriceSingola) : 0;
   const priceDifference = listing.price - regionalAverage;
-  const percentageRatio = Math.round((Math.abs(priceDifference) / regionalAverage) * 100);
+  const percentageRatio = regionalAverage ? Math.round((Math.abs(priceDifference) / regionalAverage) * 100) : 0;
+  const rangeMatch = benchmark ? /(\d+)\D+(\d+)/.exec(benchmark.canoneConcordatoRange) : null;
+  const isWithinConcordatoRange = rangeMatch
+    ? listing.price >= Number(rangeMatch[1]) && listing.price <= Number(rangeMatch[2])
+    : false;
 
   // Video progress timer simulation
   useEffect(() => {
@@ -518,8 +518,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <span className="text-orange-700 font-semibold">{listing.distanceToFaculty}</span>
               <span>•</span>
               <span className="text-stone-400">{t.photosCount}: {listing.images.length}</span>
-              <span>•</span>
-              <span className="text-emerald-700 font-semibold">{listing.confirmationTimeLeft}</span>
+              {listing.confirmationTimeLeft && (
+                <>
+                  <span>•</span>
+                  <span className="text-emerald-700 font-semibold">{listing.confirmationTimeLeft}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -543,30 +547,28 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <p>{listing.description}</p>
             </div>
 
-            {/* Living Rules Badges */}
-            <div className="pt-3 border-t border-stone-100">
-              <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block mb-2">
-                {t.houseRulesLabel}:
-              </span>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="bg-stone-50 border border-stone-200 text-stone-700 px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <VolumeX className="w-3.5 h-3.5 text-stone-500" />
-                  <span>{t.ruleQuietHours}</span>
+            {/* Living Rules Badges (ilan verisinden) */}
+            {(listing.smokingAllowed !== undefined || listing.petsAllowed !== undefined) && (
+              <div className="pt-3 border-t border-stone-100">
+                <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block mb-2">
+                  {t.houseRulesLabel}
                 </span>
-                <span className="bg-stone-50 border border-stone-200 text-stone-700 px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <Ban className="w-3.5 h-3.5 text-rose-500" />
-                  <span>{t.ruleNoSmoking}</span>
-                </span>
-                <span className="bg-stone-50 border border-stone-200 text-stone-700 px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-blue-500" />
-                  <span>{t.ruleGuests}</span>
-                </span>
-                <span className="bg-stone-50 border border-stone-200 text-stone-700 px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <Ban className="w-3.5 h-3.5 text-amber-500" />
-                  <span>{t.ruleNoPets}</span>
-                </span>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {listing.smokingAllowed !== undefined && (
+                    <span className="bg-stone-50 border border-stone-200 text-stone-700 px-3 py-1 rounded-full flex items-center gap-1.5">
+                      {listing.smokingAllowed ? <Cigarette className="w-3.5 h-3.5 text-emerald-600" /> : <Ban className="w-3.5 h-3.5 text-rose-500" />}
+                      <span>{listing.smokingAllowed ? t.smokingAllowed : t.ruleNoSmoking}</span>
+                    </span>
+                  )}
+                  {listing.petsAllowed !== undefined && (
+                    <span className="bg-stone-50 border border-stone-200 text-stone-700 px-3 py-1 rounded-full flex items-center gap-1.5">
+                      {listing.petsAllowed ? <Dog className="w-3.5 h-3.5 text-emerald-600" /> : <Ban className="w-3.5 h-3.5 text-amber-500" />}
+                      <span>{listing.petsAllowed ? t.petsAllowed : t.ruleNoPets}</span>
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Key Amenities Grid */}
@@ -614,8 +616,8 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               </div>
 
               {/* Klima (A/C) */}
-              <div className="p-3 border border-stone-200 rounded-xl bg-stone-50/80 flex items-start gap-2.5">
-                <Wind className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+              <div className={`p-3 border border-stone-200 rounded-xl bg-stone-50/80 flex items-start gap-2.5 ${listing.hasAirConditioning ? '' : 'opacity-60'}`}>
+                <Wind className={`w-4 h-4 shrink-0 mt-0.5 ${listing.hasAirConditioning ? 'text-sky-600' : 'text-stone-400'}`} />
                 <div>
                   <span className="text-stone-900 font-bold block">{t.airConditioningLabel}</span>
                   <span className="text-stone-600 text-[11px]">
@@ -625,7 +627,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               </div>
 
               {/* Çamaşır Makinesi */}
-              <div className="p-3 border border-stone-200 rounded-xl bg-stone-50/80 flex items-start gap-2.5">
+              <div className={`p-3 border border-stone-200 rounded-xl bg-stone-50/80 flex items-start gap-2.5 ${listing.hasWashingMachine ? '' : 'opacity-60'}`}>
                 <span className="text-sm mt-0.5">🧺</span>
                 <div>
                   <span className="text-stone-900 font-bold block">{t.washingMachineLabel}</span>
@@ -636,8 +638,8 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               </div>
 
               {/* Wi-Fi / Fiber */}
-              <div className="p-3 border border-stone-200 rounded-xl bg-stone-50/80 flex items-start gap-2.5">
-                <Wifi className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className={`p-3 border border-stone-200 rounded-xl bg-stone-50/80 flex items-start gap-2.5 ${listing.hasWifi !== false ? '' : 'opacity-60'}`}>
+                <Wifi className={`w-4 h-4 shrink-0 mt-0.5 ${listing.hasWifi !== false ? 'text-emerald-600' : 'text-stone-400'}`} />
                 <div>
                   <span className="text-stone-900 font-bold block">{t.wifiLabel}</span>
                   <span className="text-stone-600 text-[11px]">
@@ -730,14 +732,6 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                       </td>
                     </tr>
                   )}
-                  <tr className="border-b border-stone-100">
-                    <td className="py-2.5 text-stone-400 font-medium uppercase">{t.depositLabel}</td>
-                    <td className="py-2.5 font-semibold text-stone-800">€{listing.price * 2} ({t.depositTwoMonths})</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 text-stone-400 font-medium uppercase">{t.minStay}</td>
-                    <td className="py-2.5 font-semibold text-stone-800">{t.minStayValue}</td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -776,6 +770,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           </div>
 
           {/* 3. DEDICATED REGIONAL AVERAGE PRICE RATIO & FAIR PRICE AUDIT (Bölge Ortalamasına Göre Oran) */}
+          {showPriceRadar && benchmark && (
           <div className="p-4 md:p-5 bg-gradient-to-r from-emerald-50/70 via-teal-50/50 to-amber-50/60 rounded-2xl border border-emerald-200/80 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/60 pb-2.5">
               <div className="flex items-center gap-2">
@@ -785,7 +780,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 </h2>
               </div>
               <span className="bg-emerald-800 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                {t.padovaComuneAudit}
+                {t.rentTableBadge}
               </span>
             </div>
 
@@ -812,11 +807,11 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   <div>
                     <div className="text-lg md:text-xl font-bold text-stone-900 leading-tight">
                       {priceDifference < 0 ? (
-                        <span className="text-emerald-700">%{percentageRatio} {t.moreAffordable}</span>
+                        <span className="text-emerald-700">{formatPercent(percentageRatio, currentLang)} {t.moreAffordable}</span>
                       ) : priceDifference === 0 ? (
                         <span className="text-amber-700">{t.exactAverage}</span>
                       ) : (
-                        <span className="text-rose-700">%{percentageRatio} {t.aboveAverage}</span>
+                        <span className="text-rose-700">{formatPercent(percentageRatio, currentLang)} {t.aboveAverage}</span>
                       )}
                     </div>
                     <span className="text-[11px] text-stone-500 font-medium block">
@@ -843,7 +838,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <div className="bg-white border border-stone-200 rounded-xl p-2.5 col-span-2 sm:col-span-1">
                   <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.canoneConcordatoLabel}</span>
                   <span className="text-sm font-bold text-stone-800">{benchmark.canoneConcordatoRange}</span>
-                  <span className="text-[9px] text-emerald-800 block font-semibold">{t.padovaComuneAudit}</span>
+                  <span className="text-[9px] text-emerald-800 block font-semibold">{t.rentTableBadge}</span>
                 </div>
               </div>
 
@@ -878,10 +873,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               </div>
 
               <p className="text-[11px] text-stone-600 leading-snug pt-1">
-                <strong>*{t.priceGuaranteeTitle}:</strong> {benchmark.marketTrend}. {t.priceGuaranteeBody}
+                <strong>*{t.priceNoteTitle}:</strong> {marketTrendLabel(rawListing.district, benchmark.marketTrend, currentLang)}.
+                {isWithinConcordatoRange && <> {t.priceNoteBody}</>}
               </p>
             </div>
           </div>
+          )}
 
         </div>
 
@@ -930,7 +927,9 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <span>{t.watchVideoTour}</span>
               </button>
             )}
-            <p className="text-[13px] text-stone-500 leading-snug">{listing.confirmationTimeLeft}</p>
+            {listing.confirmationTimeLeft && (
+              <p className="text-[13px] text-stone-500 leading-snug">{listing.confirmationTimeLeft}</p>
+            )}
           </div>
 
           {/* Poster Profile Card */}
@@ -1023,14 +1022,20 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   </span>
                 </div>
               )}
-              <div className="flex items-center gap-2 pt-1 border-t border-stone-200/60 text-[11px]">
-                <span className={`px-2 py-0.5 rounded font-medium ${listing.smokingAllowed ? 'bg-amber-100 text-amber-900' : 'bg-stone-200 text-stone-700'}`}>
-                  {listing.smokingAllowed ? `🚬 ${t.smokingAllowed}` : `🚭 ${t.smokingForbidden}`}
-                </span>
-                <span className={`px-2 py-0.5 rounded font-medium ${listing.petsAllowed ? 'bg-emerald-100 text-emerald-900' : 'bg-stone-200 text-stone-700'}`}>
-                  {listing.petsAllowed ? `🐾 ${t.petsAllowed}` : `🚫 ${t.petsForbidden}`}
-                </span>
-              </div>
+              {(listing.smokingAllowed !== undefined || listing.petsAllowed !== undefined) && (
+                <div className="flex items-center gap-2 pt-1 border-t border-stone-200/60 text-[11px]">
+                  {listing.smokingAllowed !== undefined && (
+                    <span className={`px-2 py-0.5 rounded font-medium ${listing.smokingAllowed ? 'bg-amber-100 text-amber-900' : 'bg-stone-200 text-stone-700'}`}>
+                      {listing.smokingAllowed ? `🚬 ${t.smokingAllowed}` : `🚭 ${t.smokingForbidden}`}
+                    </span>
+                  )}
+                  {listing.petsAllowed !== undefined && (
+                    <span className={`px-2 py-0.5 rounded font-medium ${listing.petsAllowed ? 'bg-emerald-100 text-emerald-900' : 'bg-stone-200 text-stone-700'}`}>
+                      {listing.petsAllowed ? `🐾 ${t.petsAllowed}` : `🚫 ${t.petsForbidden}`}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2.5">

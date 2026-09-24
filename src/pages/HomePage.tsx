@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp, DEFAULT_FILTERS } from '../context/AppContext';
+import { useApp, DEFAULT_FILTERS, MAX_PRICE_UNLIMITED } from '../context/AppContext';
 import { RecentlyAddedSection } from '../components/RecentlyAddedSection';
 import { PadovaMap } from '../components/PadovaMap';
 import { ListingCard } from '../components/ListingCard';
@@ -37,7 +37,7 @@ export const HomePage: React.FC = () => {
   const {
     t,
     currentLang,
-    listings,
+    publicListings,
     filteredListings,
     filters,
     setFilters,
@@ -85,7 +85,7 @@ export const HomePage: React.FC = () => {
     Boolean(filters.searchQuery),
     filters.contractType !== 'all',
     filters.district !== 'all',
-    filters.maxPrice < 900,
+    filters.maxPrice < MAX_PRICE_UNLIMITED,
     filters.onlyVideoTour,
     filters.onlyStudentVerified,
     filters.onlyHighCompatibility,
@@ -198,10 +198,10 @@ export const HomePage: React.FC = () => {
           <span className={fieldLabel}>{h.maxRentField}</span>
           <div className="relative">
             <select id="select-max-price" value={filters.maxPrice} onChange={(e) => update({ maxPrice: Number(e.target.value) })} className={fieldSelect}>
-              {[300, 400, 500, 600, 700, 900].map((v) => (
+              {[300, 400, 500, 600, 700, 800, MAX_PRICE_UNLIMITED].map((v) => (
                 <option key={v} value={v}>
                   €{v}
-                  {v === 900 ? '+' : ''}
+                  {v === MAX_PRICE_UNLIMITED ? '+' : ''}
                 </option>
               ))}
             </select>
@@ -290,7 +290,7 @@ export const HomePage: React.FC = () => {
 
       {/* Son eklenenler (yatay kaydırmalı) */}
       <RecentlyAddedSection
-        listings={listings}
+        listings={publicListings}
         t={t}
         currentLang={currentLang}
         onOpenDetailPage={handleOpenDetailPage}

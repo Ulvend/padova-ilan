@@ -3,11 +3,11 @@ import {
   Plus, 
   CheckCircle2, 
   Clock, 
-  Eye, 
   Trash2, 
   Video, 
   Archive, 
   Sparkles, 
+  Eye,
   X, 
   Check, 
   RotateCcw, 
@@ -35,6 +35,8 @@ interface MyListingsViewProps {
   onBackToHome: () => void;
   currentLang?: Language;
   currentUser?: UserProfile;
+  // İlan kimliği → görüntülenme sayısı (listing_stats).
+  viewCounts?: Record<string, number>;
 }
 
 // Kiracı profili seçenekleri: kayda geçen değer sabit kalır, görünen etiket dile göre değişir.
@@ -66,6 +68,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
   onBackToHome,
   currentLang = 'tr',
   currentUser,
+  viewCounts = {},
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const tenantLabel = (value: string) => {
@@ -286,19 +289,16 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                     </div>
 
                     <div className="pt-2.5 border-t border-stone-100 flex flex-wrap items-center justify-between text-xs text-stone-500 gap-2">
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1.5">
-                          <Eye className="w-3.5 h-3.5 text-stone-400" />
-                          <strong className="text-stone-700">{listing.views}</strong>
-                        </span>
-                        <span className="flex items-center gap-1 text-emerald-700">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          {t.padovaComuneAudit}
-                        </span>
-                      </div>
-                      <span className="text-orange-600 font-medium">
-                        {listing.confirmationTimeLeft}
+                      <span className="flex items-center gap-1.5" title={t.viewsLabel}>
+                        <Eye className="w-3.5 h-3.5 text-stone-400" />
+                        <strong className="text-stone-700">{viewCounts[listing.id] ?? 0}</strong>
+                        <span>{t.viewsLabel}</span>
                       </span>
+                      {listing.confirmationTimeLeft && (
+                        <span className="text-orange-600 font-medium">
+                          {listing.confirmationTimeLeft}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
@@ -409,7 +409,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-stone-400" />
-                        <span>{t.totalViewsLabel}: <strong className="text-stone-800">{listing.views}</strong></span>
+                        <span>{t.totalViewsLabel}: <strong className="text-stone-800">{viewCounts[listing.id] ?? 0}</strong></span>
                       </div>
                     </div>
                   </div>

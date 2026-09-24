@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { NotificationsView } from '../components/NotificationsView';
 import { ActiveView } from '../types';
+import { LoginRequired } from '../components/LoginRequired';
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ export const NotificationsPage: React.FC = () => {
     handleDeleteNotification,
     setActiveConversationId,
     currentLang,
+    isLoggedIn,
+    authReady,
   } = useApp();
 
   const handleNavigateView = (view: ActiveView, linkId?: string) => {
@@ -29,6 +32,9 @@ export const NotificationsPage: React.FC = () => {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (!authReady) return null;
+  if (!isLoggedIn) return <LoginRequired />;
 
   return (
     <NotificationsView

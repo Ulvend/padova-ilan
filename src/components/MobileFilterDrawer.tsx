@@ -1,4 +1,6 @@
+import { useModalBehavior } from '../utils/useModalBehavior';
 import React from 'react';
+import { MAX_PRICE_UNLIMITED } from '../context/AppContext';
 import { X, RotateCcw, ShieldCheck, Video, Users, Check, ArrowUpDown, Filter, GraduationCap, Calendar } from 'lucide-react';
 import { FilterState, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
@@ -23,6 +25,8 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
   currentLang,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+
+  useModalBehavior(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -150,13 +154,13 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                 {t.budgetLabel}
               </label>
               <span className="font-bold text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-md text-xs border border-orange-200">
-                {t.maxBudgetPrefix} €{filters.maxPrice}
+                {t.maxBudgetPrefix} €{filters.maxPrice}{filters.maxPrice >= MAX_PRICE_UNLIMITED ? '+' : ''}
               </span>
             </div>
             <input 
               type="range" 
               min="200" 
-              max="900" 
+              max={MAX_PRICE_UNLIMITED} 
               step="25" 
               value={filters.maxPrice}
               onChange={(e) => onFilterChange({ maxPrice: Number(e.target.value) })}

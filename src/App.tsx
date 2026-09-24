@@ -75,6 +75,7 @@ const AppLayout: React.FC = () => {
     handleUpdateListing,
     isProfileSettingsOpen,
     handleUpdateProfile,
+    handleChangeUsername,
     isAuthModalOpen,
     setIsAuthModalOpen,
     authModalMode,
@@ -234,6 +235,7 @@ const AppLayout: React.FC = () => {
         onClose={() => setIsProfileSettingsOpen(false)}
         currentUser={currentUser}
         onUpdateProfile={handleUpdateProfile}
+        onChangeUsername={handleChangeUsername}
         currentLang={currentLang}
       />
 

@@ -15,7 +15,11 @@ export const MessagesPage: React.FC = () => {
     currentLang,
     t,
     handleOpenAuthModal,
+    authReady,
   } = useApp();
+
+  // Oturum yüklenirken giriş kapısı yanıp sönmesin.
+  if (!authReady) return null;
 
   if (!isLoggedIn) {
     return (

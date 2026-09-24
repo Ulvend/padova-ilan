@@ -20,6 +20,28 @@ import {
   X
 } from 'lucide-react';
 
+// Nokta ikonları Leaflet'in HTML string işaretlerinde kullanıldığı için lucide yollarının SVG karşılıkları.
+const LANDMARK_ICON_SHAPES: Record<string, string> = {
+  Building2:
+    '<path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/>',
+  Stethoscope:
+    '<path d="M11 2v2"/><path d="M5 2v2"/><path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"/><path d="M8 15a6 6 0 0 0 12 0v-3"/><circle cx="20" cy="10" r="2"/>',
+  Cpu:
+    '<path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/>',
+  BookOpen:
+    '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  Train:
+    '<rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h.01"/><path d="M16 15h.01"/>',
+  Landmark:
+    '<path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/>',
+};
+
+const landmarkIconSvg = (name: string): string => {
+  const shapes = LANDMARK_ICON_SHAPES[name];
+  if (!shapes) return '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">${shapes}</svg>`;
+};
+
 interface PadovaMapProps {
   listings: HousingListing[];
   selectedListing?: HousingListing | null;
@@ -169,7 +191,7 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
         const landmarkHtml = `
           <div class="cursor-pointer transform -translate-x-1/2 -translate-y-full hover:scale-110 transition">
             <div class="flex items-center gap-1.5 bg-stone-900 text-amber-300 border border-amber-400/80 px-2.5 py-1 rounded-full shadow-md text-[10px] font-semibold whitespace-nowrap">
-              <span>${lm.icon}</span>
+              ${landmarkIconSvg(lm.icon)}
               <span class="max-w-[120px] truncate">${landmarkLabel(lm.name, lm.type, currentLang).name}</span>
             </div>
             <div class="w-2 h-2 bg-stone-900 rotate-45 mx-auto -mt-1 border-r border-b border-amber-400/80"></div>
@@ -186,7 +208,7 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
         const landmarkMarker = L.marker([lm.lat, lm.lng], { icon });
         landmarkMarker.bindPopup(`
           <div class="text-xs p-1 space-y-1">
-            <strong class="text-stone-900 block font-bold">${lm.icon} ${landmarkLabel(lm.name, lm.type, currentLang).name}</strong>
+            <strong class="text-stone-900 block font-bold">${landmarkLabel(lm.name, lm.type, currentLang).name}</strong>
             <span class="text-stone-500 block text-[10px]">${landmarkLabel(lm.name, lm.type, currentLang).type}</span>
           </div>
         `);

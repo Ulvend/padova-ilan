@@ -5,6 +5,7 @@ import { TRANSLATIONS } from '../utils/translations';
 import { HOME_TEXT } from '../utils/homeText';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { formatGenderDistribution } from '../utils/genderDistribution';
+import { formatBathrooms } from '../utils/format';
 
 interface ListingCardProps {
   listing: HousingListing;
@@ -45,14 +46,14 @@ export const ListingCard: React.FC<ListingCardProps> = ({
 
   const handleOpenDetail = () => {
     const fn = onOpenDetailPage || onSelectListing;
-    if (fn) fn(listing);
+    if (fn) fn(rawListing);
   };
 
   const handleOpenVideo = (e: React.MouseEvent) => {
     e.stopPropagation();
     const fn = onOpenVideoModal || onOpenVideoTour;
-    if (fn) fn(listing);
-    else onOpenPreviewModal(listing);
+    if (fn) fn(rawListing);
+    else onOpenPreviewModal(rawListing);
   };
 
   const isPricey = listing.fairPriceStatus !== 'lower' && listing.fairPriceStatus !== 'average';
@@ -125,7 +126,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           id={`btn-card-preview-${listing.id}`}
           onClick={(e) => {
             e.stopPropagation();
-            onOpenPreviewModal(listing);
+            onOpenPreviewModal(rawListing);
           }}
           className="absolute right-3 bottom-2.5 h-11 px-4 bg-white text-stone-900 rounded-full shadow-md flex items-center gap-2 text-sm font-bold cursor-pointer hover:bg-stone-50 transition active:scale-95"
           title={t.quickPreview}
@@ -176,7 +177,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <span className={chipCls}>{listing.roomType}</span>
           <span className={chipCls}>{listing.roomM2} m²</span>
           <span className={chipCls}>
-            {listing.bathrooms} {t.bathroomsNumber}
+            {formatBathrooms(listing.bathrooms, currentLang)}
           </span>
         </div>
 
