@@ -502,8 +502,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthModalOpen(true);
   };
 
-  // Misafirler de sihirbazı açabilir; giriş, yayın anında istenir.
+  // İlan vermek için üye girişi gerekir; misafir giriş/kayıt penceresine yönlendirilir.
   const handleOpenCreateListingModal = () => {
+    if (!isLoggedIn) {
+      handleOpenAuthModal('login', 'createListing');
+      return;
+    }
     setEditingListing(null);
     setIsCreateModalOpen(true);
   };
@@ -518,9 +522,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Oturum durumu Firebase listener'ından gelir; burada yalnızca modal sonrası akış yönetilir.
+  // İlan vermek için açılan giriş penceresi başarıyla bittiyse, oturum oturunca sihirbaza devam edilir.
+  const resumeCreateAfterLogin = useRef(false);
   const handleLoginSuccess = (_userData?: Partial<UserProfile>) => {
+    if (authModalReason === 'createListing') resumeCreateAfterLogin.current = true;
     setIsAuthModalOpen(false);
   };
+  useEffect(() => {
+    if (isLoggedIn && resumeCreateAfterLogin.current) {
+      resumeCreateAfterLogin.current = false;
+      setEditingListing(null);
+      setIsCreateModalOpen(true);
+    }
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     setIsChatOpen(false);

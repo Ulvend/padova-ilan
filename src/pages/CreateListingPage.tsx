@@ -9,7 +9,6 @@ import {
   Eye,
   Image as ImageIcon,
   Loader2,
-  LogIn,
   PartyPopper,
   Pencil,
   ShieldCheck,
@@ -45,6 +44,18 @@ const newId = () => `ph-${crypto.randomUUID()}`;
 // Rota değişince (ör. yayın sonrası "video ekle") sihirbaz sıfırdan kurulsun.
 export const CreateListingRoute: React.FC = () => {
   const loc = useLocation();
+  const navigate = useNavigate();
+  const { authReady, isLoggedIn, handleOpenAuthModal } = useApp();
+
+  // Üye girişi olmadan sihirbaz açılmaz (adresi doğrudan yazsalar bile): ana sayfaya dönüp giriş penceresi açılır.
+  useEffect(() => {
+    if (authReady && !isLoggedIn) {
+      navigate('/', { replace: true });
+      handleOpenAuthModal('login', 'createListing');
+    }
+  }, [authReady, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!authReady || !isLoggedIn) return null;
   return <CreateListingPage key={loc.pathname + loc.search} />;
 };
 
@@ -55,11 +66,9 @@ const CreateListingPage: React.FC = () => {
   const {
     currentLang: lang,
     currentUser,
-    isLoggedIn,
     myListings,
     handleAddListing,
     handleUpdateListing,
-    handleOpenAuthModal,
     setEditingListing,
   } = useApp();
   const w = WIZARD_TEXT[lang];
@@ -84,7 +93,6 @@ const CreateListingPage: React.FC = () => {
   const [done, setDone] = useState<{ id: string; listing: HousingListing } | null>(null);
   const [copied, setCopied] = useState(false);
   const hydratedEdit = useRef(false);
-  const pendingPublish = useRef(false);
   const formRef = useRef(form);
   formRef.current = form;
 
@@ -147,17 +155,15 @@ const CreateListingPage: React.FC = () => {
     const items: PhotoItem[] = files.map((file) => ({
       id: newId(),
       url: URL.createObjectURL(file),
-      status: isLoggedIn ? 'uploading' : 'pending',
+      status: 'uploading',
       progress: 0,
       file,
     }));
     setForm((f) => ({ ...f, photos: [...f.photos, ...items] }));
-    if (isLoggedIn) {
-      // Sırayla yükle: hem ilerleme çubukları okunur kalır hem sunucu yükü düşer
-      (async () => {
-        for (const item of items) await uploadOne(item);
-      })();
-    }
+    // Sırayla yükle: hem ilerleme çubukları okunur kalır hem sunucu yükü düşer
+    (async () => {
+      for (const item of items) await uploadOne(item);
+    })();
   };
 
   const addUrl = (url: string) =>
@@ -215,18 +221,12 @@ const CreateListingPage: React.FC = () => {
         return;
       }
     }
-    if (!isLoggedIn) {
-      pendingPublish.current = true;
-      handleOpenAuthModal('register', 'createListing');
-      return;
-    }
-
     setSubmitError(null);
     setSubmitting(true);
     try {
-      // Bekleyen / başarısız fotoğrafları yükle
+      // Başarısız fotoğrafları yeniden yükle
       let photos = formRef.current.photos;
-      for (const p of photos.filter((p) => p.status === 'pending' || p.status === 'error')) {
+      for (const p of photos.filter((p) => p.status === 'error')) {
         const ok = await uploadOne(p);
         if (!ok) throw new Error(w.uploadFailed);
       }
@@ -256,16 +256,6 @@ const CreateListingPage: React.FC = () => {
       setSubmitting(false);
     }
   };
-
-  // Misafir girişten sonra yayınlamayı otomatik sürdür
-  const publishRef = useRef(publish);
-  publishRef.current = publish;
-  useEffect(() => {
-    if (isLoggedIn && pendingPublish.current) {
-      pendingPublish.current = false;
-      publishRef.current();
-    }
-  }, [isLoggedIn]);
 
   // ---------- Türetilmiş veri ----------
   const previewListing = useMemo(
@@ -437,7 +427,6 @@ const CreateListingPage: React.FC = () => {
             form={form}
             lang={lang}
             listing={previewListing}
-            isLoggedIn={isLoggedIn}
             error={submitError}
             onEdit={goTo}
           />
@@ -566,11 +555,6 @@ const CreateListingPage: React.FC = () => {
             <p className="mt-2 text-base text-stone-600">{stepHints[step]}</p>
 
             <div className="mt-5 space-y-4">
-              {step === 0 && !isLoggedIn && !isEdit && !restored && (
-                <InfoBox tone="accent" icon={<CheckCircle2 className="h-4 w-4" />}>
-                  {w.guestIntro}
-                </InfoBox>
-              )}
               {restored && (
                 <InfoBox
                   icon={<Pencil className="h-4 w-4" />}
@@ -644,8 +628,8 @@ const CreateListingPage: React.FC = () => {
               </>
             ) : isLast ? (
               <>
-                {!isLoggedIn ? <LogIn className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                {!isLoggedIn ? w.loginToPublish : isEdit ? w.saveChanges : w.publish}
+                <Check className="h-4 w-4" />
+                {isEdit ? w.saveChanges : w.publish}
               </>
             ) : (
               w.next
@@ -690,10 +674,9 @@ const StepReview: React.FC<{
   form: FormState;
   lang: import('../types').Language;
   listing: HousingListing;
-  isLoggedIn: boolean;
   error: string | null;
   onEdit: (step: number) => void;
-}> = ({ form, lang, listing, isLoggedIn, error, onEdit }) => {
+}> = ({ form, lang, listing, error, onEdit }) => {
   const w = WIZARD_TEXT[lang];
 
   const rows: { step: number; label: string; value: string }[] = [
@@ -757,12 +740,6 @@ const StepReview: React.FC<{
           ))}
         </ul>
       </Card>
-
-      {!isLoggedIn && (
-        <InfoBox tone="accent" icon={<LogIn className="h-4 w-4" />}>
-          {w.loginNote}
-        </InfoBox>
-      )}
 
       {error && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">

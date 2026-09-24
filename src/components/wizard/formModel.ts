@@ -14,7 +14,7 @@ import { evaluateFairPrice } from '../../utils/fairPrice';
 import { WIZARD_TEXT, LANG_LOCALE } from '../../utils/wizardText';
 import { TRANSLATIONS } from '../../utils/translations';
 
-export type PhotoStatus = 'done' | 'uploading' | 'pending' | 'error';
+export type PhotoStatus = 'done' | 'uploading' | 'error';
 
 export interface PhotoItem {
   id: string;

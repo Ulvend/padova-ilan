@@ -128,11 +128,6 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({ photos, w, error, 
                   <span className="text-[12px] font-semibold">{w.uploading} %{p.progress}</span>
                 </div>
               )}
-              {p.status === 'pending' && (
-                <span className="absolute bottom-2 left-2 right-2 rounded-md bg-stone-900/75 px-2 py-1 text-center text-[12px] font-medium text-white">
-                  {w.pendingUpload}
-                </span>
-              )}
               {p.status === 'error' && (
                 <button
                   type="button"
