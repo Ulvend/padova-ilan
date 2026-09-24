@@ -499,12 +499,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthModalOpen(true);
   };
 
+  // Misafirler de sihirbazı açabilir; giriş, yayın anında istenir.
   const handleOpenCreateListingModal = () => {
-    if (!isLoggedIn) {
-      setPendingCreateListingAfterAuth(true);
-      handleOpenAuthModal('register', 'createListing');
-      return;
-    }
     setEditingListing(null);
     setIsCreateModalOpen(true);
   };

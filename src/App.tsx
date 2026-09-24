@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AppProvider, useApp, DEFAULT_FILTERS } from './context/AppContext';
 import { Header } from './components/Header';
@@ -6,11 +6,11 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileFilterDrawer } from './components/MobileFilterDrawer';
 import { VideoTourModal } from './components/VideoTourModal';
 import { ListingDetailModal } from './components/ListingDetailModal';
-import { CreateListingModal } from './components/CreateListingModal';
 import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 import { AuthModal } from './components/AuthModal';
 import { ChatWidget } from './components/ChatWidget';
 import { HomePage } from './pages/HomePage';
+import { CreateListingRoute } from './pages/CreateListingPage';
 import { ListingDetailPage } from './pages/ListingDetailPage';
 import { MyListingsPage } from './pages/MyListingsPage';
 import { MessagesPage } from './pages/MessagesPage';
@@ -99,13 +99,39 @@ const AppLayout: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Hata olursa CreateListingModal yakalar ve kullanıcıya gösterir; modal açık kalır.
-  const onListingCreated = async (newListing: HousingListing) => {
-    await handleAddListing(newListing);
+  // "İlan ver" / "Düzenle" istekleri (context bayrağı) tam sayfa sihirbaz rotasına yönlendirilir.
+  useEffect(() => {
+    if (!isCreateModalOpen) return;
     setIsCreateModalOpen(false);
-    navigate(`/ilan/${newListing.id}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    navigate(editingListing ? `/ilan-ver/${editingListing.id}` : '/ilan-ver');
+  }, [isCreateModalOpen, editingListing, navigate, setIsCreateModalOpen]);
+
+  // Sihirbaz kendi tam sayfa düzenini kullanır: üst menü, alt menü ve sohbet yok.
+  if (location.pathname.startsWith('/ilan-ver')) {
+    return (
+      <div className="min-h-screen bg-stone-50 text-stone-900 font-sans selection:bg-orange-500/20 selection:text-orange-900">
+        <Routes>
+          <Route path="/ilan-ver/:id?" element={<CreateListingRoute />} />
+        </Routes>
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          initialMode={authModalMode}
+          currentLang={currentLang}
+          onLoginSuccess={handleLoginSuccess}
+          authReason={authModalReason}
+        />
+        {toast && (
+          <div
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            className="fixed z-[60] left-1/2 -translate-x-1/2 bottom-24 w-[calc(100%-2rem)] max-w-md px-4 py-3 rounded-xl shadow-lg border border-stone-200 bg-white text-sm text-stone-800"
+          >
+            {toast.text}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-stone-100/70 text-stone-900 flex flex-col font-sans selection:bg-orange-500/20 selection:text-orange-900">
@@ -200,23 +226,6 @@ const AppLayout: React.FC = () => {
           setPreviewModalListing(null);
           handleOpenChat(user, subject, listingId);
         }}
-      />
-
-      <CreateListingModal
-        isOpen={isCreateModalOpen}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setEditingListing(null);
-        }}
-        initialListing={editingListing}
-        isEditMode={Boolean(editingListing)}
-        onAddListing={onListingCreated}
-        onSubmitListing={onListingCreated}
-        onUpdateListing={handleUpdateListing}
-        currentLang={currentLang}
-        currentUser={currentUser}
-        isLoggedIn={isLoggedIn}
-        onOpenAuthModal={handleOpenAuthModal}
       />
 
       <ProfileSettingsModal
