@@ -13,6 +13,8 @@ import { isUniPdEmail } from '../config';
  */
 export const UniPdVerificationCard: React.FC = () => {
   const {
+    t,
+    currentLang,
     currentUser,
     emailVerified,
     handleRequestUniPdVerification,
@@ -29,10 +31,10 @@ export const UniPdVerificationCard: React.FC = () => {
   if (currentUser.studentIdVerified) {
     return (
       <div className="border border-emerald-200 bg-emerald-50/70 p-3 rounded-xl text-xs text-right">
-        <span className="text-[10px] text-stone-500 block uppercase font-semibold">UniPD Doğrulaması</span>
+        <span className="text-[10px] text-stone-500 block uppercase font-semibold">{t.unipdVerifTitle}</span>
         <span className="text-emerald-800 font-bold flex items-center justify-end gap-1 mt-0.5">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          UniPD Onaylı
+          {t.studentCardVerified}
         </span>
         <span className="text-[10px] text-emerald-600 block mt-0.5 font-medium">{currentUser.email}</span>
       </div>
@@ -47,7 +49,7 @@ export const UniPdVerificationCard: React.FC = () => {
     try {
       await action();
     } catch (err) {
-      setError(describeAuthError(err));
+      setError(describeAuthError(err, currentLang));
     } finally {
       setBusy(false);
     }
@@ -68,9 +70,9 @@ export const UniPdVerificationCard: React.FC = () => {
     run(async () => {
       const verified = await handleRefreshVerification();
       if (verified) {
-        showToast('UniPD doğrulaman tamamlandı. Rozetin aktif!', 'success');
+        showToast(t.toastUnipdVerified, 'success');
       } else {
-        setError('Henüz doğrulanmamış görünüyor. E-postadaki linke tıkladıktan sonra tekrar deneyin.');
+        setError(t.unipdNotYet);
       }
     });
 
@@ -78,21 +80,23 @@ export const UniPdVerificationCard: React.FC = () => {
     <div className="border border-[#f3ccd2] bg-[#fdf2f4] p-3.5 rounded-xl text-xs space-y-2.5 w-full sm:w-80">
       <div className="flex items-center gap-2 text-[#7a0d1a] font-bold">
         <GraduationCap className="w-4 h-4" />
-        <span>UniPD rozeti al</span>
+        <span>{t.unipdGetBadge}</span>
       </div>
 
       {sentTo ? (
         <p className="text-[11px] text-stone-700 leading-relaxed">
-          <strong>{sentTo}</strong> adresine doğrulama linki gönderildi. Linke tıkladıktan sonra aşağıdaki butona bas.
+          {t.unipdLinkSentTo.split('{email}').map((part, i, arr) => (
+            <React.Fragment key={i}>{part}{i < arr.length - 1 && <strong>{sentTo}</strong>}</React.Fragment>
+          ))}
         </p>
       ) : accountIsUniPd ? (
         <p className="text-[11px] text-stone-700 leading-relaxed">
-          Hesabın UniPD adresine bağlı ama henüz doğrulanmamış. Doğrulama linkini tekrar gönderebilirsin.
+          {t.unipdAccountUnverified}
         </p>
       ) : (
         <>
           <p className="text-[11px] text-stone-700 leading-relaxed">
-            UniPD e-postanı gir; gelen linke tıklayınca hesabının e-postası bu adres olur ve "UniPD Onaylı" rozeti alırsın.
+            {t.unipdEnterEmail}
           </p>
           <div className="relative">
             <input
@@ -122,7 +126,7 @@ export const UniPdVerificationCard: React.FC = () => {
             disabled={busy || (!accountIsUniPd && !isUniPdEmail(unipdEmail))}
             className="flex-1 bg-[#9b0014] hover:bg-[#830011] text-white font-bold px-3 py-2 rounded-lg transition cursor-pointer disabled:opacity-50"
           >
-            {accountIsUniPd ? 'Linki tekrar gönder' : 'Doğrulama linki gönder'}
+            {accountIsUniPd ? t.resendLink : t.sendVerifyLink}
           </button>
         )}
         {(sentTo || accountIsUniPd) && (
@@ -133,7 +137,7 @@ export const UniPdVerificationCard: React.FC = () => {
             className="flex-1 bg-white border border-[#e3b3bb] text-[#7a0d1a] font-bold px-3 py-2 rounded-lg transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             {busy && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-            Doğruladım
+            {t.iVerified}
           </button>
         )}
       </div>

@@ -37,6 +37,22 @@ interface MyListingsViewProps {
   currentUser?: UserProfile;
 }
 
+// Kiracı profili seçenekleri: kayda geçen değer sabit kalır, görünen etiket dile göre değişir.
+const TENANT_OPTIONS = [
+  { value: 'UniPD Tıp / Mühendislik Öğrencisi', key: 'tenantMedEng' },
+  { value: 'UniPD Lisans / Master Öğrencisi', key: 'tenantBaMa' },
+  { value: 'Erasmus+ Değişim Öğrencisi', key: 'tenantErasmus' },
+  { value: 'Doktora / Doktora Sonrası Araştırmacı', key: 'tenantPhd' },
+  { value: 'Genç Çalışan / Mezun', key: 'tenantWorker' },
+] as const;
+
+// "{title}" gibi yer tutucuları verilen düğümlerle değiştirir (dile göre kelime sırası değişebilir).
+const richText = (template: string, parts: Record<string, React.ReactNode>): React.ReactNode =>
+  template.split(/(\{\w+\})/).map((chunk, i) => {
+    const m = /^\{(\w+)\}$/.exec(chunk);
+    return m && m[1] in parts ? <React.Fragment key={i}>{parts[m[1]]}</React.Fragment> : chunk;
+  });
+
 export const MyListingsView: React.FC<MyListingsViewProps> = ({
   myListings,
   archivedListings = [],
@@ -52,18 +68,22 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
   currentUser,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const tenantLabel = (value: string) => {
+    const o = TENANT_OPTIONS.find((opt) => opt.value === value);
+    return o ? t[o.key] : value;
+  };
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
 
   // Confirmation Modal state for "Kiracı Buldum"
   const [selectedListingForRent, setSelectedListingForRent] = useState<HousingListing | null>(null);
   const [rentedPrice, setRentedPrice] = useState<number>(420);
-  const [tenantType, setTenantType] = useState<string>('UniPD Öğrencisi');
+  const [tenantType, setTenantType] = useState<string>(TENANT_OPTIONS[1].value);
   const [rentalNote, setRentalNote] = useState<string>('');
 
   const openRentConfirmation = (listing: HousingListing) => {
     setSelectedListingForRent(listing);
     setRentedPrice(listing.price);
-    setTenantType('UniPD Lisans/Master Öğrencisi');
+    setTenantType(TENANT_OPTIONS[1].value);
     setRentalNote('');
   };
 
@@ -118,7 +138,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
           }`}
         >
           <Building2 className="w-3.5 h-3.5" />
-          <span>{currentLang === 'tr' ? 'Yayındaki Aktif İlanlarım' : 'Active Listings'}</span>
+          <span>{t.activeListingsTab}</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
             activeTab === 'active' ? 'bg-stone-800 text-orange-400' : 'bg-stone-200 text-stone-700'
           }`}>
@@ -136,7 +156,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
           }`}
         >
           <Archive className="w-3.5 h-3.5" />
-          <span>{currentLang === 'tr' ? 'Geçmiş İlanlar & Kiracı Bulunanlar' : 'Past & Rented Listings'}</span>
+          <span>{t.pastListingsTab}</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
             activeTab === 'archived' ? 'bg-emerald-900 text-emerald-300' : 'bg-stone-200 text-stone-700'
           }`}>
@@ -155,9 +175,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
               </div>
               <p className="text-sm font-semibold text-stone-700">{t.noListingsYet}</p>
               <p className="text-xs text-stone-400 max-w-sm mx-auto">
-                {currentLang === 'tr' 
-                  ? 'Şu anda yayında aktif ilanınız bulunmamaktadır. Kiracı bulduğunuz ilanlar Geçmiş İlanlar sekmesinde arşivlenir.' 
-                  : 'You currently have no active listings. Listings marked as rented are moved to Past Listings.'}
+                {t.noActiveListings}
               </p>
               <button 
                 onClick={onOpenCreateModal} 
@@ -223,10 +241,10 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                           type="button"
                           onClick={() => onEditListing?.(rawListing)}
                           className="border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer min-h-[40px] flex items-center gap-1.5 shadow-2xs active:scale-95"
-                          title="İlanı, fotoğrafları ve videoyu düzenle"
+                          title={t.editListingTitle}
                         >
                           <Pencil className="w-4 h-4 text-amber-600" />
-                          <span>{currentLang === 'tr' ? 'Düzenle' : currentLang === 'it' ? 'Modifica' : 'Edit'}</span>
+                          <span>{t.editShort}</span>
                         </button>
 
                         {/* REQ 4: "Kiracı Buldum" Button */}
@@ -234,10 +252,10 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                           type="button"
                           onClick={() => openRentConfirmation(rawListing)}
                           className="border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer min-h-[40px] flex items-center gap-1.5 shadow-2xs active:scale-95"
-                          title="İlan için kiracı buldum, yayından kaldır ve geçmişe kaydet"
+                          title={t.foundTenantHint}
                         >
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>{currentLang === 'tr' ? 'Kiracı Buldum' : 'Found Tenant'}</span>
+                          <span>{t.foundTenantBtn}</span>
                         </button>
 
                         {listing.hasVideoTour && (
@@ -299,12 +317,10 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
             </div>
             <div className="text-xs text-emerald-950 space-y-0.5">
               <strong className="font-bold block">
-                {currentLang === 'tr' ? 'Geçmiş İlanlar & Piyasa Veri Kaydı' : 'Archived Listings & Market Trend Data'}
+                {t.archivedTitle}
               </strong>
               <p className="text-emerald-800 leading-snug">
-                {currentLang === 'tr'
-                  ? 'Kiracı bulunan ilanlar yayından güvenle kaldırılmış olup, veri tabanında Padova emsal kira analizleri ve piyasa istatistikleri için geçmiş veri olarak saklanmaktadır.'
-                  : 'Rented listings are removed from public search and safely stored in the database for historical market rate analytics.'}
+                {t.archivedBody}
               </p>
             </div>
           </div>
@@ -313,12 +329,10 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
             <div className="p-10 text-center bg-white rounded-2xl border border-stone-200 shadow-sm space-y-2">
               <Archive className="w-8 h-8 text-stone-400 mx-auto" />
               <p className="text-sm font-semibold text-stone-700">
-                {currentLang === 'tr' ? 'Henüz geçmişe aktarılan ilan bulunmuyor' : 'No past listings found'}
+                {t.noPastListings}
               </p>
               <p className="text-xs text-stone-400 max-w-sm mx-auto">
-                {currentLang === 'tr'
-                  ? 'Aktif ilanlarınızdan kiracı bulduğunuzda "Kiracı Buldum" butonuna basarak ilanı bu arşive aktarabilirsiniz.'
-                  : 'When you find a tenant for your active listing, click "Found Tenant" to archive it here.'}
+                {t.noPastListingsHint}
               </p>
             </div>
           ) : (
@@ -334,13 +348,13 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                       <div className="flex items-center gap-2">
                         <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
                           <Check className="w-3.5 h-3.5 text-emerald-700" />
-                          <span>{currentLang === 'tr' ? 'Kiracı Bulundu (Arşiv Verisi)' : 'Tenant Found (Archived)'}</span>
+                          <span>{t.tenantFoundArchived}</span>
                         </span>
                         <span className="text-xs text-stone-500 font-medium">{listing.district}</span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-stone-500 font-medium">Kiralama Fiyatı:</span>
+                        <span className="text-xs text-stone-500 font-medium">{t.rentedPriceLabel}:</span>
                         <span className="text-lg font-bold text-stone-900">
                           €{rawListing.rentedPrice || rawListing.price}
                         </span>
@@ -367,10 +381,10 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                             type="button"
                             onClick={() => onReactivateListing(rawListing.id)}
                             className="border border-stone-300 bg-white hover:bg-stone-100 text-stone-800 px-3 py-1.5 text-xs font-semibold rounded-xl transition cursor-pointer flex items-center gap-1.5"
-                            title="Kiracı anlaşması bozulduysa tekrar aktif ilana dönüştür"
+                            title={t.reactivateHint}
                           >
                             <RotateCcw className="w-3.5 h-3.5 text-stone-600" />
-                            <span>{currentLang === 'tr' ? 'Tekrar Yayına Al' : 'Reactivate'}</span>
+                            <span>{t.reactivateBtn}</span>
                           </button>
                         )}
 
@@ -387,15 +401,15 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                     <div className="pt-2.5 border-t border-stone-200 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-stone-600">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-stone-400" />
-                        <span>Kiralama Tarihi: <strong className="text-stone-800">{rawListing.rentedAt || 'Kayıtlı'}</strong></span>
+                        <span>{t.rentedOnLabel}: <strong className="text-stone-800">{rawListing.rentedAt || t.recordedValue}</strong></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Kiracı Tipi: <strong className="text-stone-800">{rawListing.tenantType || 'UniPD Öğrencisi'}</strong></span>
+                        <span>{t.tenantTypeLabel}: <strong className="text-stone-800">{rawListing.tenantType ? tenantLabel(rawListing.tenantType) : t.tenantBaMa}</strong></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-stone-400" />
-                        <span>Toplam Görüntülenme: <strong className="text-stone-800">{listing.views}</strong></span>
+                        <span>{t.totalViewsLabel}: <strong className="text-stone-800">{listing.views}</strong></span>
                       </div>
                     </div>
                   </div>
@@ -423,7 +437,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                   <CheckCircle2 className="w-4 h-4" />
                 </span>
                 <span className="font-bold text-xs uppercase tracking-wider text-emerald-950">
-                  Kiracı Bulundu Onay Masası
+                  {t.rentModalTitle}
                 </span>
               </div>
               <button
@@ -437,10 +451,13 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
             <div className="p-6 space-y-4">
               <div className="space-y-1">
                 <h3 className="text-lg font-bold text-stone-900">
-                  Tebrikler! Kiracı Buldunuz Mu?
+                  {t.rentCongrats}
                 </h3>
                 <p className="text-xs text-stone-500 leading-relaxed">
-                  Onay vermeniz durumunda <strong>"{selectedListingForRent.title}"</strong> ilanı aktif yayından kaldırılacak ve veri ambarında <strong>"Geçmiş İlan"</strong> olarak saklanacaktır.
+                  {richText(t.rentConfirmBody, {
+                    title: <strong>"{selectedListingForRent.title}"</strong>,
+                    archive: <strong>{t.pastListingWord}</strong>,
+                  })}
                 </p>
               </div>
 
@@ -448,7 +465,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
               <div className="space-y-3 pt-2">
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-stone-700">
-                    Anlaşılan Nihai Kira Bedeli (€/ay)
+                    {t.rentFinalPrice}
                   </label>
                   <div className="relative">
                     <input
@@ -463,30 +480,28 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
 
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-stone-700">
-                    Kiracı Profili
+                    {t.tenantProfile}
                   </label>
                   <select
                     value={tenantType}
                     onChange={(e) => setTenantType(e.target.value)}
                     className="w-full min-h-[42px] px-3 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-emerald-500"
                   >
-                    <option value="UniPD Tıp / Mühendislik Öğrencisi">UniPD Tıp / Mühendislik Öğrencisi</option>
-                    <option value="UniPD Lisans / Master Öğrencisi">UniPD Lisans / Master Öğrencisi</option>
-                    <option value="Erasmus+ Değişim Öğrencisi">Erasmus+ Değişim Öğrencisi</option>
-                    <option value="Doktora / Doktora Sonrası Araştırmacı">Doktora / Doktora Sonrası Araştırmacı</option>
-                    <option value="Genç Çalışan / Mezun">Genç Çalışan / Mezun</option>
+                    {TENANT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{t[o.key]}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-stone-700">
-                    Kiralama Notu (İsteğe Bağlı)
+                    {t.rentalNoteLabel}
                   </label>
                   <input
                     type="text"
                     value={rentalNote}
                     onChange={(e) => setRentalNote(e.target.value)}
-                    placeholder="Örn: 1 yıllık Canone Concordato sözleşmesi imzalandı"
+                    placeholder={t.rentalNotePlaceholder}
                     className="w-full min-h-[42px] px-3.5 text-xs border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -499,7 +514,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                   onClick={() => setSelectedListingForRent(null)}
                   className="px-4 py-2 text-xs font-semibold rounded-xl text-stone-600 hover:bg-stone-100 transition cursor-pointer"
                 >
-                  Vazgeç
+                  {t.cancelBtn}
                 </button>
 
                 <button
@@ -508,7 +523,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                   className="px-5 py-2.5 text-xs font-bold rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
                 >
                   <Check className="w-4 h-4" />
-                  <span>Evet, Kiracı Buldum (İlanı Arşivle)</span>
+                  <span>{t.confirmRentBtn}</span>
                 </button>
               </div>
             </div>

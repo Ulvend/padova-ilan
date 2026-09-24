@@ -119,7 +119,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             onClick={handleToggleFav}
             className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full border border-stone-200 bg-stone-50 hover:bg-rose-50 active:scale-95 transition cursor-pointer"
             title={isFavorite ? t.unfavorite : t.favorite}
-            aria-label="Favori"
+            aria-label={t.favorite}
           >
             <Heart className={`w-4 h-4 transition-colors ${isFavorite ? 'fill-rose-600 text-rose-600' : 'text-stone-400'}`} />
           </button>
@@ -296,7 +296,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           {listing.hasBikeParking && (
             <span className="bg-emerald-50 text-emerald-800 border border-emerald-300/80 px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 shadow-2xs" title={listing.bikeParkingDetails || t.bikeParkingBadge}>
               <Bike className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-              <span>Posto Bici (Padova)</span>
+              <span>{t.bikeSpotShort}</span>
             </span>
           )}
 
@@ -312,15 +312,15 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           {listing.heatingType && (
             <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
               <Flame className="w-3 h-3 text-rose-600 shrink-0" />
-              <span>{listing.heatingType === 'autonomo' ? 'Otonom Kombi' : 'Merkezi Isıtma'}</span>
+              <span>{listing.heatingType === 'autonomo' ? t.heatingAutonomoShort : t.heatingCentralShort}</span>
             </span>
           )}
 
           {/* Klima */}
           {listing.hasAirConditioning && (
-            <span className="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-1 rounded-md font-medium flex items-center gap-1" title="Klima (A/C) Mevcut">
+            <span className="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-1 rounded-md font-medium flex items-center gap-1" title={t.acAvailable}>
               <Wind className="w-3 h-3 text-sky-600 shrink-0" />
-              <span>Klima</span>
+              <span>{t.acShort}</span>
             </span>
           )}
 
@@ -328,7 +328,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           {listing.hasWashingMachine && (
             <span className="bg-stone-100 text-stone-700 px-2 py-1 rounded-md font-medium flex items-center gap-1">
               <span>🧺</span>
-              <span>Çamaşır Mak.</span>
+              <span>{t.washerShort}</span>
             </span>
           )}
 

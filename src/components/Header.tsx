@@ -100,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
                 value={currentLang}
                 onChange={(e) => onLangChange(e.target.value as Language)}
                 className="bg-transparent text-xs sm:text-sm font-bold text-stone-800 outline-none cursor-pointer pr-1"
-                aria-label="Language Switcher"
+                aria-label={t.langSwitcherLabel}
               >
                 <option value="tr">TR (Türkçe)</option>
                 <option value="en">EN (English)</option>
@@ -144,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
                     : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
                 }`}
-                title="İlan arama ve radar ekranı"
+                title={t.searchScreenTitle}
               >
                 <Search className="w-4 h-4" />
                 <span>{t.homeNav}</span>
@@ -200,10 +200,10 @@ export const Header: React.FC<HeaderProps> = ({
                         ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
                         : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
                     }`}
-                    title="Kullanıcı Bildirimleri"
+                    title={t.notificationsNavTitle}
                   >
                     <Bell className="w-4 h-4 text-stone-600" />
-                    <span className="hidden md:inline">Bildirimler</span>
+                    <span className="hidden md:inline">{t.notificationsNav}</span>
                     {unreadNotificationsCount > 0 && (
                       <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">
                         {unreadNotificationsCount}
@@ -221,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
                           ? 'bg-amber-600 text-white border-amber-600 shadow-sm' 
                           : 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-200'
                       }`}
-                      title="UniPD Konut & Güvenlik Yönetim Masası"
+                      title={t.adminDeskTitle}
                     >
                       <ShieldCheck className="w-4 h-4 text-amber-600" />
                       <span className="font-bold">Admin</span>
@@ -315,7 +315,7 @@ export const Header: React.FC<HeaderProps> = ({
                           >
                             <div className="flex items-center gap-2.5">
                               <Bell className="w-4 h-4 text-stone-500" />
-                              <span>Bildirimler</span>
+                              <span>{t.notificationsNav}</span>
                             </div>
                             {unreadNotificationsCount > 0 && (
                               <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
@@ -336,7 +336,7 @@ export const Header: React.FC<HeaderProps> = ({
                               className="w-full text-left px-4 py-2.5 text-amber-900 bg-amber-50/70 hover:bg-amber-100 flex items-center gap-2.5 cursor-pointer transition font-bold"
                             >
                               <ShieldCheck className="w-4 h-4 text-amber-600" />
-                              <span>Yönetici Paneli (Admin)</span>
+                              <span>{t.adminPanelMenu}</span>
                             </button>
                           )}
 

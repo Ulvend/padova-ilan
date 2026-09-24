@@ -79,7 +79,7 @@ export const HomePage: React.FC = () => {
                 type="button"
                 onClick={() => setFilters((prev) => ({ ...prev, searchQuery: '' }))}
                 className="w-8 h-8 rounded-full flex items-center justify-center absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 font-bold"
-                aria-label="Clear search"
+                aria-label={t.clearSearch}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -164,6 +164,7 @@ export const HomePage: React.FC = () => {
       <RecentlyAddedSection
         listings={listings}
         t={t}
+        currentLang={currentLang}
         onOpenDetailPage={handleOpenDetailPage}
         onOpenPreviewModal={setPreviewModalListing}
       />
@@ -259,9 +260,7 @@ export const HomePage: React.FC = () => {
               </span>
               {filters.categoryTab === 'newest' && (
                 <span className="text-[10px] bg-orange-100 border border-orange-300 px-2 py-0.5 text-orange-900 font-bold rounded-full">
-                  {currentLang === 'tr' ? 'Son Eklenen 8 İlan' :
-                   currentLang === 'it' ? 'Ultimi 8 Annunci' :
-                   'Latest 8 Listings'}
+                  {t.latestEightTitle}
                 </span>
               )}
             </div>

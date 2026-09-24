@@ -9,8 +9,10 @@ import {
 } from '../../types';
 import { DISTRICT_COORDINATES_MAP } from '../../data/mockData';
 import { calculateNearestFaculty } from '../../services/geocodingService';
+import { landmarkLabel } from '../../utils/landmarkText';
 import { evaluateFairPrice } from '../../utils/fairPrice';
 import { WIZARD_TEXT, LANG_LOCALE } from '../../utils/wizardText';
+import { TRANSLATIONS } from '../../utils/translations';
 
 export type PhotoStatus = 'done' | 'uploading' | 'pending' | 'error';
 
@@ -175,7 +177,7 @@ export const districtFromCoords = (lat: number, lng: number): DistrictArea => {
 
 export const travelEstimate = (lat: number, lng: number, lang: Language) => {
   const n = calculateNearestFaculty(lat, lng, lang);
-  const name = n.landmarkName.split('(')[0].trim();
+  const name = landmarkLabel(n.landmarkName, '', lang).name;
   // Otobüs: ~15 km/s ortalama + 4 dk bekleme/yürüme payı. Yalnızca yaklaşık değer.
   const busMinutes = Math.max(4, Math.round(n.distanceMeters / 250) + 4);
   return { name, walkMinutes: n.walkMinutes, busMinutes, distanceMeters: n.distanceMeters, text: n.formattedText };
@@ -329,13 +331,13 @@ export const buildListing = (
     roomM2: Number(f.roomM2) || 0,
     apartmentM2: Number(f.apartmentM2) || 0,
     bathrooms: f.bathrooms,
-    confirmationTimeLeft: existing?.confirmationTimeLeft ?? '3 Gün Teyitli: 72s Kaldı',
+    confirmationTimeLeft: existing?.confirmationTimeLeft ?? TRANSLATIONS.tr.confirmed3Days,
     description: f.description.trim() || existing?.description || '',
     userId: existing?.userId ?? user?.id,
     poster: existing?.poster ?? {
       id: user?.id,
       username: user?.username || 'ogrenci',
-      name: user?.name || 'UniPD Öğrencisi',
+      name: user?.name || TRANSLATIONS[lang].defaultStudentName,
       avatar:
         user?.avatar ||
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',

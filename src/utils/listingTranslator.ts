@@ -1,4 +1,28 @@
 import { HousingListing, Language, ContractType, DistrictArea, RoomType } from '../types';
+import { localizedFairPriceText } from './fairPrice';
+import { calculateNearestFaculty } from '../services/geocodingService';
+import { WIZARD_TEXT } from './wizardText';
+import { TRANSLATIONS } from './translations';
+import { LANG_LOCALE } from './wizardText';
+
+// Kullanıcının yazdığı gider metni ("+€40 Giderler" / "Giderler dahil") kullanıcının diline çevrilir.
+// Kayıtlı teyit süresi metinleri sabit üç değerden biri olduğunda kullanıcının diline çevrilir.
+const localizeConfirmation = (value: string, lang: Language): string => {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const known: Record<string, string> = {
+    [TRANSLATIONS.tr.confirmed3Days]: t.confirmed3Days,
+    [TRANSLATIONS.tr.confirmed48h]: t.confirmed48h,
+    [TRANSLATIONS.tr.confirmedArchived]: t.confirmedArchived,
+  };
+  return known[value] ?? value;
+};
+
+const localizeExpenses = (expenses: string, lang: Language): string => {
+  if (!expenses) return expenses;
+  const w = WIZARD_TEXT[lang];
+  const amount = /(\d+(?:[.,]\d+)?)/.exec(expenses);
+  return amount ? `+€${amount[1]} ${w.expensesExtraText}` : w.expensesIncludedText;
+};
 
 export const CONTRACT_TYPE_TRANSLATIONS: Record<Language, Record<string, string>> = {
   tr: {
@@ -521,7 +545,7 @@ const LISTINGS_I18N: Record<string, ListingLocalization> = {
 /**
  * Returns a localized clone of a housing listing in the user's active language
  */
-export function getLocalizedListing(listing: HousingListing, lang: Language): HousingListing {
+function localizeListingBase(listing: HousingListing, lang: Language): HousingListing {
   const i18n = LISTINGS_I18N[listing.id];
   const localizedDistrict = DISTRICT_TRANSLATIONS[lang]?.[listing.district] || listing.district;
   const localizedContract = CONTRACT_TYPE_TRANSLATIONS[lang]?.[listing.contractType] || listing.contractType;
@@ -530,6 +554,14 @@ export function getLocalizedListing(listing: HousingListing, lang: Language): Ho
   if (!i18n) {
     return {
       ...listing,
+      fairPriceText: localizedFairPriceText(listing, lang),
+      expenses: localizeExpenses(listing.expenses, lang),
+      confirmationTimeLeft: localizeConfirmation(listing.confirmationTimeLeft, lang),
+      // Konum biliniyorsa yürüme süresi metni kullanıcının diliyle yeniden üretilir.
+      distanceToFaculty:
+        typeof listing.lat === 'number' && typeof listing.lng === 'number'
+          ? calculateNearestFaculty(listing.lat, listing.lng, lang).formattedText
+          : listing.distanceToFaculty,
       district: localizedDistrict as DistrictArea,
       contractType: localizedContract as ContractType,
       roomType: localizedRoomType,
@@ -549,5 +581,23 @@ export function getLocalizedListing(listing: HousingListing, lang: Language): Ho
     district: localizedDistrict as DistrictArea,
     contractType: localizedContract as ContractType,
     roomType: localizedRoomType,
+  };
+}
+
+// Sözleşme tarihleri ISO değerden kullanıcının diliyle yeniden biçimlenir (kayıtlı metin yazarın dilindedir).
+const formatIsoDate = (iso: string | undefined, lang: Language): string | undefined => {
+  const m = iso ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso) : null;
+  if (!m) return undefined;
+  return new Intl.DateTimeFormat(LANG_LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric' }).format(
+    new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  );
+};
+
+export function getLocalizedListing(listing: HousingListing, lang: Language): HousingListing {
+  const base = localizeListingBase(listing, lang);
+  return {
+    ...base,
+    contractStartDate: formatIsoDate(listing.contractStartISO, lang) ?? base.contractStartDate,
+    contractEndDate: formatIsoDate(listing.contractEndISO, lang) ?? base.contractEndDate,
   };
 }

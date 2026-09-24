@@ -1,4 +1,5 @@
 import { Language } from '../types';
+import { EXTRA_TEXT, ExtraText } from './uiText';
 
 export interface TranslationDictionary {
   radarBadge: string;
@@ -357,7 +358,7 @@ export interface TranslationDictionary {
   passwordHint: string;
 }
 
-export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
+const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
   tr: {
     radarBadge: 'CANLI RADAR',
     networkTitle: 'PADOVA GÜVENLİ ÖĞRENCİ AĞI',
@@ -2488,4 +2489,16 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     passwordStrengthStrong: 'मज़बूत पासवर्ड',
     passwordHint: 'पासवर्ड कम से कम 8 अक्षरों का होना चाहिए, जिसमें अक्षर और संख्याएं शामिल हों।',
   },
+};
+
+// Ana sözlük + arayüzde sonradan eklenen metinler (uiText.ts). Tüm bileşenler `t.anahtar` ile okur.
+export type FullDictionary = TranslationDictionary & ExtraText;
+
+export const TRANSLATIONS: Record<Language, FullDictionary> = {
+  tr: { ...BASE_TRANSLATIONS.tr, ...EXTRA_TEXT.tr },
+  en: { ...BASE_TRANSLATIONS.en, ...EXTRA_TEXT.en },
+  it: { ...BASE_TRANSLATIONS.it, ...EXTRA_TEXT.it },
+  de: { ...BASE_TRANSLATIONS.de, ...EXTRA_TEXT.de },
+  ru: { ...BASE_TRANSLATIONS.ru, ...EXTRA_TEXT.ru },
+  hi: { ...BASE_TRANSLATIONS.hi, ...EXTRA_TEXT.hi },
 };

@@ -36,9 +36,9 @@ export const ListingDetailPage: React.FC = () => {
           <Building2 className="w-8 h-8" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-xl font-bold text-stone-900">İlan Bulunamadı</h2>
+          <h2 className="text-xl font-bold text-stone-900">{t.listingNotFoundTitle}</h2>
           <p className="text-xs text-stone-500 max-w-sm mx-auto">
-            Aradığınız ilan ID'si ({id}) artık yayında olmayabilir veya kiralanmış olabilir.
+            {t.listingNotFoundBody.replace('{id}', id ?? '')}
           </p>
         </div>
         <div className="pt-2">
@@ -47,7 +47,7 @@ export const ListingDetailPage: React.FC = () => {
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-sm cursor-pointer"
           >
             <Home className="w-4 h-4" />
-            <span>{t.backToHome || 'Ana Sayfaya Dön'}</span>
+            <span>{t.backToHome}</span>
           </button>
         </div>
       </div>

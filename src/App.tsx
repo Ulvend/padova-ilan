@@ -92,6 +92,7 @@ const AppLayout: React.FC = () => {
     isAdmin,
     toast,
     dismissToast,
+    t,
   } = useApp();
 
   const handleNavigateView = (view: ActiveView) => {
@@ -274,7 +275,7 @@ const AppLayout: React.FC = () => {
             type="button"
             onClick={dismissToast}
             className="text-xs font-bold opacity-60 hover:opacity-100 cursor-pointer"
-            aria-label="Kapat"
+            aria-label={t.closeBtn}
           >
             ✕
           </button>

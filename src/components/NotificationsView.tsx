@@ -86,17 +86,17 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
   const getTypeLabel = (type: NotificationType) => {
     switch (type) {
       case 'message':
-        return currentLang === 'tr' ? 'Mesaj' : currentLang === 'it' ? 'Messaggio' : 'Message';
+        return t.notifTypeMessage;
       case 'listing':
-        return currentLang === 'tr' ? 'İlan Durumu' : currentLang === 'it' ? 'Annuncio' : 'Listing';
+        return t.notifTypeListing;
       case 'security':
-        return currentLang === 'tr' ? 'UniPD SSO / Güvenlik' : currentLang === 'it' ? 'Sicurezza SSO' : 'Security / SSO';
+        return t.notifTypeSecurity;
       case 'tenant':
-        return currentLang === 'tr' ? 'Kiracı & Eşleşme' : currentLang === 'it' ? 'Coinquilino' : 'Tenant';
+        return t.notifTypeTenant;
       case 'admin':
-        return currentLang === 'tr' ? 'Admin / Yetki' : currentLang === 'it' ? 'Admin' : 'Admin';
+        return t.notifTypeAdmin;
       default:
-        return currentLang === 'tr' ? 'Sistem' : 'System';
+        return t.notifTypeSystem;
     }
   };
 
@@ -119,18 +119,16 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl md:text-2xl font-bold tracking-tight text-stone-900">
-                  {currentLang === 'tr' ? 'Bildirimler' : currentLang === 'it' ? 'Notifiche' : 'Notifications'}
+                  {t.notificationsNav}
                 </h2>
                 {unreadCount > 0 && (
                   <span className="bg-orange-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {unreadCount} {currentLang === 'tr' ? 'Yeni' : 'New'}
+                    {unreadCount} {t.notifNewCount}
                   </span>
                 )}
               </div>
               <p className="text-xs text-stone-500 mt-0.5">
-                {currentLang === 'tr' ? 'Kişiselleştirilmiş ilan güncellemeleri, UniPD SSO doğrulamaları ve mesaj bildirimleri' :
-                 currentLang === 'it' ? 'Aggiornamenti personalizzati sugli annunci, verifiche SSO UniPD e notifiche dei messaggi' :
-                 'Personalized listing updates, UniPD SSO verifications, and direct message notifications'}
+                {t.notifSubtitle}
               </p>
             </div>
           </div>
@@ -145,7 +143,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
               className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 transition cursor-pointer flex items-center gap-1.5"
             >
               <CheckCheck className="w-4 h-4 text-emerald-600" />
-              <span>{currentLang === 'tr' ? 'Tümünü Okundu Say' : 'Mark all as read'}</span>
+              <span>{t.markAllRead}</span>
             </button>
           )}
 
@@ -156,7 +154,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
               className="px-3 py-2 text-xs font-semibold rounded-xl text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer flex items-center gap-1.5"
             >
               <Trash2 className="w-4 h-4" />
-              <span>{currentLang === 'tr' ? 'Tümünü Temizle' : 'Clear all'}</span>
+              <span>{t.clearAll}</span>
             </button>
           )}
         </div>
@@ -173,7 +171,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
               : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
           }`}
         >
-          {currentLang === 'tr' ? 'Tüm Bildirimler' : 'All'} ({notifications.length})
+          {t.notifFilterAll} ({notifications.length})
         </button>
 
         <button
@@ -186,7 +184,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
           }`}
         >
           <Building2 className="w-3.5 h-3.5" />
-          <span>{currentLang === 'tr' ? 'İlanlar' : 'Listings'}</span>
+          <span>{t.notifFilterListings}</span>
         </button>
 
         <button
@@ -199,7 +197,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
           }`}
         >
           <MessageSquare className="w-3.5 h-3.5" />
-          <span>{currentLang === 'tr' ? 'Mesajlar' : 'Messages'}</span>
+          <span>{t.notifFilterMessages}</span>
         </button>
 
         <button
@@ -212,7 +210,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
           }`}
         >
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span>{currentLang === 'tr' ? 'UniPD SSO' : 'UniPD SSO'}</span>
+          <span>UniPD SSO</span>
         </button>
 
         <button
@@ -236,12 +234,10 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
             <CheckCircle2 className="w-7 h-7 text-emerald-500" />
           </div>
           <h3 className="font-bold text-base text-stone-900">
-            {currentLang === 'tr' ? 'Yeni Bildiriminiz Yok' : currentLang === 'it' ? 'Nessuna nuova notifica' : 'No notifications'}
+            {t.noNotifTitle}
           </h3>
           <p className="text-xs text-stone-500 max-w-sm mx-auto">
-            {currentLang === 'tr' ? 'Tüm bildirimlerinizi okudunuz veya seçilen filtrede bildirim bulunmuyor.' :
-             currentLang === 'it' ? 'Hai letto tutte le tue notifiche o non ci sono elementi per il filtro selezionato.' :
-             'You have reviewed all your updates or there are no items under this category.'}
+            {t.noNotifBody}
           </p>
           <button
             type="button"
@@ -302,11 +298,11 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                         className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer"
                       >
                         <span>
-                          {notif.linkView === 'messages' ? (currentLang === 'tr' ? 'Mesajı Görüntüle' : 'Open Message') :
-                           notif.linkView === 'myListings' ? (currentLang === 'tr' ? 'İlanlarıma Git' : 'Go to My Listings') :
-                           notif.linkView === 'profile' ? (currentLang === 'tr' ? 'Profilimi Aç' : 'View Profile') :
-                           notif.linkView === 'admin' ? (currentLang === 'tr' ? 'Yönetici Masasını Aç' : 'Open Admin Panel') :
-                           (currentLang === 'tr' ? 'Detayları İncele' : 'View Details')}
+                          {notif.linkView === 'messages' ? t.notifOpenMessage :
+                           notif.linkView === 'myListings' ? t.notifGoMyListings :
+                           notif.linkView === 'profile' ? t.notifOpenProfile :
+                           notif.linkView === 'admin' ? t.notifOpenAdmin :
+                           t.notifViewDetails}
                         </span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
@@ -323,7 +319,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                   onDeleteNotification(notif.id);
                 }}
                 className="text-stone-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition cursor-pointer shrink-0"
-                title={currentLang === 'tr' ? 'Bildirimi Sil' : 'Delete'}
+                title={t.notifDelete}
               >
                 <Trash2 className="w-4 h-4" />
               </button>

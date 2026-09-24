@@ -72,7 +72,7 @@ export async function syncUserProfile(
     const now = new Date().toISOString();
     const { error: profileError } = await supabase.from('profiles').upsert({
       id: user.id,
-      name: (user.name || user.username || 'Padova Öğrencisi').slice(0, 100),
+      name: (user.name || user.username || 'UniPD Student').slice(0, 100),
       username: (user.username || user.email?.split('@')[0] || 'student').slice(0, 50),
       faculty: (user.faculty || 'Università degli Studi di Padova').slice(0, 150),
       bio: (user.bio || '').slice(0, 500),
@@ -97,7 +97,7 @@ export async function syncUserProfile(
 
 export async function updateUserProfilePhoto(userId: string, photoURL: string): Promise<void> {
   if (!photoURL.startsWith('https://')) {
-    throw new Error('Geçersiz profil fotoğrafı bağlantısı. Yalnızca HTTPS web bağlantıları kaydedilebilir.');
+    throw Object.assign(new Error('Invalid profile photo URL.'), { code: 'upload/bad-profile-url' });
   }
   const path = `profiles/${userId}`;
   try {

@@ -39,7 +39,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 
   // Formatted message time
   const messageTime = message.timestamp
-    ? (compact ? formatDeviceTime(message.timestamp) : formatDeviceRelativeDate(message.timestamp))
+    ? (compact ? formatDeviceTime(message.timestamp) : formatDeviceRelativeDate(message.timestamp, currentLang))
     : (message.time || formatDeviceTime());
 
   // Detect likely source language
@@ -312,7 +312,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                 ? 'bg-stone-800 text-stone-400' 
                 : 'bg-stone-100 text-stone-500'
             }`}
-            title={`Algılanan Dil: ${detectedMeta.name}`}
+            title={`${t.detectedLanguage}: ${detectedMeta.name}`}
           >
             {detectedMeta.flag} {initialDetected.toUpperCase()}
           </span>

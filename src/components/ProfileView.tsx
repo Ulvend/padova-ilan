@@ -60,14 +60,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
           <div className="space-y-1 max-w-md mx-auto">
             <h2 className="text-xl md:text-2xl font-bold text-stone-900">
-              {currentLang === 'tr' ? 'UniPD Konaklama Profilinize Giriş Yapın' :
-               currentLang === 'it' ? 'Accedi al tuo Profilo UniPD' :
-               'Sign In to Your UniPD Profile'}
+              {t.profileLoginTitle}
             </h2>
             <p className="text-xs sm:text-sm text-stone-500 leading-relaxed">
-              {currentLang === 'tr' 
-                ? 'İlan vermek, ev sahipleri ve oda arkadaşlarıyla doğrudan mesajlaşmak, favorilerinizi kaydetmek ve ev arkadaşı uyum profilinizi yönetmek için hesabınıza giriş yapın veya kayıt olun.'
-                : 'Sign in or create an account to post listings, message room owners directly, save favorites, and manage your roommate compatibility profile.'}
+              {t.profileLoginBody}
             </p>
           </div>
 
@@ -143,19 +139,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 {currentUser.role === 'superadmin' ? (
                   <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
                     <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Ana Admin (Super Admin)</span>
+                    <span>{t.superAdminLabel}</span>
                   </span>
                 ) : currentUser.role === 'admin' ? (
                   <span className="bg-blue-100 text-blue-900 border border-blue-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-blue-700" />
-                    <span>Yetkili Admin</span>
+                    <span>{t.authorizedAdminLabel}</span>
                   </span>
                 ) : null}
 
                 {currentUser.studentIdVerified && (
                   <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>UniPD Onaylı</span>
+                    <span>{t.studentCardVerified}</span>
                   </span>
                 )}
               </div>
@@ -168,7 +164,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     onClick={onOpenProfileSettings}
                     className="text-[11px] text-stone-500 hover:text-orange-600 font-medium underline cursor-pointer"
                   >
-                    (Departmanı Değiştir)
+                    {t.changeDepartment}
                   </button>
                 )}
               </div>
@@ -189,11 +185,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <div className="flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5 text-amber-600" />
               <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
-                Kullanıcı Kimliği (UID)
+                {t.userIdLabel}
               </span>
             </div>
             <p className="text-[11px] text-stone-500">
-              Yönetici (Admin) yetkisi almak için bu kimliği Ana Admin'e iletebilirsiniz.
+              {t.adminIdHint}
             </p>
           </div>
 
@@ -209,12 +205,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               {copiedHash ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Kopyalandı</span>
+                  <span>{t.copied}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Kopyala</span>
+                  <span>{t.copyBtn}</span>
                 </>
               )}
             </button>
@@ -233,7 +229,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   {t.profileSettingsTitle}
                 </h4>
                 <p className="text-[11px] text-stone-600">
-                  UniPD departmanınızı (32 resmi departman), profil fotoğrafınızı ve hesap şifrenizi dilediğiniz an buradan güncelleyebilirsiniz.
+                  {t.profileSettingsHint}
                 </p>
               </div>
             </div>
@@ -244,7 +240,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               className="px-4 py-2 bg-white hover:bg-orange-50 text-orange-950 border border-orange-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
             >
               <Settings className="w-3.5 h-3.5 text-orange-600" />
-              <span>Ayarları Aç</span>
+              <span>{t.openSettingsBtn}</span>
             </button>
           </div>
         )}
@@ -256,19 +252,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">Quiet Hours</span>
+              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefQuietHours}</span>
               <strong className="text-stone-900 block mt-0.5">{currentUser.compatibilityPreferences.quietHours}</strong>
             </div>
             <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">Habits</span>
+              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefHabits}</span>
               <strong className="text-stone-900 block mt-0.5">{currentUser.compatibilityPreferences.smoking}</strong>
             </div>
             <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">Study Rhythm</span>
+              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefStudyRhythm}</span>
               <strong className="text-stone-900 block mt-0.5">{currentUser.compatibilityPreferences.studyVibe}</strong>
             </div>
             <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">Cleanliness</span>
+              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefCleanliness}</span>
               <strong className="text-emerald-700 block mt-0.5">{currentUser.compatibilityPreferences.cleanlinessRating}</strong>
             </div>
           </div>

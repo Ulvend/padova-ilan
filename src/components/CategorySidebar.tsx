@@ -58,7 +58,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
               <button
                 onClick={() => onFilterChange({ searchQuery: '' })}
                 className="w-7 h-7 rounded-full flex items-center justify-center absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 font-bold text-xs"
-                aria-label="Clear search"
+                aria-label={t.clearSearch}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -193,11 +193,11 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
             onChange={(e) => onFilterChange({ contractStartDateFilter: e.target.value })}
             className="w-full min-h-[42px] border border-stone-200 px-3 bg-stone-50/60 rounded-xl outline-none text-xs text-stone-900 cursor-pointer focus:bg-white focus:border-stone-400 transition-colors"
           >
-            <option value="all">{currentLang === 'tr' ? 'Tüm Tarihler' : currentLang === 'it' ? 'Tutte le date' : 'All Dates'}</option>
+            <option value="all">{t.allDates}</option>
             <option value="immediate">{t.contractStartImmediate}</option>
-            <option value="october">{currentLang === 'tr' ? '1 Ekim (Güz Dönemi)' : currentLang === 'it' ? '1 Ottobre (Semestre Autunno)' : '1 October (Fall Semester)'}</option>
-            <option value="november">{currentLang === 'tr' ? '1 Kasım' : currentLang === 'it' ? '1 Novembre' : '1 November'}</option>
-            <option value="spring">{currentLang === 'tr' ? '1 Şubat (Bahar Dönemi)' : currentLang === 'it' ? '1 Febbraio (Semestre Primavera)' : '1 February (Spring Semester)'}</option>
+            <option value="october">{t.dateOctober}</option>
+            <option value="november">{t.dateNovember}</option>
+            <option value="spring">{t.dateSpring}</option>
           </select>
         </div>
 
@@ -221,7 +221,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
           />
           <div className="flex justify-between text-stone-400 font-medium text-[10px]">
             <span>€200</span>
-            <span>€500 (Ortalama)</span>
+            <span>€500 ({t.averageWord})</span>
             <span>€900+</span>
           </div>
         </div>

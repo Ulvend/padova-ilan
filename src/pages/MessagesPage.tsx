@@ -25,14 +25,10 @@ export const MessagesPage: React.FC = () => {
         </div>
         <div className="space-y-1">
           <h2 className="text-lg font-bold text-stone-900">
-            {currentLang === 'tr' ? 'Mesajlaşmak İçin Giriş Yapmalısınız' :
-             currentLang === 'it' ? 'Accesso Richiesto per Messaggiare' :
-             'Login Required to Message'}
+            {t.loginToMessageTitle}
           </h2>
           <p className="text-xs text-stone-600 max-w-md mx-auto leading-relaxed">
-            {currentLang === 'tr' 
-              ? 'Padova Güvenli Öğrenci Ağı kuralı gereğince, ilan sahipleri ve potansiyel ev arkadaşlarıyla mesajlaşabilmek için onaylı bir hesaba ve profile sahip olmanız gerekmektedir.' 
-              : 'According to the Padova Safe Student Network rules, messaging listing owners and roommates requires an active profile and verified account.'}
+            {t.loginToMessageBody}
           </p>
         </div>
         <div className="flex items-center justify-center gap-3 pt-3 flex-wrap">

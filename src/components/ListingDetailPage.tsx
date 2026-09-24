@@ -93,7 +93,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
     avgPriceDoppia: 310,
     canoneConcordatoRange: '€380 - €460',
     districtLabel: listing.district,
-    marketTrend: 'Padova öğrenci bölgesinde dengeli talep',
+    marketTrend: t.marketTrendDefault,
   };
 
   const isDoppia = listing.roomType === 'Doppia' || listing.roomType === 'Posto Letto';
@@ -154,10 +154,10 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               type="button"
               onClick={() => onEditListing?.(rawListing)}
               className="border border-amber-400 bg-amber-500 hover:bg-amber-600 text-white min-h-[42px] px-4 py-2 text-xs font-bold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5"
-              title="İlanı, fotoğrafları ve videoyu düzenle"
+              title={t.editListingTitle}
             >
               <Pencil className="w-4 h-4" />
-              <span>{currentLang === 'tr' ? 'İlanı Düzenle' : currentLang === 'it' ? 'Modifica Annuncio' : 'Edit Listing'}</span>
+              <span>{t.editListingBtn}</span>
             </button>
           )}
 
@@ -165,11 +165,11 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           <button
             type="button"
             onClick={() => {
-              const text = `${listing.title} - Padova Öğrenci İlanı:\n${window.location.href}`;
+              const text = `${listing.title} - ${t.shareTextPrefix}:\n${window.location.href}`;
               window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
             }}
             className="border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 min-h-[42px] px-3 py-2 text-xs font-semibold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5"
-            title="WhatsApp ile Paylaş"
+            title={t.shareWhatsAppTitle}
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-600" />
             <span className="hidden sm:inline">WhatsApp</span>
@@ -182,7 +182,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank');
             }}
             className="border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-800 min-h-[42px] px-3 py-2 text-xs font-semibold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5"
-            title="Facebook Grubunda Paylaş"
+            title={t.shareFacebookTitle}
           >
             <Share2 className="w-3.5 h-3.5 text-blue-600" />
             <span className="hidden sm:inline">Facebook</span>
@@ -195,7 +195,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             title={t.share}
           >
             {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-            <span>{copiedLink ? t.copied : 'Linki Kopyala'}</span>
+            <span>{copiedLink ? t.copied : t.copyLinkBtn}</span>
           </button>
 
           {/* Favorite button */}
@@ -456,7 +456,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           <div className="relative aspect-video sm:aspect-[16/9] md:aspect-[21/9] bg-stone-950 rounded-2xl overflow-hidden group">
             <img 
               src={listing.images[activePhotoIndex]} 
-              alt={`Foto ${activePhotoIndex + 1}`} 
+              alt={`${t.photoAlt} ${activePhotoIndex + 1}`} 
               className="w-full h-full object-cover transition-transform duration-300"
             />
 
@@ -547,7 +547,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     ? listing.images[1] || listing.images[0]
                     : listing.images[2] || listing.images[0]
                 }
-                alt="Video Tour Frame"
+                alt={t.liveVideoTour}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${
                   isPlayingVideo ? 'opacity-90 scale-105 transition-transform duration-1000' : 'opacity-70'
                 }`}
@@ -565,7 +565,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
 
               {/* Watermark */}
               <div className="absolute top-3 left-3 bg-stone-900/80 px-2.5 py-1 rounded-md text-[10px] text-stone-300">
-                UNIPD VERIFIED RECORDING #{listing.id}
+                {t.liveVerifiedFootage} #{listing.id}
               </div>
             </div>
 
@@ -637,16 +637,16 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   : 'border-stone-300 opacity-80 hover:opacity-100'
               }`}
             >
-              <img src={listing.images[0]} alt="Video Thumbnail" className="w-full h-full object-cover opacity-60" />
+              <img src={listing.images[0]} alt={t.videoTour30} className="w-full h-full object-cover opacity-60" />
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 text-white bg-purple-950/40">
                 <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center shadow-xs">
                   <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                 </div>
-                <span className="text-[9px] font-bold tracking-tight">30s Video Tur</span>
+                <span className="text-[9px] font-bold tracking-tight">{t.videoTour30}</span>
               </div>
               {activeMediaTab === 'video' && (
                 <span className="absolute bottom-0 inset-x-0 bg-purple-700 text-white text-[9px] font-bold text-center py-0.5">
-                  Oynatılıyor
+                  {t.playingNow}
                 </span>
               )}
             </button>
@@ -719,10 +719,10 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <Bike className={`w-4 h-4 shrink-0 mt-0.5 ${listing.hasBikeParking ? 'text-emerald-700' : 'text-stone-400'}`} />
                 <div>
                   <span className={`font-bold block ${listing.hasBikeParking ? 'text-emerald-950' : 'text-stone-700'}`}>
-                    Posto Bici (Padova)
+                    {t.bikeSpotShort}
                   </span>
                   <span className={`text-[11px] ${listing.hasBikeParking ? 'text-emerald-800' : 'text-stone-500'}`}>
-                    {listing.hasBikeParking ? (listing.bikeParkingDetails || t.bikeParkingBadge) : 'Bisiklet parkı yok'}
+                    {listing.hasBikeParking ? (listing.bikeParkingDetails || t.bikeParkingBadge) : t.noBikeParking}
                   </span>
                 </div>
               </div>
@@ -735,7 +735,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     {t.parkingLabel}
                   </span>
                   <span className={`text-[11px] ${listing.hasParking ? 'text-blue-800' : 'text-stone-500'}`}>
-                    {listing.hasParking ? (listing.parkingDetails || t.parkingBadge) : 'Özel otopark yok'}
+                    {listing.hasParking ? (listing.parkingDetails || t.parkingBadge) : t.noParking}
                   </span>
                 </div>
               </div>
@@ -746,7 +746,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <div>
                   <span className="text-stone-900 font-bold block">{t.airConditioningLabel}</span>
                   <span className="text-stone-600 text-[11px]">
-                    {listing.hasAirConditioning ? 'Klima (A/C) Mevcut' : 'Klima Yok'}
+                    {listing.hasAirConditioning ? t.acAvailable : t.acNo}
                   </span>
                 </div>
               </div>
@@ -757,7 +757,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <div>
                   <span className="text-stone-900 font-bold block">{t.washingMachineLabel}</span>
                   <span className="text-stone-600 text-[11px]">
-                    {listing.hasWashingMachine ? 'Çamaşır Makinesi Mevcut' : 'Ortak Çamaşırhane'}
+                    {listing.hasWashingMachine ? t.washerYes : t.washerNo}
                   </span>
                 </div>
               </div>
@@ -768,7 +768,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <div>
                   <span className="text-stone-900 font-bold block">{t.wifiLabel}</span>
                   <span className="text-stone-600 text-[11px]">
-                    {listing.hasWifi !== false ? 'Yüksek Hızlı Fiber Wi-Fi' : 'Wi-Fi Yok'}
+                    {listing.hasWifi !== false ? t.wifiLabel : t.wifiNo}
                   </span>
                 </div>
               </div>
@@ -816,14 +816,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     <td className="py-2.5 text-stone-400 font-medium uppercase">{t.bikeParkingLabel}</td>
                     <td className="py-2.5 font-semibold text-stone-800 flex items-center gap-1.5">
                       <Bike className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{listing.hasBikeParking ? (listing.bikeParkingDetails || t.bikeParkingBadge) : 'Yok'}</span>
+                      <span>{listing.hasBikeParking ? (listing.bikeParkingDetails || t.bikeParkingBadge) : t.noneValue}</span>
                     </td>
                   </tr>
                   <tr className="border-b border-stone-100">
                     <td className="py-2.5 text-stone-400 font-medium uppercase">{t.parkingLabel}</td>
                     <td className="py-2.5 font-semibold text-stone-800 flex items-center gap-1.5">
                       <Car className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{listing.hasParking ? (listing.parkingDetails || t.parkingBadge) : 'Yok'}</span>
+                      <span>{listing.hasParking ? (listing.parkingDetails || t.parkingBadge) : t.noneValue}</span>
                     </td>
                   </tr>
                   <tr className="border-b border-stone-100">
@@ -1059,7 +1059,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             className={`w-12 h-12 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl border transition active:scale-95 cursor-pointer ${
               isFavorite ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-stone-200 text-stone-700'
             }`}
-            title="Favori"
+            title={t.favorite}
           >
             <Heart className={`w-5 h-5 ${isFavorite ? 'fill-rose-600 text-rose-600' : ''}`} />
           </button>
@@ -1084,7 +1084,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           <div className="relative max-w-5xl max-h-[90vh]">
             <img 
               src={listing.images[activePhotoIndex]} 
-              alt="Zoomed" 
+              alt="" 
               className="max-h-[85vh] max-w-full object-contain rounded-xl shadow-2xl" 
             />
             <div className="text-center text-white/80 text-xs mt-3">

@@ -208,6 +208,8 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
               min={undefined}
               hintStart={w.pickStartFirst}
               hintEnd={w.pickEnd}
+              prevLabel={t.prevMonth}
+              nextLabel={t.nextMonth}
               onChange={(s, e) => set({ startDate: s, endDate: e })}
             />
           </div>

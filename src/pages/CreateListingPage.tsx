@@ -20,7 +20,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { HousingListing } from '../types';
 import { WIZARD_TEXT, fill } from '../utils/wizardText';
-import { uploadListingPhoto } from '../services/storageService';
+import { uploadListingPhoto, describeUploadError } from '../services/storageService';
 import { ListingCard } from '../components/ListingCard';
 import { Card, InfoBox, SectionTitle } from '../components/ui/kit';
 import {
@@ -136,7 +136,7 @@ const CreateListingPage: React.FC = () => {
       } catch (err) {
         console.error('Photo upload failed:', err);
         patchPhoto(item.id, { status: 'error', progress: 0 });
-        setSubmitError((err as Error)?.message || null);
+        setSubmitError(describeUploadError(err, lang));
         return false;
       }
     },

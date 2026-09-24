@@ -135,11 +135,11 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
               onChange={(e) => onFilterChange({ contractStartDateFilter: e.target.value })}
               className="w-full min-h-[46px] px-3 text-xs border border-stone-200 bg-stone-50/50 rounded-xl outline-none text-stone-900 cursor-pointer focus:bg-white focus:border-stone-400 transition-colors"
             >
-              <option value="all">{currentLang === 'tr' ? 'Tüm Tarihler' : currentLang === 'it' ? 'Tutte le date' : 'All Dates'}</option>
+              <option value="all">{t.allDates}</option>
               <option value="immediate">{t.contractStartImmediate}</option>
-              <option value="october">{currentLang === 'tr' ? '1 Ekim (Güz Dönemi)' : currentLang === 'it' ? '1 Ottobre (Semestre Autunno)' : '1 October (Fall Semester)'}</option>
-              <option value="november">{currentLang === 'tr' ? '1 Kasım' : currentLang === 'it' ? '1 Novembre' : '1 November'}</option>
-              <option value="spring">{currentLang === 'tr' ? '1 Şubat (Bahar Dönemi)' : currentLang === 'it' ? '1 Febbraio (Semestre Primavera)' : '1 February (Spring Semester)'}</option>
+              <option value="october">{t.dateOctober}</option>
+              <option value="november">{t.dateNovember}</option>
+              <option value="spring">{t.dateSpring}</option>
             </select>
           </div>
 

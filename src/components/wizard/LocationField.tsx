@@ -227,7 +227,7 @@ export const LocationField: React.FC<LocationFieldProps> = ({ value, onChange, l
         <button
           type="button"
           onClick={() => map.current?.setView([value.lat, value.lng], 16, { animate: true })}
-          aria-label="Recenter"
+          aria-label={t.mapCenter}
           className="absolute right-2.5 top-2.5 z-[400] flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-700 shadow-sm hover:text-orange-600 cursor-pointer"
         >
           <Crosshair className="h-4 w-4" />

@@ -1,5 +1,7 @@
 import { HousingListing } from '../types';
 import { DISTRICT_BENCHMARKS } from '../data/mockData';
+import { Language } from '../types';
+import { TRANSLATIONS } from './translations';
 
 type FairPrice = Pick<HousingListing, 'fairPriceStatus' | 'fairPriceText'>;
 
@@ -32,4 +34,24 @@ export function evaluateFairPrice(
     return { fairPriceStatus: 'higher', fairPriceText: `Bölge ortalamasının üstünde (ort. €${average})` };
   }
   return { fairPriceStatus: 'average', fairPriceText: `Bölge ortalamasında (ort. €${average})` };
+}
+
+/**
+ * Kayıtlı `fairPriceText` yayın anındaki dilde saklanır; gösterimde kullanıcının diline göre yeniden üretilir.
+ * Durum (`fairPriceStatus`) ve bölge ortalaması ilan verisinden okunur.
+ */
+export function localizedFairPriceText(
+  listing: Pick<HousingListing, 'fairPriceStatus' | 'district' | 'roomType'>,
+  lang: Language
+): string {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const benchmark = DISTRICT_BENCHMARKS[listing.district];
+  const average =
+    !benchmark ? undefined
+    : listing.roomType === 'Singola' ? benchmark.avgPriceSingola
+    : listing.roomType === 'Doppia' || listing.roomType === 'Posto Letto' ? benchmark.avgPriceDoppia
+    : undefined;
+  if (!average) return t.fairNoData;
+  const template = listing.fairPriceStatus === 'lower' ? t.fairBelow : listing.fairPriceStatus === 'higher' ? t.fairAbove : t.fairAt;
+  return template.replace('{avg}', String(average));
 }

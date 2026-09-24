@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { HelpCircle, Minus, Plus } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 
 // İlan sihirbazının ortak form bileşenleri. Renk: yalnızca orange / stone (+ durum için emerald, rose).
 // Tipografi: etiket 14px semibold, yardımcı metin 13px, gövde 16px (mobilde zoom olmasın diye).
@@ -29,7 +30,8 @@ export const SectionTitle: React.FC<{ children: React.ReactNode; hint?: string; 
   </div>
 );
 
-export const HelpTip: React.FC<{ children: React.ReactNode; label?: string }> = ({ children, label = 'Yardım' }) => {
+export const HelpTip: React.FC<{ children: React.ReactNode; label?: string }> = ({ children, label }) => {
+  const { t } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   const id = useId();
@@ -54,7 +56,7 @@ export const HelpTip: React.FC<{ children: React.ReactNode; label?: string }> = 
     <span ref={ref} className="relative inline-flex">
       <button
         type="button"
-        aria-label={label}
+        aria-label={label ?? t.helpLabel}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}

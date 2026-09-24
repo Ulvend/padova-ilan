@@ -11,11 +11,12 @@ import {
 } from 'lucide-react';
 import { HousingListing } from '../types';
 import { formatDeviceRelativeDate } from '../utils/deviceTime';
-import { TranslationDictionary } from '../utils/translations';
+import { FullDictionary } from '../utils/translations';
 
 interface RecentlyAddedSectionProps {
   listings: HousingListing[];
-  t: TranslationDictionary;
+  t: FullDictionary;
+  currentLang?: string;
   onOpenDetailPage: (listing: HousingListing) => void;
   onOpenPreviewModal?: (listing: HousingListing) => void;
 }
@@ -23,6 +24,7 @@ interface RecentlyAddedSectionProps {
 export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
   listings,
   t,
+  currentLang,
   onOpenDetailPage,
   onOpenPreviewModal,
 }) => {
@@ -74,7 +76,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
             id="scroll-recent-left"
             onClick={() => scroll('left')}
             className="w-7 h-7 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 flex items-center justify-center text-stone-600 transition cursor-pointer shadow-2xs"
-            aria-label="Scroll left"
+            aria-label={t.scrollLeft}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -83,7 +85,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
             id="scroll-recent-right"
             onClick={() => scroll('right')}
             className="w-7 h-7 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 flex items-center justify-center text-stone-600 transition cursor-pointer shadow-2xs"
-            aria-label="Scroll right"
+            aria-label={t.scrollRight}
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -116,7 +118,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
                 {/* Newly Added Pill */}
                 <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5 bg-stone-900/80 backdrop-blur-xs text-white text-[9px] font-semibold px-1.5 py-0.5 rounded shadow-xs">
                   <Clock className="w-2.5 h-2.5 text-orange-400" />
-                  <span>{createdMs(listing) ? formatDeviceRelativeDate(createdMs(listing)) : 'Yeni'}</span>
+                  <span>{createdMs(listing) ? formatDeviceRelativeDate(createdMs(listing), currentLang) : t.recentlyAddedBadge}</span>
                 </div>
 
                 {/* Quick Preview Button */}

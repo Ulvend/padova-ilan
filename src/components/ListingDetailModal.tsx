@@ -111,7 +111,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
             <button
               onClick={handleShare}
               className="p-2 hover:bg-stone-800 text-stone-300 hover:text-white transition rounded-lg cursor-pointer"
-              title={copied ? 'Kopyalandı' : 'Paylaş'}
+              title={copied ? t.copied : t.share}
             >
               {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
             </button>
@@ -122,7 +122,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
                 onToggleFavorite?.(listing.id);
               }}
               className="p-2 hover:bg-stone-800 text-stone-300 hover:text-white transition rounded-lg cursor-pointer"
-              title="Favori"
+              title={t.favorite}
             >
               <Heart className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-stone-300'}`} />
             </button>
@@ -300,7 +300,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
               {listing.hasBikeParking && (
                 <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md font-semibold text-[11px] flex items-center gap-1">
                   <Bike className="w-3 h-3 text-emerald-700" />
-                  <span>Posto Bici (Padova)</span>
+                  <span>{t.bikeSpotShort}</span>
                 </span>
               )}
               {listing.hasParking && (
@@ -323,7 +323,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
               )}
               {listing.hasWashingMachine && (
                 <span className="bg-white border border-stone-200 text-stone-700 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
-                  <span>🧺 Çamaşır Mak.</span>
+                  <span>🧺 {t.washerShort}</span>
                 </span>
               )}
               {listing.hasWifi !== false && (

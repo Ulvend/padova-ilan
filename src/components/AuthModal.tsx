@@ -213,7 +213,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       finishLogin();
     } catch (err: any) {
       console.error('Google Auth Error:', err);
-      setAuthError(describeAuthError(err));
+      setAuthError(describeAuthError(err, currentLang));
     } finally {
       setIsGoogleAuthenticating(false);
     }
@@ -227,7 +227,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       finishLogin();
     } catch (err: any) {
       console.error('Apple Auth Error:', err);
-      setAuthError(describeAuthError(err));
+      setAuthError(describeAuthError(err, currentLang));
     } finally {
       setIsAppleAuthenticating(false);
     }
@@ -292,7 +292,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setCountdown(60);
         setMode('verify');
       } else {
-        setAuthError(describeAuthError(err));
+        setAuthError(describeAuthError(err, currentLang));
       }
     } finally {
       setIsSubmitting(false);
@@ -322,7 +322,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setCountdown(60);
       setMode('verify');
     } catch (err) {
-      setAuthError(describeAuthError(err));
+      setAuthError(describeAuthError(err, currentLang));
     } finally {
       setIsSubmitting(false);
     }
@@ -337,7 +337,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       // Supabase, hesap var/yok bilgisini sızdırmamak için var olmayan e-postalarda da başarı döner.
       await sendResetPasswordEmail(email);
     } catch (err: any) {
-      setAuthError(describeAuthError(err));
+      setAuthError(describeAuthError(err, currentLang));
       setIsSubmitting(false);
       return;
     }
@@ -360,7 +360,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setCountdown(60);
       setCanResend(false);
     } catch (err) {
-      setAuthError(describeAuthError(err));
+      setAuthError(describeAuthError(err, currentLang));
     } finally {
       setIsSubmitting(false);
     }
@@ -384,7 +384,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       );
       setTimeout(finishLogin, 1200);
     } catch (err) {
-      setAuthError(describeAuthError(err));
+      setAuthError(describeAuthError(err, currentLang));
     } finally {
       setIsSubmitting(false);
     }
@@ -413,7 +413,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               )}
             </span>
             <span className="font-bold text-sm text-stone-900 tracking-tight">
-              {mode === 'register' ? t.registerNav : mode === 'login' ? t.loginNav : mode === 'verify' ? 'E-posta Doğrulama' : t.forgotPasswordNav}
+              {mode === 'register' ? t.registerNav : mode === 'login' ? t.loginNav : mode === 'verify' ? t.authVerifyTitle : t.forgotPasswordNav}
             </span>
           </div>
           <button
@@ -434,18 +434,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <div className="space-y-0.5">
                 <strong className="block font-bold text-amber-900">
-                  {currentLang === 'tr' ? 'Mesajlaşmak İçin Giriş Yapmalısınız' :
-                   currentLang === 'it' ? 'Accesso Richiesto per Messaggiare' :
-                   currentLang === 'de' ? 'Konto für Nachrichten erforderlich' :
-                   currentLang === 'ru' ? 'Для сообщений требуется профиль' :
-                   currentLang === 'hi' ? 'मैसेज करने के लिए लॉगिन आवश्यक है' :
-                   'Account Required to Message'}
+                  {t.loginToMessageTitle}
                 </strong>
                 <p className="text-[11px] text-amber-800 leading-snug">
-                  {currentLang === 'tr' ? 'Padova güvenli öğrenci topluluğunda ilan sahipleri ve ev arkadaşlarıyla mesajlaşabilmek için onaylı bir hesaba ve profile sahip olmanız gerekmektedir.' :
-                   currentLang === 'it' ? 'Per la sicurezza della comunità studentesca di Padova, per messaggiare con i coinquilini e proprietari è necessario un profilo attivo.' :
-                   currentLang === 'de' ? 'Für die Sicherheit der Studenten in Padua ist ein aktives Profil erforderlich, um Nachrichten zu senden.' :
-                   'To message listing owners and roommates safely in Padova, an active student profile is required.'}
+                  {t.loginToMessageBody}
                 </p>
               </div>
             </div>
@@ -459,20 +451,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <div className="space-y-0.5">
                 <strong className="block font-bold text-orange-900">
-                  {currentLang === 'tr' ? 'İlan Oluşturmak İçin Kayıt Olmalısınız' :
-                   currentLang === 'it' ? 'Registrazione Richiesta per Creare un Annuncio' :
-                   currentLang === 'de' ? 'Registrierung erforderlich, um ein Inserat zu erstellen' :
-                   currentLang === 'ru' ? 'Для создания объявления требуется регистрация' :
-                   currentLang === 'hi' ? 'विज्ञापन बनाने के लिए पंजीकरण आवश्यक है' :
-                   'Registration Required to Create a Listing'}
+                  {t.createListingAuthTitle}
                 </strong>
                 <p className="text-[11px] text-orange-800 leading-snug">
-                  {currentLang === 'tr' ? 'Padova güvenli öğrenci ağına yeni bir oda veya ev ilanı ekleyebilmek için lütfen kayıt olun veya hesabınıza giriş yapın.' :
-                   currentLang === 'it' ? 'Per aggiungere un nuovo annuncio di stanza o alloggio nella rete studentesca di Padova, registrati o accedi con il tuo account.' :
-                   currentLang === 'de' ? 'Um ein neues Zimmer- oder Wohnungsangebot im Paduaner Studentennetzwerk aufzugeben, registrieren Sie sich bitte oder melden Sie sich an.' :
-                   currentLang === 'ru' ? 'Чтобы добавить новое объявление о комнате или квартире в сеть студентов Падуи, пожалуйста, зарегистрируйтесь или войдите в систему.' :
-                   currentLang === 'hi' ? 'पदुवा छात्र नेटवर्क में नया कमरा या आवास विज्ञापन जोड़ने के लिए, कृपया पंजीकरण करें या लॉगिन करें।' :
-                   'To publish a new room or housing listing in the Padova student network, please register or sign in to your account.'}
+                  {t.createListingAuthBody}
                 </p>
               </div>
             </div>
@@ -607,7 +589,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       ref={emailInputRef}
-                      placeholder={unipdOnly ? 'ad.soyad@studenti.unipd.it' : 'ornek@email.com'}
+                      placeholder={unipdOnly ? 'ad.soyad@studenti.unipd.it' : t.emailPlaceholder}
                       className="w-full min-h-[44px] px-3.5 pl-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                     />
                     <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -818,7 +800,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
-                      placeholder="Ad Soyad"
+                      placeholder={t.fullNameLabel}
                       className="w-full min-h-[42px] px-3.5 pl-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                     />
                     <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -837,7 +819,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       ref={emailInputRef}
-                      placeholder={unipdOnly ? 'ad.soyad@studenti.unipd.it' : 'ornek@email.com'}
+                      placeholder={unipdOnly ? 'ad.soyad@studenti.unipd.it' : t.emailPlaceholder}
                       className="w-full min-h-[42px] px-3.5 pl-10 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                     />
                     <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -851,9 +833,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-semibold text-stone-700">
-                      {t.facultyLabel} (UniPD Resmi Departmanları)
+                      {t.facultyLabel} {t.departmentsSuffix}
                     </label>
-                    <span className="text-[10px] text-orange-600 font-bold">32 Departman</span>
+                    <span className="text-[10px] text-orange-600 font-bold">{t.departmentsCount}</span>
                   </div>
                   <div className="relative">
                     <select
@@ -876,7 +858,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <ChevronDown className="w-4 h-4 text-stone-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                   <p className="text-[11px] text-stone-400">
-                    Öğrenim gördüğünüz veya araştırma yaptığınız UniPD departmanını seçin.
+                    {t.departmentPickHint}
                   </p>
                 </div>
 
@@ -1027,7 +1009,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-left text-xs text-amber-900 space-y-1">
                 <div className="flex items-center gap-1.5 font-bold">
                   <Info className="w-4 h-4 text-amber-700 shrink-0" />
-                  <span>Güvenlik Hatırlatması</span>
+                  <span>{t.securityReminder}</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-amber-800">
                   {t.resetLinkSentNote}
@@ -1082,10 +1064,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <h3 className="text-xl font-bold text-stone-900 tracking-tight">E-postanı doğrula</h3>
+                <h3 className="text-xl font-bold text-stone-900 tracking-tight">{t.verifyEmailHeading}</h3>
                 <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto">
-                  Aşağıdaki adrese bir doğrulama linki gönderdik. Linke tıkladıktan sonra "Doğruladım" butonuna bas.
-                  {isUniPdEmail(email) && ' Doğrulama tamamlanınca hesabın UniPD Onaylı rozetini alır.'}
+                  {t.verifyEmailBody}
+                  {isUniPdEmail(email) && ` ${t.verifyUniPdNote}`}
                 </p>
               </div>
 
@@ -1110,7 +1092,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               )}
 
               <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-left text-[11px] text-amber-800 leading-relaxed">
-                E-posta gelmediyse spam/gereksiz klasörünü kontrol et. Doğrulamadan giriş yapabilirsin ama ilan vermek ve mesaj göndermek için doğrulama gerekir.
+                {t.verifyEmailSpam}
               </div>
 
               <div className="space-y-3">
@@ -1121,7 +1103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white min-h-[44px] rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  <span>Doğruladım</span>
+                  <span>{t.iVerified}</span>
                 </button>
 
                 <div className="text-xs text-stone-500">
@@ -1132,7 +1114,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       disabled={isSubmitting}
                       className="font-bold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer disabled:opacity-50"
                     >
-                      Doğrulama e-postasını tekrar gönder
+                      {t.resendVerifyEmail}
                     </button>
                   ) : (
                     <span>
@@ -1146,7 +1128,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClick={finishLogin}
                   className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 min-h-[42px] rounded-xl text-xs font-bold transition cursor-pointer"
                 >
-                  Daha sonra doğrulayacağım
+                  {t.verifyLater}
                 </button>
               </div>
             </div>

@@ -19,7 +19,7 @@ import {
 import { Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
-import { uploadProfilePhoto } from '../services/storageService';
+import { uploadProfilePhoto, describeUploadError } from '../services/storageService';
 import { updateUserProfilePhoto } from '../services/supabaseService';
 import { supabase, changePassword, describeAuthError } from '../lib/supabase';
 
@@ -95,13 +95,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setPhotoError('Lütfen geçerli bir görsel dosyası seçin (PNG, JPG, WEBP).');
+      setPhotoError(t.errNotImage);
       return;
     }
 
     // 10MB limit before client compression
     if (file.size > 10 * 1024 * 1024) {
-      setPhotoError('Görsel boyutu 10 MB\'tan küçük olmalıdır.');
+      setPhotoError(t.errImageTooBig);
       return;
     }
 
@@ -125,7 +125,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
   const handleSavePhoto = async () => {
     if (!photoFile) {
-      setPhotoError('Lütfen önce bir fotoğraf seçin.');
+      setPhotoError(t.errPickPhotoFirst);
       return;
     }
 
@@ -137,7 +137,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       // 1. Upload to Supabase Storage (compressed client-side, returning secure HTTPS URL)
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const userId = currentUser.id || authUser?.id;
-      if (!userId) throw new Error('Fotoğraf yüklemek için giriş yapmalısınız.');
+      if (!userId) throw Object.assign(new Error('Sign in to upload.'), { code: 'upload/need-login' });
       const downloadUrl = await uploadProfilePhoto(photoFile, userId, (progress) => {
         setUploadProgress(progress);
       });
@@ -170,7 +170,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       }
     } catch (err: any) {
       console.error('Failed to upload profile photo:', err);
-      setPhotoError(err.message || 'Fotoğraf yüklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+      setPhotoError(describeUploadError(err, currentLang));
     } finally {
       setIsSavingPhoto(false);
       setUploadProgress(0);
@@ -233,7 +233,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setPasswordError(describeAuthError(err));
+      setPasswordError(describeAuthError(err, currentLang));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -355,13 +355,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 </div>
                 <div className="space-y-0.5 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-stone-900">Mevcut Departman:</span>
+                    <span className="text-xs font-bold text-stone-900">{t.currentDept}</span>
                     <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
                       UniPD
                     </span>
                   </div>
                   <p className="text-xs text-orange-600 font-semibold truncate">
-                    {currentUser.faculty || 'Seçilmemiş'}
+                    {currentUser.faculty || t.notSelected}
                   </p>
                   <p className="text-[11px] text-stone-500 truncate">
                     @{currentUser.username} • {currentUser.email}
@@ -374,7 +374,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 animate-in fade-in">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span className="font-semibold">
-                    Padova Üniversitesi departmanınız başarıyla güncellendi! Profilinizde ve ilanlarınızda hemen yansıtıldı.
+                    {t.deptUpdated}
                   </span>
                 </div>
               )}
@@ -383,9 +383,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide">
-                    Padova Üniversitesi Resmi Departmanı (32 Seçenek)
+                    {t.officialDeptTitle}
                   </label>
-                  <span className="text-[11px] text-stone-400 font-medium">8 Fakülte / Okul</span>
+                  <span className="text-[11px] text-stone-400 font-medium">{t.schools8}</span>
                 </div>
 
                 <div className="relative">
@@ -418,7 +418,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                       <div className="flex items-center justify-between text-orange-950 font-bold">
                         <span>{currentObj.school}</span>
                         <span className="bg-orange-200/80 text-orange-900 px-2 py-0.5 rounded-md text-[10px] uppercase font-mono">
-                          Kod: {currentObj.code}
+                          {t.codeLabel}: {currentObj.code}
                         </span>
                       </div>
                       <p className="text-[11px] text-stone-600">
@@ -429,7 +429,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 })()}
 
                 <p className="text-[11px] text-stone-400 leading-relaxed pt-1">
-                  Seçtiğiniz departman, diğer UniPD öğrencileriyle olan eşleşme yüzdelerinizi (Uyumluluk Analizi) ve fakülteye olan yürüme mesafesi hesaplamalarını otomatik olarak optimize eder.
+                  {t.deptMatchNote}
                 </p>
               </div>
 
@@ -443,12 +443,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   {isSavingDepartment ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Kaydediliyor...</span>
+                      <span>{t.savingDots}</span>
                     </>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Departmanı Güncelle</span>
+                      <span>{t.updateDept}</span>
                     </>
                   )}
                 </button>
@@ -468,7 +468,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     alt={currentUser.name}
                     className="w-20 h-20 rounded-full object-cover border-2 border-orange-500 shadow-sm"
                   />
-                  <span className="absolute -bottom-1 -right-1 bg-emerald-600 text-white p-1 rounded-full border-2 border-white shadow-xs" title="Doğrulanmış Profil">
+                  <span className="absolute -bottom-1 -right-1 bg-emerald-600 text-white p-1 rounded-full border-2 border-white shadow-xs" title={t.unipdVerifiedProfile}>
                     <ShieldCheck className="w-3.5 h-3.5" />
                   </span>
                 </div>
@@ -549,7 +549,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                     <span className="text-xs font-semibold text-stone-700">{t.newPhotoPreview}:</span>
                     <img
                       src={previewPhoto}
-                      alt="Yeni fotoğraf"
+                      alt={t.newPhotoAlt}
                       className="w-9 h-9 rounded-full object-cover border border-stone-300"
                     />
                     <button
@@ -586,7 +586,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
               {isSavingPhoto && uploadProgress > 0 && (
                 <div className="p-3 bg-orange-50/70 border border-orange-200/60 rounded-xl space-y-1.5 animate-in fade-in">
                   <div className="flex items-center justify-between text-xs text-orange-900 font-semibold">
-                    <span>Bulut Depolamaya Aktarılıyor...</span>
+                    <span>{t.uploadingCloud}</span>
                     <span>%{uploadProgress}</span>
                   </div>
                   <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
@@ -672,7 +672,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 {newPassword && (
                   <div className="space-y-1 pt-1">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-stone-500">Güvenlik Seviyesi:</span>
+                      <span className="text-stone-500">{t.securityLevel}:</span>
                       <span className="font-bold text-stone-700">{passStrength.label}</span>
                     </div>
                     <div className="h-1.5 w-full bg-stone-200 rounded-full overflow-hidden flex gap-1">

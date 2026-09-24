@@ -1,4 +1,6 @@
 import { UNIPD_LANDMARKS, DISTRICT_COORDINATES_MAP } from '../data/mockData';
+import { landmarkLabel } from '../utils/landmarkText';
+import type { Language } from '../types';
 
 export interface GeocodeResult {
   lat: number;
@@ -304,16 +306,21 @@ export const calculateNearestFaculty = (
     }
   }
 
+  const landmarkName = landmarkLabel(nearest.name, nearest.type, (lang as Language) in { tr: 1, en: 1, it: 1, de: 1, ru: 1, hi: 1 } ? (lang as Language) : 'tr').name;
   const walkMinutes = Math.max(1, Math.round(minDistance / 75)); // ~75m/min walking speed through historical streets
   const distFormatted = minDistance < 1000 ? `${minDistance}m` : `${(minDistance / 1000).toFixed(1)} km`;
 
-  let formattedText = `${nearest.name.split('(')[0].trim()}: ${distFormatted} (${walkMinutes} dk yürüme)`;
+  let formattedText = `${landmarkName}: ${distFormatted} (${walkMinutes} dk yürüme)`;
   if (lang === 'it') {
-    formattedText = `${nearest.name.split('(')[0].trim()}: ${distFormatted} (${walkMinutes} min a piedi)`;
+    formattedText = `${landmarkName}: ${distFormatted} (${walkMinutes} min a piedi)`;
   } else if (lang === 'en') {
-    formattedText = `${nearest.name.split('(')[0].trim()}: ${distFormatted} (${walkMinutes} min walk)`;
+    formattedText = `${landmarkName}: ${distFormatted} (${walkMinutes} min walk)`;
   } else if (lang === 'de') {
-    formattedText = `${nearest.name.split('(')[0].trim()}: ${distFormatted} (${walkMinutes} Min. zu Fuß)`;
+    formattedText = `${landmarkName}: ${distFormatted} (${walkMinutes} Min. zu Fuß)`;
+  } else if (lang === 'ru') {
+    formattedText = `${landmarkName}: ${distFormatted} (${walkMinutes} мин пешком)`;
+  } else if (lang === 'hi') {
+    formattedText = `${landmarkName}: ${distFormatted} (${walkMinutes} मिनट पैदल)`;
   }
 
   return {

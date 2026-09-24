@@ -58,8 +58,8 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
 
   // Yalnızca ilan sahibinin eklediği videolar gösterilir (örnek videolara düşülmez).
   const angleLabels: Record<VideoAngleId, string> = {
-    room: t.videoAngleWide || 'Geniş Açı Oda',
-    desk: t.videoAngleDesk || 'Çalışma Masası',
+    room: t.videoAngleWide,
+    desk: t.videoAngleDesk,
     kitchen: t.videoAngleShared || 'Mutfak / Ortak',
     view: 'Balkon / Manzara',
   };
@@ -183,13 +183,13 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
     return (
       <div className="fixed inset-0 z-50 bg-stone-950/80 flex items-center justify-center p-4" onClick={onClose}>
         <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center space-y-3" onClick={(e) => e.stopPropagation()}>
-          <p className="text-sm font-bold text-stone-900">Bu ilan için video tur eklenmemiş.</p>
+          <p className="text-sm font-bold text-stone-900">{t.videoNone}</p>
           <button
             type="button"
             onClick={onClose}
             className="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-bold cursor-pointer"
           >
-            Kapat
+            {t.closeBtn}
           </button>
         </div>
       </div>
@@ -218,7 +218,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
                 <h4 className="font-bold text-sm text-stone-100">{t.liveVideoTour}</h4>
                 <span className="text-[10px] bg-red-500/90 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
-                  CANLI HD TUR
+                  {t.liveHdTour}
                 </span>
               </div>
               <p className="text-[11px] text-stone-400 truncate max-w-sm sm:max-w-md">
@@ -231,7 +231,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
             <button
               onClick={toggleFullscreen}
               className="p-2 text-stone-400 hover:text-stone-100 hover:bg-stone-800 rounded-xl transition cursor-pointer"
-              title="Tam Ekran"
+              title={t.fullscreen}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -304,7 +304,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
             <div className="bg-black/70 backdrop-blur-md text-stone-200 px-3 py-1 rounded-xl border border-white/10 flex items-center gap-1.5 shadow-lg">
               <Compass className="w-3.5 h-3.5 text-orange-400 animate-spin" style={{ animationDuration: '8s' }} />
               <span className="font-mono text-[10px]">
-                360° Açı: {Math.round(panOffset + 180)}°
+                {t.angle360}: {Math.round(panOffset + 180)}°
               </span>
             </div>
           </div>
@@ -314,7 +314,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-2xs">
               <div className="p-3 bg-stone-900/90 rounded-2xl border border-stone-700 flex items-center gap-2.5 text-xs text-stone-200 shadow-xl">
                 <RefreshCw className="w-4 h-4 animate-spin text-orange-500" />
-                <span>Video akışı yükleniyor...</span>
+                <span>{t.videoLoading}</span>
               </div>
             </div>
           )}
@@ -323,8 +323,8 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
           {hasError && (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
               <div className="p-4 bg-stone-900/95 rounded-2xl border border-red-500/40 text-center max-w-sm space-y-2">
-                <p className="text-xs text-red-400 font-bold">Video akışı geçici olarak yüklenemedi.</p>
-                <p className="text-[11px] text-stone-400">Yedek 360° fotoğraf modu devrede.</p>
+                <p className="text-xs text-red-400 font-bold">{t.videoLoadFail}</p>
+                <p className="text-[11px] text-stone-400">{t.fallback360}</p>
                 <button
                   onClick={() => {
                     setHasError(false);
@@ -333,7 +333,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
                   }}
                   className="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-semibold cursor-pointer"
                 >
-                  Tekrar Dene
+                  {t.retryBtn}
                 </button>
               </div>
             </div>
@@ -355,7 +355,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
           <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-80 group-hover:opacity-100 transition">
             <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] text-stone-300 flex items-center gap-1.5 shadow-md">
               <RotateCcw className="w-3 h-3 text-orange-400" />
-              <span>360° döndürmek için sağa-sola kaydırın</span>
+              <span>{t.dragToRotate}</span>
               <RotateCw className="w-3 h-3 text-orange-400" />
             </div>
           </div>
@@ -383,7 +383,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
                   type="button"
                   onClick={togglePlay}
                   className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer"
-                  title={isPlaying ? 'Durdur' : 'Oynat'}
+                  title={isPlaying ? t.videoPause : t.videoPlay}
                 >
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5 fill-current" />}
                 </button>
@@ -392,7 +392,7 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
                   type="button"
                   onClick={toggleMute}
                   className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer"
-                  title={isMuted ? 'Sesi Aç' : 'Sesi Kapat'}
+                  title={isMuted ? t.muteOff : t.muteOn}
                 >
                   {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
                 </button>
@@ -411,10 +411,10 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
                   type="button"
                   onClick={() => setPanOffset((p) => Math.max(-50, p - 15))}
                   className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-medium text-stone-300 flex items-center gap-1 transition cursor-pointer"
-                  title="Sola Döndür"
+                  title={t.rotateLeft}
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>Sola</span>
+                  <span>{t.leftShort}</span>
                 </button>
 
                 <button
@@ -423,19 +423,19 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
                   className={`px-2 py-1 rounded-lg text-[10px] font-medium flex items-center gap-1 transition cursor-pointer ${
                     isAutoPan ? 'bg-orange-600 text-white font-bold' : 'bg-white/10 text-stone-300 hover:bg-white/20'
                   }`}
-                  title="Otomatik 360° Tarama"
+                  title={t.autoScan}
                 >
                   <Compass className="w-3 h-3" />
-                  <span>Oto-360°</span>
+                  <span>{t.auto360}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPanOffset((p) => Math.min(50, p + 15))}
                   className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-medium text-stone-300 flex items-center gap-1 transition cursor-pointer"
-                  title="Sağa Döndür"
+                  title={t.rotateRight}
                 >
-                  <span>Sağa</span>
+                  <span>{t.rightShort}</span>
                   <RotateCw className="w-3 h-3" />
                 </button>
               </div>
@@ -448,9 +448,9 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
           <div className="flex items-center justify-between text-xs">
             <span className="text-stone-400 text-[11px] font-medium flex items-center gap-1">
               <Eye className="w-3.5 h-3.5 text-orange-400" />
-              <span>{t.cameraAngleLabel || 'Kamera Açıları (Daire İçi Çekim)'}:</span>
+              <span>{t.cameraAnglesTitle}:</span>
             </span>
-            <span className="text-[10px] text-stone-500 font-mono">4 Aktif Nokta</span>
+            <span className="text-[10px] text-stone-500 font-mono">{t.activePoints}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -486,11 +486,11 @@ const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { l
           <div className="flex items-center gap-2 text-emerald-400">
             <ShieldCheck className="w-4 h-4 shrink-0" />
             <span className="font-semibold text-[11px]">
-              {t.fieldOfficerVerified || 'Saha Yetkilisi Onaylı: Görsel ve fiziki koşullar Padova Üniversitesi standartlarına uygundur.'}
+              {t.fieldOfficerVerified}
             </span>
           </div>
           <span className="text-[10px] text-stone-500 font-mono">
-            Doğrulama ID: #VRF-{listing.id}
+            {t.verificationId}: #VRF-{listing.id}
           </span>
         </div>
 

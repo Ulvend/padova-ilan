@@ -1,4 +1,23 @@
 import { supabase } from '../lib/supabase';
+import type { Language } from '../types';
+import { TRANSLATIONS } from '../utils/translations';
+
+const coded = (code: string, message: string) => Object.assign(new Error(message), { code });
+
+/** Yükleme hatasını kullanıcının diline çevirir; bilinmeyen hatalarda genel mesaj döner. */
+export function describeUploadError(err: unknown, lang: Language = 'tr'): string {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  switch ((err as { code?: string })?.code) {
+    case 'upload/process': return t.errImageProcess;
+    case 'upload/denied': return t.errUploadDenied;
+    case 'upload/bad-url': return t.errBadDownloadUrl;
+    case 'upload/no-file': return t.errNoFile;
+    case 'upload/need-login': return t.errNeedLoginUpload;
+    case 'upload/not-image': return t.errNotImage;
+    case 'upload/bad-profile-url': return t.errBadProfileUrl;
+    default: return t.errUploadFailed;
+  }
+}
 
 export interface UploadProgressCallback {
   (percentage: number): void;
@@ -87,7 +106,7 @@ export async function compressImage(
 
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      reject(new Error('Görsel dosyası işlenirken hata oluştu.'));
+      reject(coded('upload/process', 'Image processing failed.'));
     };
 
     img.src = objectUrl;
@@ -108,16 +127,15 @@ async function uploadToBucket(
     upsert: false,
   });
   if (error) {
-    throw new Error(
-      /row-level security|not authorized|unauthorized/i.test(error.message)
-        ? 'Fotoğraf yükleme izniniz bulunmuyor (Oturum açık olmayabilir).'
-        : `Fotoğraf yüklenemedi: ${error.message}`
+    throw coded(
+      /row-level security|not authorized|unauthorized/i.test(error.message) ? 'upload/denied' : 'upload/failed',
+      `Upload failed: ${error.message}`
     );
   }
   onProgress?.(100);
   const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
   if (!data.publicUrl.startsWith('http')) {
-    throw new Error('Dönen indirme adresi geçerli bir web adresi değil.');
+    throw coded('upload/bad-url', 'Invalid download URL.');
   }
   return data.publicUrl;
 }
@@ -133,12 +151,12 @@ export async function uploadProfilePhoto(
   onProgress?: UploadProgressCallback
 ): Promise<string> {
   if (!file) {
-    throw new Error('Yüklenecek görsel dosyası bulunamadı.');
+    throw coded('upload/no-file', 'No file to upload.');
   }
 
   // 1. Check file type
   if (!file.type.startsWith('image/')) {
-    throw new Error('Yalnızca görsel dosyaları (PNG, JPG, WEBP) yüklenebilir.');
+    throw coded('upload/not-image', 'Only image files can be uploaded.');
   }
 
   // 2. Client-side compression
@@ -161,7 +179,7 @@ export async function uploadProfilePhoto(
       });
 
       if (!response.ok) {
-        throw new Error(`Cloudinary yükleme hatası: ${response.statusText}`);
+        throw coded('upload/failed', `Cloudinary upload error: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -192,13 +210,13 @@ export async function uploadListingPhoto(
   onProgress?: UploadProgressCallback
 ): Promise<string> {
   if (!file) {
-    throw new Error('Yüklenecek görsel dosyası bulunamadı.');
+    throw coded('upload/no-file', 'No file to upload.');
   }
   if (!userId) {
-    throw new Error('Fotoğraf yüklemek için giriş yapmalısınız.');
+    throw coded('upload/need-login', 'Sign in to upload.');
   }
   if (!file.type.startsWith('image/')) {
-    throw new Error('Yalnızca görsel dosyaları (PNG, JPG, WEBP) yüklenebilir.');
+    throw coded('upload/not-image', 'Only image files can be uploaded.');
   }
 
   // Compress to max 1280x850 at 0.78 quality to keep size small (<90KB)

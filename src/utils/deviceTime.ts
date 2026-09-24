@@ -99,7 +99,8 @@ export function formatDeviceRelativeDate(dateInput: Date | number, currentLang?:
 
   // Format as short date in device locale
   try {
-    return new Intl.DateTimeFormat(getDeviceLocale(), {
+    const localeByLang: Record<string, string> = { tr: 'tr-TR', en: 'en-GB', it: 'it-IT', de: 'de-DE', ru: 'ru-RU', hi: 'hi-IN' };
+    return new Intl.DateTimeFormat(currentLang ? localeByLang[currentLang] || getDeviceLocale() : getDeviceLocale(), {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',

@@ -119,7 +119,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               {conversations.map((c) => {
                 const lastMsg = c.messages[c.messages.length - 1];
                 const displayLastTime = lastMsg?.timestamp
-                  ? formatDeviceRelativeDate(lastMsg.timestamp)
+                  ? formatDeviceRelativeDate(lastMsg.timestamp, currentLang)
                   : (c.lastMessageTime || '');
 
                 return (
@@ -156,12 +156,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 <MessageSquare className="w-5 h-5" />
               </div>
               <p className="text-xs font-semibold text-stone-700">
-                {currentLang === 'tr' ? 'Henüz aktif bir sohbetiniz yok' : 'No active chats yet'}
+                {t.noActiveChats}
               </p>
               <p className="text-[11px] text-stone-400 max-w-[200px] leading-relaxed">
-                {currentLang === 'tr' 
-                  ? 'İlan detay sayfasındaki mesaj butonuna tıklayarak doğrudan yeni bir sohbet başlatabilirsiniz.'
-                  : 'Click "Chat with Student" on any listing to begin a conversation.'}
+                {t.chatWidgetHint}
               </p>
             </div>
           ) : (

@@ -14,6 +14,7 @@ import {
   resolveListingCoords,
 } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
+import { LANG_LOCALE } from '../utils/wizardText';
 import { formatDeviceTime } from '../utils/deviceTime';
 import { evaluateFairPrice } from '../utils/fairPrice';
 import { isSuperAdminEmail } from '../config';
@@ -248,7 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: authUser.uid,
       userHash: authUser.uid,
       email: authUser.email,
-      name: profileExtras.name || authUser.displayName || authUser.email.split('@')[0] || 'Padova Öğrencisi',
+      name: profileExtras.name || authUser.displayName || authUser.email.split('@')[0] || t.defaultStudentName,
       username: profileExtras.username || authUser.email.split('@')[0] || 'student',
       avatar: profileExtras.avatar || authUser.photoURL || DEFAULT_GUEST_USER.avatar,
       studentIdVerified: authUser.unipdVerified,
@@ -345,6 +346,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     safeStorageSet('padova_housing_lang', currentLang);
+    // Tarayıcı ve büyük harf dönüşümü (uppercase) doğru dil kurallarını kullansın: İ/I ayrımı, ekran okuyucu sesi.
+    document.documentElement.lang = currentLang;
   }, [currentLang]);
 
   useEffect(() => {
@@ -450,7 +453,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     return subscribeToListings(
       (firestoreListings) => setAllListings(firestoreListings.map((l, idx) => withCoords(l, idx))),
-      () => showToast('İlanlar yüklenemedi. Sayfayı yenilemeyi deneyin.')
+      () => showToast(t.toastListingsLoadFail)
     );
   }, [showToast]);
 
@@ -461,7 +464,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDraftContacts([]);
       return;
     }
-    return subscribeToMessages(authUser.uid, setMessages, () => showToast('Mesajlar yüklenemedi.'));
+    return subscribeToMessages(authUser.uid, setMessages, () => showToast(t.toastMessagesLoadFail));
   }, [authUser?.uid, showToast]);
 
   useEffect(() => {
@@ -522,7 +525,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleLogout = () => {
     setIsChatOpen(false);
     setActiveConversationId('');
-    logOut().catch((err) => showToast(describeAuthError(err)));
+    logOut().catch((err) => showToast(describeAuthError(err, currentLang)));
   };
 
   const handleUpdateProfile = (updated: Partial<UserProfile>) => {
@@ -544,7 +547,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       authUser.unipdVerified
     ).catch((err) => {
       console.warn('Could not sync updated profile to Firestore:', err);
-      showToast('Profil kaydedilemedi. Lütfen tekrar deneyin.');
+      showToast(t.toastProfileSaveFail);
     });
   };
 
@@ -613,7 +616,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return {
         id: otherUid,
         username: profile?.username || draft?.username || 'kullanici',
-        name: profile?.name || draft?.name || 'UniPD Kullanıcısı',
+        name: profile?.name || draft?.name || t.defaultStudentName,
         avatar: profile?.photoURL || draft?.avatar || DEFAULT_GUEST_USER.avatar,
         department: profile?.faculty || draft?.department || 'UniPD',
         subject: withSubject?.subject || draft?.subject || '',
@@ -647,11 +650,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const recipientUid = listing?.userId || listing?.poster?.id;
 
     if (!recipientUid) {
-      showToast('Bu ilanın sahibine mesaj gönderilemiyor.');
+      showToast(t.toastCannotMessageOwner);
       return;
     }
     if (recipientUid === authUser.uid) {
-      showToast('Kendi ilanınıza mesaj gönderemezsiniz.', 'info');
+      showToast(t.toastCannotMessageSelf, 'info');
       return;
     }
 
@@ -663,7 +666,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: listing?.poster.name || username,
         avatar: listing?.poster.avatar || DEFAULT_GUEST_USER.avatar,
         department: listing?.poster.department || 'UniPD',
-        subject: subject || listing?.title || 'Oda Görüşmesi',
+        subject: subject || listing?.title || t.defaultChatSubject,
         listingId: listing?.id,
         unreadCount: 0,
         online: false,
@@ -672,7 +675,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           {
             id: `sys-${recipientUid}`,
             sender: 'system',
-            text: `"${subject || listing?.title || ''}" ilanı için mesajlaşma başlatıldı. Kapora veya ödeme talep eden kişilere karşı dikkatli olun.`,
+            text: t.chatStartedNotice.replace('{subject}', subject || listing?.title || ''),
             time: formatDeviceTime(),
           },
         ],
@@ -701,11 +704,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const contact = conversations.find((c) => c.id === targetConvId);
     if (!contact) {
-      showToast('Mesaj göndermek için önce bir sohbet seçin.', 'info');
+      showToast(t.toastPickChat, 'info');
       return;
     }
     if (!authUser.emailVerified) {
-      showToast('Mesaj gönderebilmek için e-posta adresinizi doğrulayın.');
+      showToast(t.toastVerifyEmailToMessage);
       return;
     }
 
@@ -718,7 +721,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       subject: contact.subject,
     }).catch((err) => {
       console.warn('Message send error:', err);
-      showToast('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+      showToast(t.toastMessageSendFail);
     });
   };
 
@@ -738,9 +741,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ---- İlanlar ----
 
   const requireVerifiedUser = () => {
-    if (!authUser) throw new Error('İlan işlemleri için giriş yapmalısınız.');
+    if (!authUser) throw new Error(t.errListingNeedLogin);
     if (!authUser.emailVerified) {
-      throw new Error('İlan verebilmek için önce e-posta adresinizi doğrulayın (gelen kutunuzdaki linke tıklayın).');
+      throw new Error(t.errListingNeedEmail);
     }
     return authUser;
   };
@@ -799,7 +802,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
       .catch((err) => {
         console.warn('Firestore listing deletion error:', err);
-        showToast('İlan silinemedi. Yetkiniz olmayabilir.');
+        showToast(t.toastDeleteFail);
       });
   };
 
@@ -811,7 +814,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const target = allListings.find((l) => l.id === id);
     if (!target) return;
     if (!isAdmin) {
-      showToast('Bu işlem için yönetici yetkisi gerekiyor.');
+      showToast(t.toastAdminRequired);
       return;
     }
     const updates = buildUpdates(target);
@@ -824,7 +827,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
       .catch((err) => {
         console.warn('Admin listing update error:', err);
-        showToast('İlan güncellenemedi.');
+        showToast(t.toastUpdateFail);
       });
   };
 
@@ -855,7 +858,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const target = allListings.find((l) => l.id === listingId);
     if (!target || !authUser) return;
 
-    const rentedDateStr = new Date().toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'tr-TR', {
+    const rentedDateStr = new Date().toLocaleDateString(LANG_LOCALE[currentLang], {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -867,15 +870,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rentedPrice: details?.rentedPrice || target.price,
       archiveReason: details?.note || 'Kiracı bulundu',
       tenantType: details?.tenantType || 'UniPD Öğrencisi',
-      confirmationTimeLeft: 'Kiracı bulundu (Arşivlendi)',
+      confirmationTimeLeft: TRANSLATIONS.tr.confirmedArchived,
     })
       .then(() =>
         saveNotificationToFirestore({
           userId: authUser.uid,
-          title: currentLang === 'it' ? 'Inquilino Trovato & Annuncio Archiviato' : 'Kiracı Bulundu & İlan Arşivlendi',
-          message: currentLang === 'it'
-            ? `L'annuncio "${target.title}" è stato contrassegnato come affittato (€${details?.rentedPrice || target.price}/mese) e salvato nell'archivio storico.`
-            : `"${target.title}" ilanınız için kiracı bulundu (€${details?.rentedPrice || target.price}/ay) ve 'Geçmiş İlanlar' bölümüne taşındı.`,
+          title: t.notifTenantTitle,
+          message: t.notifTenantMsg.replace('{title}', target.title).replace('{price}', String(details?.rentedPrice || target.price)),
           type: 'tenant',
           createdAt: new Date().toISOString(),
           linkView: 'myListings',
@@ -883,7 +884,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
       .catch((err) => {
         console.warn('Mark rented error:', err);
-        showToast('İlan arşivlenemedi.');
+        showToast(t.toastArchiveFail);
       });
   };
 
@@ -893,16 +894,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     updateListingInFirestore(
       listingId,
-      { isArchived: false, confirmationTimeLeft: '48 saat içinde teyitli' },
+      { isArchived: false, confirmationTimeLeft: TRANSLATIONS.tr.confirmed48h },
       ['rentedAt', 'rentedPrice', 'archiveReason', 'tenantType']
     )
       .then(() =>
         saveNotificationToFirestore({
           userId: authUser.uid,
-          title: currentLang === 'it' ? 'Annuncio Riattivato' : 'İlan Tekrar Yayında',
-          message: currentLang === 'it'
-            ? `L'annuncio "${target.title}" è stato riattivato e ripubblicato nella bacheca attiva.`
-            : `"${target.title}" ilanınız arşivden çıkarılarak tekrar aktif ilanlar arasına alındı.`,
+          title: t.notifReactivateTitle,
+          message: t.notifReactivateMsg.replace('{title}', target.title),
           type: 'listing',
           createdAt: new Date().toISOString(),
           linkView: 'myListings',
@@ -910,7 +909,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
       .catch((err) => {
         console.warn('Reactivate error:', err);
-        showToast('İlan yeniden yayınlanamadı.');
+        showToast(t.toastReactivateFail);
       });
   };
 
@@ -922,7 +921,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleDeleteNotification = (id: string) => {
     deleteNotificationFromFirestore(id).catch((err) => {
       console.warn('Notification delete error:', err);
-      showToast('Bildirim silinemedi.');
+      showToast(t.toastNotifDeleteFail);
     });
   };
 

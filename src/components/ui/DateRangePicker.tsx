@@ -25,9 +25,11 @@ interface DateRangePickerProps {
   min?: string;
   hintStart: string;
   hintEnd: string;
+  prevLabel: string;
+  nextLabel: string;
 }
 
-export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, onChange, locale, min, hintStart, hintEnd }) => {
+export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, onChange, locale, min, hintStart, hintEnd, prevLabel, nextLabel }) => {
   const initial = fromISO(start) || new Date();
   const [cursor, setCursor] = useState(() => new Date(initial.getFullYear(), initial.getMonth(), 1));
   const [hover, setHover] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, on
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
-          aria-label="Previous month"
+          aria-label={prevLabel}
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
           className="flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
         >
@@ -77,7 +79,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, on
         <span className="text-sm font-bold capitalize text-stone-900">{monthLabel}</span>
         <button
           type="button"
-          aria-label="Next month"
+          aria-label={nextLabel}
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
           className="flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
         >

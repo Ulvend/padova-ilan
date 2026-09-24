@@ -135,11 +135,11 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
                 </div>
                 <p className="text-xs font-semibold text-stone-600">
                   {searchContact 
-                    ? (currentLang === 'tr' ? 'Kişi bulunamadı' : 'No contacts found') 
-                    : (currentLang === 'tr' ? 'Henüz mesajınız bulunmuyor' : 'No messages yet')}
+                    ? t.noContactsFound 
+                    : t.noMessagesYet}
                 </p>
                 <p className="text-[11px] text-stone-400 max-w-[220px] mx-auto leading-relaxed">
-                  {currentLang === 'tr' ? 'İlan sayfalarından ev sahiplerine ve öğrencilere mesaj göndererek yeni sohbet başlatabilirsiniz.' : 'You can start a chat directly from any listing page.'}
+                  {t.startChatFromListing}
                 </p>
               </div>
             ) : (
@@ -147,7 +147,7 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
                 const isActive = contact.id === activeContact?.id;
                 const lastMsg = contact.messages[contact.messages.length - 1];
                 const displayLastTime = lastMsg?.timestamp
-                  ? formatDeviceRelativeDate(lastMsg.timestamp)
+                  ? formatDeviceRelativeDate(lastMsg.timestamp, currentLang)
                   : (contact.lastMessageTime || '');
 
                 return (
@@ -336,12 +336,10 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
               </div>
               <div className="space-y-1 max-w-xs">
                 <p className="text-xs font-semibold text-stone-700">
-                  {currentLang === 'tr' ? 'Sohbet Seçin veya Başlatın' : 'Select or Start a Chat'}
+                  {t.selectOrStartChat}
                 </p>
                 <p className="text-[11px] text-stone-400 leading-relaxed">
-                  {currentLang === 'tr' 
-                    ? 'İlan sayfalarındaki mesajlaşma butonunu kullanarak doğrudan yeni bir sohbet başlatabilir ve gerçek zamanlı mesajlaşabilirsiniz.'
-                    : 'Use the chat button on any listing page to begin a conversation with a student.'}
+                  {t.selectOrStartChatHint}
                 </p>
               </div>
             </div>

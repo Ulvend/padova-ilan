@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { HousingListing, Language } from '../types';
 import { UNIPD_LANDMARKS, resolveListingCoords } from '../data/mockData';
+import { landmarkLabel } from '../utils/landmarkText';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { 
@@ -169,7 +170,7 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
           <div class="cursor-pointer transform -translate-x-1/2 -translate-y-full hover:scale-110 transition">
             <div class="flex items-center gap-1.5 bg-stone-900 text-amber-300 border border-amber-400/80 px-2.5 py-1 rounded-full shadow-md text-[10px] font-semibold whitespace-nowrap">
               <span>${lm.icon}</span>
-              <span class="max-w-[120px] truncate">${lm.name.split('(')[0]}</span>
+              <span class="max-w-[120px] truncate">${landmarkLabel(lm.name, lm.type, currentLang).name}</span>
             </div>
             <div class="w-2 h-2 bg-stone-900 rotate-45 mx-auto -mt-1 border-r border-b border-amber-400/80"></div>
           </div>
@@ -185,14 +186,14 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
         const landmarkMarker = L.marker([lm.lat, lm.lng], { icon });
         landmarkMarker.bindPopup(`
           <div class="text-xs p-1 space-y-1">
-            <strong class="text-stone-900 block font-bold">${lm.icon} ${lm.name}</strong>
-            <span class="text-stone-500 block text-[10px]">${lm.type}</span>
+            <strong class="text-stone-900 block font-bold">${lm.icon} ${landmarkLabel(lm.name, lm.type, currentLang).name}</strong>
+            <span class="text-stone-500 block text-[10px]">${landmarkLabel(lm.name, lm.type, currentLang).type}</span>
           </div>
         `);
         landmarksGroup.addLayer(landmarkMarker);
       });
     }
-  }, [showLandmarks, selectedListing]);
+  }, [showLandmarks, selectedListing, currentLang]);
 
   const handleCenterPadova = () => {
     mapInstanceRef.current?.setView(PADOVA_CENTER, 13, { animate: true });
@@ -284,7 +285,7 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
                 <button 
                   onClick={() => setActivePopupListing(null)}
                   className="text-stone-400 hover:text-stone-700 font-bold text-xs p-1 transition"
-                  aria-label="Close"
+                  aria-label={t.closeBtn}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
