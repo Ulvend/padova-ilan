@@ -1,41 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  ShieldCheck, 
-  Video, 
-  FileText, 
-  Users, 
-  Plus, 
-  Globe, 
-  Scale, 
-  Flame, 
-  CheckCircle2, 
-  Building2, 
-  Sparkles,
+import {
+  ShieldCheck,
+  Users,
+  Plus,
+  Globe,
   MessageSquare,
-  Home,
-  Search,
   Settings,
   KeyRound,
-  LogIn,
   LogOut,
   ChevronDown,
-  UserPlus,
-  RefreshCw,
-  Bell
+  Bell,
+  FileText,
 } from 'lucide-react';
 import { ActiveView, FilterState, Language, UserProfile } from '../types';
-import { CURRENT_USER, PADOVA_STATS } from '../data/mockData';
+import { CURRENT_USER } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
+import { HOME_TEXT } from '../utils/homeText';
 
 interface HeaderProps {
   currentView: ActiveView;
   onNavigateView: (view: ActiveView) => void;
-  filters: FilterState;
-  onFilterChange: (updates: Partial<FilterState>) => void;
+  filters?: FilterState;
+  onFilterChange?: (updates: Partial<FilterState>) => void;
   currentLang: Language;
   onLangChange: (lang: Language) => void;
   onOpenCreateModal: () => void;
-  totalListingsCount: number;
+  totalListingsCount?: number;
   unreadMessagesCount: number;
   unreadNotificationsCount?: number;
   myListingsCount?: number;
@@ -50,12 +40,9 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigateView,
-  filters,
-  onFilterChange,
   currentLang,
   onLangChange,
   onOpenCreateModal,
-  totalListingsCount,
   unreadMessagesCount,
   unreadNotificationsCount = 0,
   myListingsCount = 0,
@@ -67,6 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -84,171 +72,102 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const navLink = (active: boolean) =>
+    `relative min-h-[44px] px-2.5 xl:px-4 flex items-center gap-1.5 xl:gap-2 text-sm xl:text-[15px] whitespace-nowrap shrink-0 transition cursor-pointer border-b-[3px] ${
+      active ? 'font-bold text-stone-900 border-orange-600' : 'font-semibold text-stone-600 hover:text-stone-900 border-transparent'
+    }`;
+
+  const countBadge = (n: number) =>
+    n > 0 ? (
+      <span className="bg-orange-600 text-white text-[11px] min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center">
+        {n}
+      </span>
+    ) : null;
+
   return (
-    <header className="w-full space-y-4">
-      {/* Top Banner Box with Refined Air and Modern Simplicity */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 sm:p-6 md:p-7">
-        
-        {/* TOPMOST UTILITY BAR: TOP-RIGHT CORNER LANGUAGE SWITCHER */}
-        <div className="flex items-center justify-end gap-3 pb-3 border-b border-stone-100 mb-4 text-xs">
-          {/* DEDICATED TOP-RIGHT LANGUAGE SWITCHER (DİL SEÇİCİ - SAĞ ÜST KÖŞE) */}
-          <div className="flex items-center gap-2" id="header-top-right-language-switcher">
-            <div className="flex items-center border border-stone-200 bg-stone-50 hover:bg-stone-100 px-3 py-1.5 rounded-xl min-h-[38px] transition-colors shadow-2xs">
-              <Globe className="w-4 h-4 mr-2 text-stone-600 shrink-0" />
-              <select 
-                id="langSelectorTopRight" 
-                value={currentLang}
-                onChange={(e) => onLangChange(e.target.value as Language)}
-                className="bg-transparent text-xs sm:text-sm font-bold text-stone-800 outline-none cursor-pointer pr-1"
-                aria-label={t.langSwitcherLabel}
-              >
-                <option value="tr">TR (Türkçe)</option>
-                <option value="en">EN (English)</option>
-                <option value="it">IT (Italiano)</option>
-                <option value="de">DE (Deutsch)</option>
-                <option value="ru">RU (Русский)</option>
-                <option value="hi">HI (हिन्दी)</option>
-              </select>
-            </div>
-          </div>
+    <header className="w-full bg-white border-b border-stone-200 sticky top-0 z-30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 h-[64px] sm:h-[72px] flex items-center justify-between gap-4">
+        {/* Logo + gezinme */}
+        <div className="flex items-center gap-4 xl:gap-10 min-w-0 flex-1 overflow-hidden">
+          <button
+            type="button"
+            id="header-brand-logo"
+            onClick={() => onNavigateView('home')}
+            className="flex items-baseline gap-2.5 cursor-pointer select-none shrink-0"
+            aria-label={t.mainHeading}
+          >
+            <span className="font-display font-black text-2xl sm:text-[28px] tracking-tight text-stone-900">Padova</span>
+            {!isLoggedIn && <span className="hidden xl:inline text-[11px] font-bold tracking-[0.14em] uppercase text-stone-500 whitespace-nowrap">Student Housing</span>}
+          </button>
+
+          <nav id="navUserBadge" className="hidden sm:flex items-center gap-0.5 xl:gap-1 min-w-0 overflow-hidden" aria-label={h.mainMenu}>
+            <button id="btn-nav-home" type="button" onClick={() => onNavigateView('home')} className={navLink(currentView === 'home')}>
+              {h.navExplore}
+            </button>
+            {isLoggedIn && (
+              <>
+                <button id="btn-nav-my-listings" type="button" onClick={() => onNavigateView('myListings')} className={navLink(currentView === 'myListings')} title={t.myListingsNav} aria-label={t.myListingsNav}>
+                  <FileText className="w-4 h-4 xl:hidden" />
+                  <span className="hidden xl:inline">{t.myListingsNav}</span>
+                  {countBadge(myListingsCount)}
+                </button>
+                <button id="btn-nav-messages" type="button" onClick={() => onNavigateView('messages')} className={navLink(currentView === 'messages')} title={t.messagesNav} aria-label={t.messagesNav}>
+                  <MessageSquare className="w-4 h-4 xl:hidden" />
+                  <span className="hidden xl:inline">{t.messagesNav}</span>
+                  {countBadge(unreadMessagesCount)}
+                </button>
+                <button
+                  id="btn-nav-notifications"
+                  type="button"
+                  onClick={() => onNavigateView('notifications')}
+                  className={navLink(currentView === 'notifications')}
+                  title={t.notificationsNavTitle}
+                  aria-label={t.notificationsNav}
+                >
+                  <Bell className="w-4 h-4" />
+                  {countBadge(unreadNotificationsCount)}
+                </button>
+              </>
+            )}
+          </nav>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-5">
-          
-          {/* Logo & Headline */}
-          <div 
-            className="cursor-pointer group select-none" 
-            onClick={() => onNavigateView('home')}
-            id="header-brand-logo"
-          >
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-stone-900 group-hover:text-orange-600 transition-colors">
-              {t.mainHeading}
-            </h1>
-            <p className="text-xs sm:text-sm text-stone-500 mt-1 max-w-xl leading-relaxed">
-              {t.tagline}
-            </p>
+        {/* Sağ taraf */}
+        <div className="flex items-center gap-2 xl:gap-3 shrink-0">
+          <div className="flex items-center border border-stone-200 hover:bg-stone-50 px-2.5 rounded-xl min-h-[44px] transition-colors" id="header-top-right-language-switcher">
+            <Globe className="w-4 h-4 mr-1.5 text-stone-600 shrink-0" />
+            <select
+              id="langSelectorTopRight"
+              value={currentLang}
+              onChange={(e) => onLangChange(e.target.value as Language)}
+              className="bg-transparent text-sm font-semibold text-stone-800 outline-none cursor-pointer"
+              aria-label={t.langSwitcherLabel}
+            >
+              <option value="tr">TR</option>
+              <option value="en">EN</option>
+              <option value="it">IT</option>
+              <option value="de">DE</option>
+              <option value="ru">RU</option>
+              <option value="hi">HI</option>
+            </select>
           </div>
 
-          {/* Controls: Desktop Navigation Buttons + User Menu */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-            
-            {/* Desktop Navigation Badges */}
-            <div id="navUserBadge" className="hidden sm:flex items-center gap-2">
-              
-              {/* Anasayfa Button */}
-              <button 
-                id="btn-nav-home"
-                onClick={() => onNavigateView('home')} 
-                className={`min-h-[42px] px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer border ${
-                  currentView === 'home' 
-                    ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
-                    : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
+          {isLoggedIn ? (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                id="btn-nav-user-menu"
+                type="button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl flex items-center gap-2 text-sm font-semibold transition cursor-pointer border ${
+                  isUserMenuOpen || currentView === 'profile' ? 'bg-stone-100 border-stone-300' : 'bg-white hover:bg-stone-50 border-stone-200'
                 }`}
-                title={t.searchScreenTitle}
+                aria-expanded={isUserMenuOpen}
+                aria-label={t.userMenu}
               >
-                <Search className="w-4 h-4" />
-                <span>{t.homeNav}</span>
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-6 h-6 rounded-full object-cover border border-stone-300" />
+                <span className="hidden 2xl:inline font-bold max-w-[140px] truncate">@{currentUser.username}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-
-              {/* AUTHENTICATED STATE: SHOW MY LISTINGS, MESSAGES, AVATAR & DROPDOWN */}
-              {isLoggedIn ? (
-                <>
-                  {/* My Listings Button */}
-                  <button 
-                    id="btn-nav-my-listings"
-                    onClick={() => onNavigateView('myListings')} 
-                    className={`min-h-[42px] px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer border ${
-                      currentView === 'myListings' 
-                        ? 'bg-orange-600 text-white border-orange-600 shadow-sm' 
-                        : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>{t.myListingsNav}</span>
-                    {myListingsCount > 0 && (
-                      <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-                        {myListingsCount}
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Mesajlar Button */}
-                  <button 
-                    id="btn-nav-messages"
-                    onClick={() => onNavigateView('messages')} 
-                    className={`min-h-[42px] px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer border ${
-                      currentView === 'messages' 
-                        ? 'bg-purple-700 text-white border-purple-700 shadow-sm' 
-                        : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{t.messagesNav}</span>
-                    {unreadMessagesCount > 0 && (
-                      <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-                        {unreadMessagesCount}
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Bildirimler Sekmesi (Kullanıcıya Özel Bildirimler) */}
-                  <button 
-                    id="btn-nav-notifications"
-                    onClick={() => onNavigateView('notifications')} 
-                    className={`min-h-[42px] px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer border ${
-                      currentView === 'notifications' 
-                        ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
-                        : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
-                    }`}
-                    title={t.notificationsNavTitle}
-                  >
-                    <Bell className="w-4 h-4 text-stone-600" />
-                    <span className="hidden md:inline">{t.notificationsNav}</span>
-                    {unreadNotificationsCount > 0 && (
-                      <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">
-                        {unreadNotificationsCount}
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Admin Panel Button (ONLY visible to authorized admins) */}
-                  {isUserAuthorizedAdmin && (
-                    <button 
-                      id="btn-nav-admin"
-                      onClick={() => onNavigateView('admin')} 
-                      className={`min-h-[42px] px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer border ${
-                        currentView === 'admin' 
-                          ? 'bg-amber-600 text-white border-amber-600 shadow-sm' 
-                          : 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-200'
-                      }`}
-                      title={t.adminDeskTitle}
-                    >
-                      <ShieldCheck className="w-4 h-4 text-amber-600" />
-                      <span className="font-bold">Admin</span>
-                    </button>
-                  )}
-
-                  {/* USER MENU BUTTON & DROPDOWN (KULLANICI MENÜSÜ & PROFİL AYARLARI) */}
-                  <div className="relative" ref={userMenuRef}>
-                    <button 
-                      id="btn-nav-user-menu"
-                      onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} 
-                      className={`min-h-[42px] px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 transition cursor-pointer border ${
-                        isUserMenuOpen || currentView === 'profile'
-                          ? 'bg-amber-100 text-amber-950 border-amber-300 shadow-sm' 
-                          : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
-                      }`}
-                      aria-expanded={isUserMenuOpen}
-                      aria-label={t.userMenu}
-                    >
-                      <img 
-                        src={currentUser.avatar} 
-                        alt={currentUser.name} 
-                        className="w-5 h-5 rounded-full object-cover border border-stone-300" 
-                      />
-                      <span className="font-bold">@{currentUser.username}</span>
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
 
                     {/* DROPDOWN MENU */}
                     {isUserMenuOpen && (
@@ -372,191 +291,47 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                       </div>
                     )}
-                  </div>
-                </>
-              ) : (
-                /* GUEST / MISAFIR STATE: ONLY GİRİŞ YAP VE KAYIT OL */
-                <div id="guest-auth-controls" className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    id="btn-nav-login"
-                    onClick={() => onOpenAuthModal && onOpenAuthModal('login')}
-                    className="min-h-[42px] px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 transition cursor-pointer shadow-2xs"
-                  >
-                    <LogIn className="w-4 h-4 text-stone-600" />
-                    <span>{t.loginNav}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    id="btn-nav-register"
-                    onClick={() => onOpenAuthModal && onOpenAuthModal('register')}
-                    className="min-h-[42px] px-4 py-1.5 text-xs font-bold rounded-lg flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white transition cursor-pointer shadow-xs"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>{t.registerNav}</span>
-                  </button>
-                </div>
-              )}
             </div>
-
-            {/* Mobile View Top Header Buttons */}
-            <div className="flex sm:hidden items-center gap-2">
-              {isLoggedIn ? (
-                <button
-                  type="button"
-                  id="mobile-header-user-btn"
-                  onClick={() => onNavigateView('profile')}
-                  className="min-h-[40px] px-2.5 py-1 rounded-lg border border-stone-200 bg-white flex items-center gap-1.5 text-xs font-bold text-stone-800"
-                >
-                  <img 
-                    src={currentUser.avatar} 
-                    alt={currentUser.name} 
-                    className="w-5 h-5 rounded-full object-cover border border-orange-400" 
-                  />
-                  <span>@{currentUser.username}</span>
-                </button>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    id="mobile-header-login-btn"
-                    onClick={() => onOpenAuthModal && onOpenAuthModal('login')}
-                    className="min-h-[38px] px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-xs font-bold text-stone-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    <LogIn className="w-3.5 h-3.5 text-stone-500" />
-                    <span>{t.loginNav}</span>
-                  </button>
-                  <button
-                    type="button"
-                    id="mobile-header-register-btn"
-                    onClick={() => onOpenAuthModal && onOpenAuthModal('register')}
-                    className="min-h-[38px] px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>{t.registerNav}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Post New Ad Button (Desktop & Tablet) */}
-            <button 
-              id="btn-post-ad"
-              onClick={onOpenCreateModal}
-              className="hidden sm:flex bg-orange-600 hover:bg-orange-500 text-white min-h-[42px] px-4 py-1.5 text-xs font-bold uppercase tracking-wider items-center gap-2 rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
+          ) : (
+            <button
+              type="button"
+              id="btn-nav-login"
+              onClick={() => onOpenAuthModal && onOpenAuthModal('login')}
+              className="min-h-[44px] px-3 sm:px-4 text-[15px] font-bold text-stone-900 hover:text-orange-700 transition cursor-pointer"
             >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>{t.postAdBtn}</span>
+              {h.guestLogin}
             </button>
-          </div>
+          )}
+
+          <button
+            id="btn-post-ad"
+            type="button"
+            onClick={onOpenCreateModal}
+            className="hidden sm:flex bg-orange-600 hover:bg-orange-700 text-white min-h-[44px] px-3.5 xl:px-5 text-sm xl:text-[15px] font-bold items-center gap-2 rounded-xl transition active:scale-95 cursor-pointer whitespace-nowrap"
+            aria-label={h.postAd}
+            title={h.postAd}
+          >
+            <Plus className="w-[18px] h-[18px] stroke-[2.4]" />
+            <span className="hidden lg:inline">{h.postAd}</span>
+          </button>
+
+          {isLoggedIn && isUserAuthorizedAdmin && (
+            <button
+              id="btn-nav-admin"
+              type="button"
+              onClick={() => onNavigateView('admin')}
+              title={t.adminDeskTitle}
+              aria-label="Admin"
+              className={`min-h-[44px] px-3 2xl:px-4 rounded-xl border flex items-center gap-2 text-sm font-bold whitespace-nowrap transition cursor-pointer ${
+                currentView === 'admin' ? 'bg-amber-600 border-amber-600 text-white' : 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-950'
+              }`}
+            >
+              <ShieldCheck className={`w-4 h-4 ${currentView === 'admin' ? 'text-white' : 'text-amber-600'}`} />
+              <span className="hidden 2xl:inline">Admin</span>
+            </button>
+          )}
         </div>
       </div>
-
-      {/* Fair Price Radar Alert Bar with Reference Market Price */}
-      <div className="border border-emerald-200/80 bg-emerald-50/80 p-3.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between text-xs sm:text-sm gap-3">
-        <div className="flex items-center gap-3">
-          <Scale className="w-5 h-5 text-emerald-700 shrink-0" />
-          <span className="leading-relaxed text-emerald-950">
-            <strong>{t.fairPriceBannerTitle}</strong> {t.fairPriceBannerText}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-          <span className="bg-white border border-emerald-200 text-emerald-900 px-2.5 py-1 text-xs font-bold rounded-md shadow-xs whitespace-nowrap">
-            {t.statAveragePrice}: {PADOVA_STATS.averageSingolaPrice}
-          </span>
-          <span className="bg-emerald-700 text-white px-2.5 py-1 text-[11px] font-semibold uppercase rounded-md whitespace-nowrap">
-            {t.fairPriceRadarTag}
-          </span>
-        </div>
-      </div>
-
-      {/* Quick Filter Tabs */}
-      {currentView === 'home' && (
-        <div className="flex items-center gap-2 text-xs font-semibold overflow-x-auto py-0.5 no-scrollbar">
-          <button 
-            id="tab-all"
-            onClick={() => onFilterChange({ categoryTab: 'all' })}
-            className={`min-h-[40px] px-4 py-2 rounded-xl transition shrink-0 cursor-pointer border ${
-              filters.categoryTab === 'all' 
-                ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
-                : 'bg-white text-stone-700 hover:bg-stone-50 border-stone-200 shadow-xs'
-            }`}
-          >
-            {t.tabAll} ({totalListingsCount})
-          </button>
-          
-          <button 
-            id="tab-newest"
-            onClick={() => onFilterChange({ categoryTab: 'newest', sortBy: 'newest' })}
-            className={`min-h-[40px] px-4 py-2 rounded-xl transition shrink-0 cursor-pointer border flex items-center gap-1.5 ${
-              filters.categoryTab === 'newest' 
-                ? 'bg-orange-600 text-white border-orange-600 shadow-sm font-bold' 
-                : 'bg-white text-stone-700 hover:bg-stone-50 border-stone-200 shadow-xs'
-            }`}
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${filters.categoryTab === 'newest' ? 'text-amber-200' : 'text-orange-500'}`} />
-            <span>{t.tabNewest}</span>
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-              filters.categoryTab === 'newest' ? 'bg-orange-800 text-white' : 'bg-orange-100 text-orange-800'
-            }`}>
-              {t.recentlyAddedBadge}
-            </span>
-          </button>
-          
-          <button 
-            id="tab-video"
-            onClick={() => onFilterChange({ categoryTab: 'video' })}
-            className={`min-h-[40px] px-4 py-2 rounded-xl transition shrink-0 cursor-pointer border flex items-center gap-2 ${
-              filters.categoryTab === 'video' 
-                ? 'bg-purple-700 text-white border-purple-700 shadow-sm' 
-                : 'bg-white text-stone-700 hover:bg-stone-50 border-stone-200 shadow-xs'
-            }`}
-          >
-            <Video className="w-3.5 h-3.5" />
-            <span>{t.tabVideo}</span>
-          </button>
-
-          <button 
-            id="tab-transitorio"
-            onClick={() => onFilterChange({ categoryTab: 'transitorio' })}
-            className={`min-h-[40px] px-4 py-2 rounded-xl transition shrink-0 cursor-pointer border flex items-center gap-2 ${
-              filters.categoryTab === 'transitorio' 
-                ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
-                : 'bg-white text-stone-700 hover:bg-stone-50 border-stone-200 shadow-xs'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>{t.tabTransitorio}</span>
-          </button>
-
-          <button 
-            id="tab-subentro"
-            onClick={() => onFilterChange({ categoryTab: 'subentro' })}
-            className={`min-h-[40px] px-4 py-2 rounded-xl transition shrink-0 cursor-pointer border flex items-center gap-2 ${
-              filters.categoryTab === 'subentro' 
-                ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
-                : 'bg-white text-stone-700 hover:bg-stone-50 border-stone-200 shadow-xs'
-            }`}
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>{t.tabSubentro}</span>
-          </button>
-
-          <button 
-            id="tab-roommates"
-            onClick={() => onFilterChange({ categoryTab: 'roommates' })}
-            className={`min-h-[40px] px-4 py-2 rounded-xl transition shrink-0 cursor-pointer border flex items-center gap-2 ${
-              filters.categoryTab === 'roommates' 
-                ? 'bg-stone-900 text-white border-stone-900 shadow-sm' 
-                : 'bg-white text-stone-700 hover:bg-stone-50 border-stone-200 shadow-xs'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>{t.tabRoommates}</span>
-          </button>
-        </div>
-      )}
     </header>
   );
 };

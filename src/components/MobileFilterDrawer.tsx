@@ -28,11 +28,11 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs flex flex-col justify-end lg:hidden animate-fadeIn"
+      className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs flex flex-col justify-end lg:justify-center lg:items-center animate-fadeIn"
       onClick={onClose}
     >
       <div 
-        className="bg-white border-t border-stone-200 w-full max-h-[88vh] flex flex-col shadow-2xl rounded-t-3xl overflow-hidden"
+        className="bg-white border-t lg:border border-stone-200 w-full lg:max-w-2xl max-h-[88vh] flex flex-col shadow-2xl rounded-t-3xl lg:rounded-3xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag Handle & Header */}

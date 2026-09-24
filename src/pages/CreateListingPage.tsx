@@ -467,7 +467,7 @@ const CreateListingPage: React.FC = () => {
     >
       {/* Üst çubuk */}
       <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5 sm:px-6">
           <button
             type="button"
             onClick={close}
@@ -489,7 +489,7 @@ const CreateListingPage: React.FC = () => {
             </span>
           )}
         </div>
-        <nav aria-label={w.stepOf} className="mx-auto max-w-6xl px-4 pb-2.5 sm:px-6">
+        <nav aria-label={w.stepOf} className="mx-auto max-w-7xl px-4 pb-2.5 sm:px-6 lg:hidden">
           <ol className="flex gap-1.5">
             {stepTitles.map((title, i) => {
               const reachable = i <= maxStep;
@@ -523,10 +523,47 @@ const CreateListingPage: React.FC = () => {
         </nav>
       </header>
 
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-36 pt-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:pb-28">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 pb-36 pt-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)_380px] lg:gap-10 lg:pb-28 lg:pt-10">
+        {/* Dikey adım listesi (masaüstü) */}
+        <nav aria-label={w.stepOf} className="hidden lg:block">
+          <ol className="sticky top-28 space-y-1.5">
+            {stepTitles.map((title, i) => {
+              const reachable = i <= maxStep;
+              const done = i < step;
+              const current = i === step;
+              return (
+                <li key={i}>
+                  <button
+                    type="button"
+                    disabled={!reachable}
+                    onClick={() => goTo(i)}
+                    aria-current={current ? 'step' : undefined}
+                    className={`flex w-full items-center gap-3.5 rounded-2xl border px-3.5 py-3 text-left transition cursor-pointer disabled:cursor-default ${
+                      current ? 'border-stone-200 bg-white' : 'border-transparent hover:bg-white/60 disabled:hover:bg-transparent'
+                    }`}
+                  >
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold ${
+                        done ? 'bg-emerald-700 text-white' : current ? 'bg-orange-600 text-white' : 'border border-stone-300 bg-white text-stone-500 font-bold'
+                      }`}
+                    >
+                      {done ? <Check className="h-4 w-4 stroke-[3]" /> : i + 1}
+                    </span>
+                    <span className="min-w-0">
+                      <span className={`block text-[15px] ${current ? 'font-extrabold text-stone-900' : reachable ? 'font-semibold text-stone-800' : 'font-semibold text-stone-500'}`}>{title}</span>
+                      <span className="block truncate text-[13px] text-stone-500">{stepHints[i]}</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+
         <div className="min-w-0">
           <div key={step} className="anim-rise">
-            <h1 className="text-2xl font-extrabold tracking-tight text-stone-900 sm:text-[28px]">{stepHints[step]}</h1>
+            <h1 className="font-display text-[28px] font-black tracking-tight text-stone-900 sm:text-4xl">{stepTitles[step]}</h1>
+            <p className="mt-2 text-base text-stone-600">{stepHints[step]}</p>
 
             <div className="mt-5 space-y-4">
               {step === 0 && !isLoggedIn && !isEdit && !restored && (
@@ -576,7 +613,7 @@ const CreateListingPage: React.FC = () => {
 
       {/* Alt eylem çubuğu */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 sm:px-6">
           <button
             type="button"
             onClick={back}

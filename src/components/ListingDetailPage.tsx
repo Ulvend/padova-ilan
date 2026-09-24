@@ -210,185 +210,8 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
         </div>
       </div>
 
-      {/* 2. Main Title, Address & Quick Info Banner */}
-      <div className="p-5 md:p-6 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-100 pb-5">
-          <div className="space-y-2 flex-1 min-w-[280px]">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-orange-600 text-white px-2.5 py-0.5 text-[10px] font-bold rounded-full">
-                {listing.id}
-              </span>
-              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
-                {listing.roomType}
-              </span>
-              {listing.hasVideoTour && (
-                <span className="bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <Video className="w-3.5 h-3.5 text-purple-700" />
-                  <span>{t.verifiedVideoTourBadge}</span>
-                </span>
-              )}
-              {listing.isStudentCardVerified && (
-                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
-                  <span>{t.studentCardVerified}</span>
-                </span>
-              )}
-              {listing.contractStartDate && (
-                <span className="bg-orange-50 text-orange-950 border border-orange-200/80 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                  <Calendar className="w-3.5 h-3.5 text-orange-600" />
-                  <span>{t.contractStartDateLabel}: {listing.contractStartDate}</span>
-                </span>
-              )}
-            </div>
-
-            <h1 className="text-2xl md:text-3xl font-bold text-stone-900 leading-snug">
-              {listing.title}
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 pt-1">
-              <span className="flex items-center gap-1 font-semibold text-stone-900">
-                <MapPin className="w-3.5 h-3.5 text-orange-600" />
-                {listing.streetAddress}
-              </span>
-              <span>•</span>
-              <span className="text-orange-700 font-semibold">{listing.distanceToFaculty}</span>
-              <span>•</span>
-              <span className="text-stone-400">{t.photosCount}: {listing.images.length}</span>
-              <span>•</span>
-              <span className="text-emerald-700 font-semibold">{listing.confirmationTimeLeft}</span>
-            </div>
-          </div>
-
-          {/* Price Box */}
-          <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-right shrink-0">
-            <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block">{t.monthlyRent}</span>
-            <div className="flex items-baseline justify-end gap-1.5">
-              <span className="text-3xl md:text-4xl font-bold text-stone-900">€{listing.price}</span>
-              <span className="text-xs text-stone-500 font-medium">/ {t.perMonth}</span>
-            </div>
-            <span className="text-[11px] text-stone-600 font-medium block mt-0.5">{listing.expenses}</span>
-            <button
-              onClick={() => onOpenChat(listing.poster.username, listing.title, listing.id)}
-              className="w-full mt-3 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition active:translate-y-0.5"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>{t.chatWithOwner}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3. DEDICATED REGIONAL AVERAGE PRICE RATIO & FAIR PRICE AUDIT (Bölge Ortalamasına Göre Oran) */}
-        <div className="p-4 md:p-5 bg-gradient-to-r from-emerald-50/70 via-teal-50/50 to-amber-50/60 rounded-2xl border border-emerald-200/80 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/60 pb-2.5">
-            <div className="flex items-center gap-2">
-              <Scale className="w-5 h-5 text-emerald-800" />
-              <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900">
-                {t.regionalPriceRatioTitle}
-              </h2>
-            </div>
-            <span className="bg-emerald-800 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {t.padovaComuneAudit}
-            </span>
-          </div>
-
-          {/* Big Ratio Badge and Key Comparison Figures */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            
-            {/* Left Result Highlight (5 cols) */}
-            <div className="md:col-span-5 bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
-              <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block mb-1">
-                {benchmark.districtLabel}
-              </span>
-              
-              <div className="flex items-center gap-2.5">
-                {priceDifference <= 0 ? (
-                  <div className="bg-emerald-600 text-white p-2 rounded-xl">
-                    <TrendingDown className="w-6 h-6" />
-                  </div>
-                ) : (
-                  <div className="bg-rose-600 text-white p-2 rounded-xl">
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                )}
-
-                <div>
-                  <div className="text-lg md:text-xl font-bold text-stone-900 leading-tight">
-                    {priceDifference < 0 ? (
-                      <span className="text-emerald-700">%{percentageRatio} {t.moreAffordable}</span>
-                    ) : priceDifference === 0 ? (
-                      <span className="text-amber-700">{t.exactAverage}</span>
-                    ) : (
-                      <span className="text-rose-700">%{percentageRatio} {t.aboveAverage}</span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-stone-500 font-medium block">
-                    {t.regionalAverage}: €{regionalAverage} ({priceDifference < 0 ? `-€${Math.abs(priceDifference)}` : `+€${priceDifference}`})
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Comparison Metrics Grid (7 cols) */}
-            <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-              <div className="bg-white border border-stone-200 rounded-xl p-2.5">
-                <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.rentOfThisRoom}</span>
-                <span className="text-base font-bold text-stone-900">€{listing.price}</span>
-                <span className="text-[9px] text-emerald-700 block font-semibold">{listing.contractType.split(' ')[0]}</span>
-              </div>
-
-              <div className="bg-white border border-stone-200 rounded-xl p-2.5">
-                <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.regionalAverage}</span>
-                <span className="text-base font-bold text-stone-800">€{regionalAverage}</span>
-                <span className="text-[9px] text-stone-500 block">{listing.roomType}</span>
-              </div>
-
-              <div className="bg-white border border-stone-200 rounded-xl p-2.5 col-span-2 sm:col-span-1">
-                <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.canoneConcordatoLabel}</span>
-                <span className="text-sm font-bold text-stone-800">{benchmark.canoneConcordatoRange}</span>
-                <span className="text-[9px] text-emerald-800 block font-semibold">{t.padovaComuneAudit}</span>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Visual Gauge Bar */}
-          <div className="space-y-1.5 pt-1">
-            <div className="flex justify-between text-[10px] font-semibold text-stone-500">
-              <span>€350 ({t.economicLabel})</span>
-              <span className="text-emerald-800 font-bold flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-emerald-800" />
-                <span>{t.thisListingLabel}: €{listing.price}</span>
-              </span>
-              <span className="text-stone-700">{t.regionalAverage}: €{regionalAverage}</span>
-              <span>€550+ ({t.expensiveLabel})</span>
-            </div>
-
-            <div className="h-2.5 w-full bg-stone-200 rounded-full relative overflow-hidden">
-              {/* Scale zone */}
-              <div className="absolute inset-y-0 left-0 w-2/5 bg-emerald-300"></div>
-              <div className="absolute inset-y-0 left-2/5 w-1/3 bg-amber-200"></div>
-              <div className="absolute inset-y-0 right-0 w-4/15 bg-rose-300"></div>
-
-              {/* Marker for this listing */}
-              <div 
-                className="absolute top-0 bottom-0 w-2 bg-stone-900 -translate-x-1/2 rounded-full shadow-md"
-                style={{ 
-                  left: `${Math.min(95, Math.max(5, ((listing.price - 300) / 300) * 100))}%` 
-                }}
-                title={`${t.thisListingLabel}: €${listing.price}`}
-              ></div>
-            </div>
-
-            <p className="text-[11px] text-stone-600 leading-snug pt-1">
-              <strong>*{t.priceGuaranteeTitle}:</strong> {benchmark.marketTrend}. {t.priceGuaranteeBody}
-            </p>
-          </div>
-        </div>
-
-      </div>
-
       {/* 4. Unified Media Gallery (Photos & Interactive Video Tour) */}
-      <div className="p-4 md:p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
+      <div id="detail-gallery" className="scroll-mt-24 p-4 md:p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
         {/* Gallery Header with Mode Tabs & Action Tools */}
         <div className="flex flex-wrap items-center justify-between border-b border-stone-100 pb-3 gap-3">
           <div className="flex items-center gap-2">
@@ -654,6 +477,56 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
         </div>
       </div>
 
+      {/* 2. Main Title, Address & Quick Info Banner */}
+      <div className="p-5 md:p-6 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-100 pb-5">
+          <div className="space-y-2 flex-1 min-w-[280px]">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                {listing.roomType}
+              </span>
+              {listing.hasVideoTour && (
+                <span className="bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Video className="w-3.5 h-3.5 text-purple-700" />
+                  <span>{t.verifiedVideoTourBadge}</span>
+                </span>
+              )}
+              {listing.isStudentCardVerified && (
+                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                  <span>{t.studentCardVerified}</span>
+                </span>
+              )}
+              {listing.contractStartDate && (
+                <span className="bg-orange-50 text-orange-950 border border-orange-200/80 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                  <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                  <span>{t.contractStartDateLabel}: {listing.contractStartDate}</span>
+                </span>
+              )}
+            </div>
+
+            <h1 className="font-display font-black text-3xl md:text-[44px] text-stone-900 leading-[1.1] tracking-tight">
+              {listing.title}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 pt-1">
+              <span className="flex items-center gap-1 font-semibold text-stone-900">
+                <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                {listing.streetAddress}
+              </span>
+              <span>•</span>
+              <span className="text-orange-700 font-semibold">{listing.distanceToFaculty}</span>
+              <span>•</span>
+              <span className="text-stone-400">{t.photosCount}: {listing.images.length}</span>
+              <span>•</span>
+              <span className="text-emerald-700 font-semibold">{listing.confirmationTimeLeft}</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
       {/* 6. Two-Column Content: Description & Specs on Left, Roommates & Poster on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
@@ -902,11 +775,164 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             </div>
           </div>
 
+          {/* 3. DEDICATED REGIONAL AVERAGE PRICE RATIO & FAIR PRICE AUDIT (Bölge Ortalamasına Göre Oran) */}
+          <div className="p-4 md:p-5 bg-gradient-to-r from-emerald-50/70 via-teal-50/50 to-amber-50/60 rounded-2xl border border-emerald-200/80 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/60 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Scale className="w-5 h-5 text-emerald-800" />
+                <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900">
+                  {t.regionalPriceRatioTitle}
+                </h2>
+              </div>
+              <span className="bg-emerald-800 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                {t.padovaComuneAudit}
+              </span>
+            </div>
+
+            {/* Big Ratio Badge and Key Comparison Figures */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            
+              {/* Left Result Highlight (5 cols) */}
+              <div className="md:col-span-5 bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+                <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block mb-1">
+                  {benchmark.districtLabel}
+                </span>
+              
+                <div className="flex items-center gap-2.5">
+                  {priceDifference <= 0 ? (
+                    <div className="bg-emerald-600 text-white p-2 rounded-xl">
+                      <TrendingDown className="w-6 h-6" />
+                    </div>
+                  ) : (
+                    <div className="bg-rose-600 text-white p-2 rounded-xl">
+                      <TrendingUp className="w-6 h-6" />
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="text-lg md:text-xl font-bold text-stone-900 leading-tight">
+                      {priceDifference < 0 ? (
+                        <span className="text-emerald-700">%{percentageRatio} {t.moreAffordable}</span>
+                      ) : priceDifference === 0 ? (
+                        <span className="text-amber-700">{t.exactAverage}</span>
+                      ) : (
+                        <span className="text-rose-700">%{percentageRatio} {t.aboveAverage}</span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-stone-500 font-medium block">
+                      {t.regionalAverage}: €{regionalAverage} ({priceDifference < 0 ? `-€${Math.abs(priceDifference)}` : `+€${priceDifference}`})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Comparison Metrics Grid (7 cols) */}
+              <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                <div className="bg-white border border-stone-200 rounded-xl p-2.5">
+                  <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.rentOfThisRoom}</span>
+                  <span className="text-base font-bold text-stone-900">€{listing.price}</span>
+                  <span className="text-[9px] text-emerald-700 block font-semibold">{listing.contractType.split(' ')[0]}</span>
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-xl p-2.5">
+                  <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.regionalAverage}</span>
+                  <span className="text-base font-bold text-stone-800">€{regionalAverage}</span>
+                  <span className="text-[9px] text-stone-500 block">{listing.roomType}</span>
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-xl p-2.5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.canoneConcordatoLabel}</span>
+                  <span className="text-sm font-bold text-stone-800">{benchmark.canoneConcordatoRange}</span>
+                  <span className="text-[9px] text-emerald-800 block font-semibold">{t.padovaComuneAudit}</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Visual Gauge Bar */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-[10px] font-semibold text-stone-500">
+                <span>€350 ({t.economicLabel})</span>
+                <span className="text-emerald-800 font-bold flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-emerald-800" />
+                  <span>{t.thisListingLabel}: €{listing.price}</span>
+                </span>
+                <span className="text-stone-700">{t.regionalAverage}: €{regionalAverage}</span>
+                <span>€550+ ({t.expensiveLabel})</span>
+              </div>
+
+              <div className="h-2.5 w-full bg-stone-200 rounded-full relative overflow-hidden">
+                {/* Scale zone */}
+                <div className="absolute inset-y-0 left-0 w-2/5 bg-emerald-300"></div>
+                <div className="absolute inset-y-0 left-2/5 w-1/3 bg-amber-200"></div>
+                <div className="absolute inset-y-0 right-0 w-4/15 bg-rose-300"></div>
+
+                {/* Marker for this listing */}
+                <div 
+                  className="absolute top-0 bottom-0 w-2 bg-stone-900 -translate-x-1/2 rounded-full shadow-md"
+                  style={{ 
+                    left: `${Math.min(95, Math.max(5, ((listing.price - 300) / 300) * 100))}%` 
+                  }}
+                  title={`${t.thisListingLabel}: €${listing.price}`}
+                ></div>
+              </div>
+
+              <p className="text-[11px] text-stone-600 leading-snug pt-1">
+                <strong>*{t.priceGuaranteeTitle}:</strong> {benchmark.marketTrend}. {t.priceGuaranteeBody}
+              </p>
+            </div>
+          </div>
+
         </div>
 
         {/* Right Column (4 cols): Poster Card & Roommates & Contact */}
         <div className="lg:col-span-4 space-y-6">
           
+          {/* Fiyat kartı */}
+          <div className="p-6 bg-white rounded-3xl border border-stone-200 shadow-[0_8px_24px_rgba(28,25,23,0.06)] space-y-4">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-4xl font-extrabold tracking-tight text-stone-900">€{listing.price}</span>
+              <span className="text-[15px] text-stone-500">{t.perMonth} · {listing.expenses}</span>
+            </div>
+            <span
+              className={`inline-block px-3 py-1.5 rounded-[10px] border text-[13px] font-bold ${
+                listing.fairPriceStatus === 'lower' || listing.fairPriceStatus === 'average'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-orange-50 border-orange-300 text-orange-800'
+              }`}
+            >
+              {listing.fairPriceText}
+            </span>
+            {listing.contractStartDate && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3 border border-stone-200 rounded-[14px] text-sm">
+                <span className="text-stone-500">{t.contractStartDateLabel}</span>
+                <b className="text-stone-900 text-right">{listing.contractStartDate}</b>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => onOpenChat(listing.poster.username, listing.title, listing.id)}
+              className="w-full h-[54px] bg-orange-600 hover:bg-orange-700 text-white text-base font-bold rounded-[14px] flex items-center justify-center gap-2 cursor-pointer transition active:scale-[0.98]"
+            >
+              <MessageSquare className="w-[18px] h-[18px]" />
+              <span>{t.chatWithOwner}</span>
+            </button>
+            {listing.hasVideoTour && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMediaTab('video');
+                  document.getElementById('detail-gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="w-full h-[50px] bg-white border border-stone-300 hover:border-stone-500 text-stone-900 text-[15px] font-bold rounded-[14px] flex items-center justify-center gap-2 cursor-pointer transition"
+              >
+                <Video className="w-[18px] h-[18px]" />
+                <span>{t.watchVideoTour}</span>
+              </button>
+            )}
+            <p className="text-[13px] text-stone-500 leading-snug">{listing.confirmationTimeLeft}</p>
+          </div>
+
           {/* Poster Profile Card */}
           <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
             <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block">

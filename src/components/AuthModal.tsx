@@ -396,36 +396,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className="bg-white w-full max-w-md rounded-2xl border border-stone-200 shadow-2xl overflow-hidden flex flex-col"
+        className="bg-white w-full max-w-md max-h-[94vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
         id="modal-auth-flow"
       >
-        {/* Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-stone-50/60">
-          <div className="flex items-center gap-2">
-            <span className="bg-orange-600 text-white p-1 rounded-lg text-xs">
-              {mode === 'register' ? (
-                <UserPlus className="w-4 h-4" />
-              ) : mode === 'login' ? (
-                <LogIn className="w-4 h-4" />
-              ) : (
+        {/* Üst çubuk: giriş / kayıt sekmeleri (ayrı sayfa yok, pencere içinde geçiş) */}
+        <div className="flex items-center gap-2 px-5 pt-5 pb-1">
+          {mode === 'login' || mode === 'register' ? (
+            <div className="flex-1 flex p-1 bg-stone-200/70 rounded-2xl" role="tablist" aria-label={t.loginNav}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'login'}
+                onClick={() => setMode('login')}
+                className={`flex-1 h-11 rounded-xl text-sm font-bold cursor-pointer transition ${mode === 'login' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
+              >
+                {t.loginNav}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'register'}
+                onClick={() => setMode('register')}
+                className={`flex-1 h-11 rounded-xl text-sm font-bold cursor-pointer transition ${mode === 'register' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
+              >
+                {t.registerNav}
+              </button>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center gap-2 px-1">
+              <span className="bg-orange-600 text-white p-1.5 rounded-lg">
                 <KeyRound className="w-4 h-4" />
-              )}
-            </span>
-            <span className="font-bold text-sm text-stone-900 tracking-tight">
-              {mode === 'register' ? t.registerNav : mode === 'login' ? t.loginNav : mode === 'verify' ? t.authVerifyTitle : t.forgotPasswordNav}
-            </span>
-          </div>
+              </span>
+              <span className="font-bold text-sm text-stone-900 tracking-tight">
+                {mode === 'verify' ? t.authVerifyTitle : t.forgotPasswordNav}
+              </span>
+            </div>
+          )}
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+            className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-stone-900 hover:bg-stone-100 transition cursor-pointer"
             aria-label={t.closeBtn}
           >
-            <X className="w-4 h-4" />
+            <X className="w-[22px] h-[22px]" />
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 pt-4 space-y-5 overflow-y-auto">
           {/* Chat / Messaging Security Notice if triggered by messaging action */}
           {authReason === 'chat' && (
             <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-950 animate-in fade-in duration-200">
@@ -464,7 +482,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'login' && (
             <div className="space-y-4">
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-stone-900 tracking-tight">
+                <h3 className="font-display font-black text-[28px] leading-tight text-stone-900 tracking-tight">
                   {t.loginTitle}
                 </h3>
                 <p className="text-xs text-stone-500">
@@ -675,7 +693,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'register' && (
             <div className="space-y-4">
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-stone-900 tracking-tight">
+                <h3 className="font-display font-black text-[28px] leading-tight text-stone-900 tracking-tight">
                   {t.registerNav}
                 </h3>
                 <p className="text-xs text-stone-500">
@@ -932,7 +950,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-1">
                   <Lock className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-bold text-stone-900 tracking-tight">
+                <h3 className="font-display font-black text-[28px] leading-tight text-stone-900 tracking-tight">
                   {t.forgotPasswordTitle}
                 </h3>
                 <p className="text-xs text-stone-500 leading-relaxed">
@@ -991,7 +1009,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <h3 className="text-xl font-bold text-stone-900 tracking-tight">
+                <h3 className="font-display font-black text-[28px] leading-tight text-stone-900 tracking-tight">
                   {t.resetLinkSentTitle}
                 </h3>
                 <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto">
@@ -1064,7 +1082,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <h3 className="text-xl font-bold text-stone-900 tracking-tight">{t.verifyEmailHeading}</h3>
+                <h3 className="font-display font-black text-[28px] leading-tight text-stone-900 tracking-tight">{t.verifyEmailHeading}</h3>
                 <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto">
                   {t.verifyEmailBody}
                   {isUniPdEmail(email) && ` ${t.verifyUniPdNote}`}

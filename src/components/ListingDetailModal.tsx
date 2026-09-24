@@ -1,29 +1,8 @@
-import React, { useState } from 'react';
-import { 
-  X, 
-  Heart, 
-  Share2, 
-  ShieldCheck, 
-  MapPin, 
-  Video, 
-  MessageSquare, 
-  Check, 
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Building2,
-  Users,
-  Scale,
-  Calendar,
-  Bike,
-  Flame,
-  Wind,
-  Wifi,
-  Car
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, Heart, Share2, MapPin, Video, Check, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
 import { HousingListing, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
+import { HOME_TEXT } from '../utils/homeText';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { formatGenderDistribution } from '../utils/genderDistribution';
 
@@ -57,9 +36,11 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
 }) => {
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
   const listing = getLocalizedListing(rawListing, currentLang);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [copied, setCopied] = useState(false);
+  const imageCount = listing.images?.length || 0;
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,326 +55,259 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
     if (fn) fn(listing);
   };
 
-  const nextImg = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveImageIdx((prev) => (prev + 1) % listing.images.length);
+  const step = (dir: 1 | -1) => {
+    if (imageCount < 2) return;
+    setActiveImageIdx((prev) => (prev + dir + imageCount) % imageCount);
   };
 
-  const prevImg = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveImageIdx((prev) => (prev - 1 + listing.images.length) % listing.images.length);
-  };
+  // Klavye: Esc kapatır, ← → fotoğraf değiştirir.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === 'ArrowRight') step(1);
+      else if (e.key === 'ArrowLeft') step(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  const isPricey = listing.fairPriceStatus !== 'lower' && listing.fairPriceStatus !== 'average';
+  const hasGender = Boolean(listing.femaleCount || listing.maleCount);
+  const tile = 'px-4 py-3.5 bg-stone-50 border border-stone-100 rounded-[14px] space-y-1';
+  const tileLabel = 'block text-xs font-bold uppercase tracking-wider text-stone-500';
+  const amenities = [
+    listing.heatingType ? (listing.heatingType === 'autonomo' ? t.heatingAutonomo : t.heatingCentralizzato) : '',
+    listing.hasAirConditioning ? t.airConditioningLabel : '',
+    listing.hasWashingMachine ? t.washerShort : '',
+    listing.hasWifi !== false ? 'Wi-Fi' : '',
+    listing.hasBikeParking ? t.bikeSpotShort : '',
+    listing.hasParking ? t.parkingLabel : '',
+  ].filter(Boolean);
 
   return (
-    <div 
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 flex items-center justify-center p-3 sm:p-6"
       onClick={onClose}
     >
-      <div 
+      <div
         id="listing-preview-popup"
+        role="dialog"
+        aria-modal="true"
+        aria-label={h.previewTitle}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-white rounded-3xl border border-stone-200 overflow-hidden my-auto max-h-[92vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95"
+        className="relative w-full max-w-6xl bg-white rounded-[28px] overflow-hidden my-auto max-h-[94vh] flex flex-col lg:flex-row shadow-2xl"
       >
-        {/* Modal Top Bar */}
-        <div className="bg-stone-900 text-white px-5 py-3.5 flex items-center justify-between border-b border-stone-800 shrink-0">
-          <div className="flex items-center gap-2 text-xs truncate">
-            <span className="bg-orange-600 px-2.5 py-0.5 font-bold uppercase tracking-wider text-[10px] text-white rounded-full">
-              {t.quickPreview}
-            </span>
-            <span className="bg-stone-800 text-stone-200 text-[10px] px-2 py-0.5 rounded-md border border-stone-700 font-medium">
-              {listing.roomType}
-            </span>
-            <span className="text-stone-500 hidden sm:inline">•</span>
-            <span className="text-stone-300 truncate hidden sm:inline">{listing.district}</span>
+        {/* Galeri */}
+        <div className="lg:w-[55%] shrink-0 flex flex-col bg-stone-100">
+          <div className="relative flex-1 min-h-[240px] sm:min-h-[340px] lg:min-h-[520px] bg-stone-200">
+            {imageCount > 0 ? (
+              <img src={listing.images[activeImageIdx]} alt={listing.title} className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-stone-400">
+                <Camera className="w-12 h-12" />
+              </div>
+            )}
+
+            <div className="absolute left-4 top-4 flex p-1 bg-white rounded-2xl shadow-md">
+              <span className="h-9 px-4 bg-stone-900 text-white rounded-xl text-sm font-bold flex items-center">
+                {h.photosTab} · {imageCount}
+              </span>
+              {listing.hasVideoTour && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    (onOpenVideoTour || onOpenVideoModal)?.(listing);
+                  }}
+                  className="h-9 px-4 rounded-xl text-sm font-bold text-stone-900 flex items-center gap-1.5 cursor-pointer hover:bg-stone-100 transition"
+                >
+                  <Video className="w-[15px] h-[15px]" />
+                  {h.videoTab}
+                </button>
+              )}
+            </div>
+
+            {imageCount > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    step(-1);
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white text-stone-900 rounded-full flex items-center justify-center shadow-md cursor-pointer hover:bg-stone-50 transition"
+                  aria-label={t.prevPhoto}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    step(1);
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white text-stone-900 rounded-full flex items-center justify-center shadow-md cursor-pointer hover:bg-stone-50 transition"
+                  aria-label={t.nextPhoto}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <span className="absolute right-5 bottom-4 h-[30px] px-3 bg-stone-900/70 text-white text-[13px] font-semibold rounded-full flex items-center">
+                  {activeImageIdx + 1} / {imageCount}
+                </span>
+              </>
+            )}
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleShare}
-              className="p-2 hover:bg-stone-800 text-stone-300 hover:text-white transition rounded-lg cursor-pointer"
-              title={copied ? t.copied : t.share}
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite?.(listing.id);
-              }}
-              className="p-2 hover:bg-stone-800 text-stone-300 hover:text-white transition rounded-lg cursor-pointer"
-              title={t.favorite}
-            >
-              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-stone-300'}`} />
-            </button>
-
-            <button
-              id="btn-close-preview-popup"
-              onClick={onClose}
-              className="p-2 bg-stone-800 hover:bg-stone-700 text-white transition rounded-lg ml-1 font-bold cursor-pointer"
-              title={t.closePreview}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          {imageCount > 1 && (
+            <div className="bg-white border-t border-stone-200 px-5 py-4 flex gap-2.5 overflow-x-auto no-scrollbar">
+              {listing.images.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveImageIdx(idx)}
+                  aria-label={`${idx + 1} / ${imageCount}`}
+                  aria-current={activeImageIdx === idx}
+                  className={`w-20 h-[68px] shrink-0 rounded-xl overflow-hidden cursor-pointer transition border-[3px] ${
+                    activeImageIdx === idx ? 'border-orange-600' : 'border-transparent opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Scrollable Modal Body */}
-        <div className="overflow-y-auto p-5 sm:p-6 space-y-5 flex-1">
-          
-          {/* Header Title & Price Overview */}
-          <div className="border-b border-stone-100 pb-4 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${
-                listing.fairPriceStatus === 'lower' 
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                  : 'bg-amber-50 text-amber-800 border-amber-200'
-              }`}>
-                <Scale className="w-3.5 h-3.5" />
-                <span>{listing.fairPriceText}</span>
-              </span>
+        {/* Bilgi */}
+        <div className="flex-1 min-w-0 flex flex-col overflow-y-auto">
+          <button
+            id="btn-close-preview-popup"
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 w-11 h-11 rounded-full flex items-center justify-center text-stone-900 hover:bg-stone-100 transition cursor-pointer z-10 bg-white/80 lg:bg-transparent"
+            title={t.closePreview}
+            aria-label={t.closePreview}
+          >
+            <X className="w-[22px] h-[22px]" />
+          </button>
 
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-bold text-stone-900">€{listing.price}</span>
-                <span className="text-xs text-stone-500 font-medium">/ {t.perMonth} ({listing.expenses})</span>
+          <div className="p-6 sm:p-8 lg:pt-7 space-y-[18px] flex-1">
+            <div className="text-xs font-bold uppercase tracking-widest text-stone-500">{h.previewTitle}</div>
+
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-4xl sm:text-[40px] font-extrabold tracking-tight text-stone-900">€{listing.price}</span>
+              <span className="text-[15px] text-stone-500">
+                {t.perMonth} · {listing.expenses}
+              </span>
+            </div>
+
+            <span
+              className={`inline-block px-3 py-1.5 rounded-[10px] border text-[13px] font-bold ${
+                isPricey ? 'bg-orange-50 border-orange-300 text-orange-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              }`}
+            >
+              {listing.fairPriceText}
+            </span>
+
+            <div className="space-y-1.5">
+              <h3
+                onClick={handleGoToDetailPage}
+                className="font-display font-bold text-[28px] sm:text-3xl leading-tight text-stone-900 cursor-pointer hover:text-orange-700 transition"
+                title={t.goToDetailPage}
+              >
+                {listing.title}
+              </h3>
+              <div className="flex items-center gap-1.5 text-[15px] text-stone-600">
+                <MapPin className="w-4 h-4 shrink-0" />
+                <span>
+                  {listing.streetAddress} · {listing.district.split('/')[0].trim()}
+                </span>
               </div>
             </div>
 
-            <h3 
-              onClick={handleGoToDetailPage}
-              className="text-lg sm:text-xl font-bold text-stone-900 leading-snug cursor-pointer hover:text-orange-600 transition"
-              title={t.goToDetailPage}
-            >
-              {listing.title}
-            </h3>
-
-            <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
-              <span className="flex items-center gap-1 font-semibold text-stone-800">
-                <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                {listing.streetAddress}
-              </span>
-              <span>•</span>
-              <span className="text-orange-700 font-medium">{listing.distanceToFaculty}</span>
-              <span>•</span>
-              <span className="text-emerald-700 font-medium">{listing.confirmationTimeLeft}</span>
-            </div>
-          </div>
-
-          {/* Quick Photo Preview Carousel */}
-          <div className="space-y-2">
-            <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-stone-900 rounded-2xl overflow-hidden flex items-center justify-center group">
-              <img 
-                src={listing.images[activeImageIdx]} 
-                alt="" 
-                className="w-full h-full object-cover"
-              />
-
-              {listing.images.length > 1 && (
-                <>
-                  <button
-                    onClick={prevImg}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-stone-900/80 hover:bg-stone-900 text-white w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition shadow-md"
-                    title={t.prevPhoto}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={nextImg}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-stone-900/80 hover:bg-stone-900 text-white w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition shadow-md"
-                    title={t.nextPhoto}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-
-              {listing.hasVideoTour && (
-                <button
-                  onClick={() => {
-                    onClose();
-                    onOpenVideoTour?.(listing);
-                  }}
-                  className="absolute bottom-3 left-3 bg-stone-900/90 text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-xl hover:bg-orange-600 transition cursor-pointer shadow-md"
-                >
-                  <Video className="w-3.5 h-3.5 text-orange-400" />
-                  <span>{t.videoTour360}</span>
-                </button>
-              )}
-
-              <span className="absolute top-3 right-3 bg-stone-900/80 text-white text-[10px] px-2.5 py-1 rounded-full font-medium shadow-sm">
-                {activeImageIdx + 1} / {listing.images.length}
-              </span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className={tile}>
+                <span className={tileLabel}>{t.roomTypeLabel}</span>
+                <strong className="text-[15px] text-stone-900">
+                  {listing.roomType} · {listing.roomM2} m²
+                </strong>
+              </div>
+              <div className={tile}>
+                <span className={tileLabel}>{t.contractStartDateLabel}</span>
+                <strong className="text-[15px] text-stone-900">
+                  {listing.contractStartDate || t.contractStartImmediate}
+                  {listing.contractEndDate ? ` – ${listing.contractEndDate}` : ''}
+                </strong>
+              </div>
+              <div className={tile}>
+                <span className={tileLabel}>{t.peopleUnit}</span>
+                <strong className="text-[15px] text-stone-900">
+                  {hasGender ? formatGenderDistribution(listing.femaleCount, listing.maleCount, t) : `${listing.totalHousemates || '-'} ${t.peopleUnit}`}
+                </strong>
+              </div>
+              <div className={tile}>
+                <span className={tileLabel}>{t.areaProximityLabel}</span>
+                <strong className="text-[15px] text-stone-900">{listing.distanceToFaculty}</strong>
+              </div>
             </div>
 
-            {/* Thumbnail dots/strip */}
-            {listing.images.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                {listing.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIdx(idx)}
-                    className={`w-14 h-10 rounded-lg shrink-0 overflow-hidden cursor-pointer transition border ${
-                      activeImageIdx === idx ? 'border-orange-600 ring-2 ring-orange-400/30' : 'border-stone-200 opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
+            {amenities.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {amenities.map((a) => (
+                  <span key={a} className="px-3 py-1.5 bg-stone-100 rounded-[10px] text-[13px] font-semibold text-stone-700">
+                    {a}
+                  </span>
                 ))}
               </div>
             )}
+
+            {listing.description && <p className="text-sm text-stone-600 leading-relaxed line-clamp-3">{listing.description}</p>}
           </div>
 
-          {/* Quick Specs Matrix */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-              <span className="text-stone-400 block text-[10px] uppercase font-medium">{t.roomTypeLabel}</span>
-              <strong className="text-stone-900">{listing.roomType}</strong>
+          <div className="p-6 sm:p-8 pt-0 space-y-3">
+            <div className="flex gap-2.5">
+              <button
+                id="btn-preview-goto-detail-page"
+                type="button"
+                onClick={handleGoToDetailPage}
+                className="flex-1 h-[52px] bg-orange-600 hover:bg-orange-700 text-white rounded-[14px] text-base font-bold cursor-pointer transition active:scale-[0.98]"
+              >
+                {h.seeFullListing}
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleFavorite?.(listing.id)}
+                className="w-[52px] h-[52px] bg-white border border-stone-300 hover:border-stone-500 rounded-[14px] flex items-center justify-center cursor-pointer transition"
+                title={isFavorite ? t.unfavorite : t.favorite}
+                aria-label={isFavorite ? t.unfavorite : t.favorite}
+                aria-pressed={isFavorite}
+              >
+                <Heart className={`w-[22px] h-[22px] ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-stone-900'}`} />
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="w-[52px] h-[52px] bg-white border border-stone-300 hover:border-stone-500 rounded-[14px] flex items-center justify-center cursor-pointer transition"
+                title={copied ? t.copied : t.share}
+                aria-label={t.share}
+              >
+                {copied ? <Check className="w-[22px] h-[22px] text-emerald-600" /> : <Share2 className="w-[22px] h-[22px] text-stone-900" />}
+              </button>
             </div>
-            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-              <span className="text-stone-400 block text-[10px] uppercase font-medium">{t.roomArea}</span>
-              <strong className="text-stone-900">{listing.roomM2} m²</strong>
-            </div>
-            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-              <span className="text-stone-400 block text-[10px] uppercase font-medium">{t.bathroomsCount}</span>
-              <strong className="text-stone-900">{listing.bathrooms}</strong>
-            </div>
-            {listing.compatibilityScore > 0 && (
-              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                <span className="text-stone-400 block text-[10px] uppercase font-medium">{t.compatibilityScore}</span>
-                <strong className="text-emerald-700 font-bold">%{listing.compatibilityScore} {t.compatible}</strong>
-              </div>
-            )}
-          </div>
-
-          {/* Contract Start Date & Duration Highlight */}
-          <div className="p-3 bg-orange-50/70 rounded-xl border border-orange-200/80 flex items-center justify-between text-xs">
-            <span className="text-orange-950 text-[11px] uppercase font-bold flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-orange-600 shrink-0" />
-              <span>{t.contractStartDateLabel}</span>
-            </span>
-            <strong className="text-orange-950 font-bold text-xs bg-white px-2.5 py-1 rounded-lg border border-orange-200/80 shadow-2xs">
-              {listing.contractStartDate || t.contractStartImmediate} {listing.contractEndDate ? `– ${listing.contractEndDate}` : ''}
-            </strong>
-          </div>
-
-          {/* Roommate Profile & Critical Amenities Badges */}
-          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-stone-700 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-stone-500" />
-                <span>
-                  {listing.totalHousemates || 3} {t.peopleUnit} • {formatGenderDistribution(listing.femaleCount, listing.maleCount, t)}
-                </span>
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                listing.genderPreference === 'female_only'
-                  ? 'bg-rose-100 text-rose-800'
-                  : listing.genderPreference === 'male_only'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-stone-200 text-stone-700'
-              }`}>
-                {listing.genderPreference === 'female_only' ? t.genderFemaleOnly : listing.genderPreference === 'male_only' ? t.genderMaleOnly : t.genderAny}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-stone-200/60">
-              {listing.hasBikeParking && (
-                <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md font-semibold text-[11px] flex items-center gap-1">
-                  <Bike className="w-3 h-3 text-emerald-700" />
-                  <span>{t.bikeSpotShort}</span>
-                </span>
-              )}
-              {listing.hasParking && (
-                <span className="bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
-                  <Car className="w-3 h-3 text-blue-600" />
-                  <span>{t.parkingLabel}</span>
-                </span>
-              )}
-              {listing.heatingType && (
-                <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-rose-600" />
-                  <span>{listing.heatingType === 'autonomo' ? t.heatingAutonomo : t.heatingCentralizzato}</span>
-                </span>
-              )}
-              {listing.hasAirConditioning && (
-                <span className="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
-                  <Wind className="w-3 h-3 text-sky-600" />
-                  <span>{t.airConditioningLabel}</span>
-                </span>
-              )}
-              {listing.hasWashingMachine && (
-                <span className="bg-white border border-stone-200 text-stone-700 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
-                  <span>🧺 {t.washerShort}</span>
-                </span>
-              )}
-              {listing.hasWifi !== false && (
-                <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-medium text-[11px] flex items-center gap-1">
-                  <Wifi className="w-3 h-3 text-emerald-600" />
-                  <span>Wi-Fi</span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Short Description Summary */}
-          <div className="border border-stone-200 p-4 rounded-2xl bg-white space-y-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 block">{t.shortDescription}</span>
-            <p className="text-xs text-stone-600 leading-relaxed line-clamp-3">
-              {listing.description}
-            </p>
-          </div>
-
-          {/* Poster Mini Summary */}
-          <div className="p-3 border border-stone-200 rounded-2xl bg-stone-50/70 flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-3">
-              <img 
-                src={listing.poster.avatar} 
-                alt="" 
-                className="w-10 h-10 rounded-full border border-stone-200 object-cover shadow-xs" 
-              />
-              <div>
-                <strong className="block text-stone-900 font-semibold">{listing.poster.name}</strong>
-                <span className="text-[10px] text-stone-500 block">
-                  @{listing.poster.username} • {listing.poster.department}
-                </span>
-              </div>
-            </div>
-
             <button
+              id="btn-preview-message"
+              type="button"
               onClick={() => {
                 onClose();
                 onOpenChat?.(listing.poster.username, listing.title, listing.id);
               }}
-              className="border border-stone-200 bg-white hover:bg-stone-50 px-3 py-2 font-semibold text-stone-700 rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer active:translate-y-0.5"
+              className="w-full h-12 bg-white border border-stone-300 hover:border-stone-500 rounded-[14px] text-[15px] font-bold text-stone-900 cursor-pointer transition"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-stone-500" />
-              <span>{t.sendMessage}</span>
+              {t.sendMessage}
             </button>
+            <p className="hidden lg:block text-center text-xs text-stone-500">{h.keysHint}</p>
           </div>
-
         </div>
-
-        {/* Modal Footer with Primary Link to Dedicated Full Listing Page */}
-        <div className="bg-stone-50 px-5 py-3.5 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <button 
-            id="btn-preview-close"
-            onClick={onClose}
-            className="border border-stone-200 px-4 py-2.5 bg-white hover:bg-stone-100 font-semibold text-xs text-stone-700 rounded-xl cursor-pointer transition shadow-xs"
-          >
-            {t.closePreview}
-          </button>
-
-          {/* Dedicated Page Button */}
-          <button
-            id="btn-preview-goto-detail-page"
-            onClick={handleGoToDetailPage}
-            className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 px-5 text-xs rounded-xl flex items-center gap-2 cursor-pointer shadow-sm active:translate-y-0.5 transition"
-          >
-            <span>{t.goToDetailPage}</span>
-            <ExternalLink className="w-4 h-4" />
-          </button>
-        </div>
-
       </div>
     </div>
   );
