@@ -18,6 +18,7 @@ import { LANG_LOCALE } from '../utils/wizardText';
 import { formatDeviceTime } from '../utils/deviceTime';
 import { evaluateFairPrice } from '../utils/fairPrice';
 import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/username';
+import { EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
 import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
 import { isSuperAdminEmail } from '../config';
 import {
@@ -172,6 +173,8 @@ interface AppContextType {
   handleUpdateListingPrice: (id: string, newPrice: number) => void;
   handleMarkListingAsRented: (listingId: string, details?: { rentedPrice: number; tenantType: string; note?: string }) => void;
   handleReactivateListing: (listingId: string) => void;
+  // Teyit süresini baştan başlatır (İlanlarım > "Süreyi Yenile").
+  handleRenewListing: (listingId: string) => void;
   handleToggleFavorite: (e?: React.MouseEvent, listingId?: string) => void;
   editingListing: HousingListing | null;
   setEditingListing: (listing: HousingListing | null) => void;
@@ -948,13 +951,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
   };
 
+  const handleRenewListing = (listingId: string) => {
+    const target = allListings.find((l) => l.id === listingId);
+    if (!target || !authUser) return;
+
+    // Sunucudaki tetikleyici zamanı gelecekteki bir değere çekilmeye karşı now() ile sınırlar.
+    updateListingInFirestore(listingId, { confirmedAt: new Date().toISOString() })
+      .then(() => showToast(t.toastRenewed, 'success'))
+      .catch((err) => {
+        console.warn('Renew error:', err);
+        showToast(t.toastRenewFail);
+      });
+  };
+
   const handleReactivateListing = (listingId: string) => {
     const target = allListings.find((l) => l.id === listingId);
     if (!target || !authUser) return;
 
     updateListingInFirestore(
       listingId,
-      { isArchived: false, confirmationTimeLeft: TRANSLATIONS.tr.confirmed48h },
+      { isArchived: false, confirmedAt: new Date().toISOString(), confirmationTimeLeft: '' },
       ['rentedAt', 'rentedPrice', 'archiveReason', 'tenantType']
     )
       .then(() =>
@@ -987,7 +1003,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ---- Türetilmiş listeler ----
 
-  const listings = useMemo(() => allListings.filter((l) => !l.isArchived), [allListings]);
+  // Teyit süresi dolan ilanlar sunucu arşivlemesini beklemeden burada da arşivde sayılır.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const listings = useMemo(
+    () => allListings.filter((l) => !l.isArchived && !isConfirmationExpired(l, nowMs)),
+    [allListings, nowMs]
+  );
 
   // Sözleşme aralığı bitmiş ilanlar herkese açık akışlarda gösterilmez (sahibi kendi listesinde görmeye devam eder).
   const publicListings = useMemo(() => {
@@ -1003,8 +1029,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Adminler tüm arşivi görür, diğer kullanıcılar yalnızca kendi arşivlerini.
   const archivedListings = useMemo(
-    () => allListings.filter((l) => l.isArchived && (isAdmin || isMine(l))),
-    [allListings, isAdmin, isMine]
+    () =>
+      allListings
+        .filter((l) => (l.isArchived || isConfirmationExpired(l, nowMs)) && (isAdmin || isMine(l)))
+        .map((l) => (l.isArchived ? l : { ...l, isArchived: true, archiveReason: EXPIRED_ARCHIVE_REASON })),
+    [allListings, isAdmin, isMine, nowMs]
   );
 
   const filteredListings = useMemo(() => {
@@ -1128,6 +1157,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleUpdateListingPrice,
     handleMarkListingAsRented,
     handleReactivateListing,
+    handleRenewListing,
     handleToggleFavorite,
     editingListing,
     setEditingListing,

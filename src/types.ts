@@ -102,6 +102,8 @@ export interface HousingListing {
   poster: PosterInfo;
   images: string[];
   createdAt: string;
+  // Sahibinin ilanı son teyit ettiği an (ISO). Yoksa createdAt esas alınır.
+  confirmedAt?: string;
   updatedAt?: string;
   views: number;
   lat?: number;

@@ -8,6 +8,7 @@ import {
   Archive, 
   Sparkles, 
   Eye,
+  RefreshCw,
   X, 
   Check, 
   RotateCcw, 
@@ -20,6 +21,8 @@ import {
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
+import { LISTING_CONFIRMATION_DAYS } from '../config';
+import { EXPIRED_ARCHIVE_REASON, confirmationDeadlineMs } from '../utils/listingExpiry';
 import { getLocalizedListing } from '../utils/listingTranslator';
 
 interface MyListingsViewProps {
@@ -32,6 +35,7 @@ interface MyListingsViewProps {
   onDeleteListing: (id: string) => void;
   onMarkAsRented?: (listingId: string, details?: { rentedPrice: number; tenantType: string; note?: string }) => void;
   onReactivateListing?: (listingId: string) => void;
+  onRenewListing?: (listingId: string) => void;
   onBackToHome: () => void;
   currentLang?: Language;
   currentUser?: UserProfile;
@@ -65,6 +69,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
   onDeleteListing,
   onMarkAsRented,
   onReactivateListing,
+  onRenewListing,
   onBackToHome,
   currentLang = 'tr',
   currentUser,
@@ -189,7 +194,12 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
+              <p className="text-[11px] text-stone-500 flex items-start gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-stone-400 shrink-0 mt-px" />
+                <span>{t.renewNotice.replace('{days}', String(LISTING_CONFIRMATION_DAYS))}</span>
+              </p>
               {myListings.map((rawListing) => {
+                const isUrgent = confirmationDeadlineMs(rawListing) - Date.now() < 24 * 60 * 60 * 1000;
                 const listing = getLocalizedListing(rawListing, currentLang);
                 return (
                   <div 
@@ -239,6 +249,23 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
 
                       {/* Action buttons including "Kiracı Buldum" */}
                       <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                        {/* Süreyi Yenile: teyit süresini baştan başlatır */}
+                        {onRenewListing && (
+                          <button
+                            type="button"
+                            onClick={() => onRenewListing(rawListing.id)}
+                            className={`border px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer min-h-[40px] flex items-center gap-1.5 shadow-2xs active:scale-95 ${
+                              isUrgent
+                                ? 'border-orange-400 bg-orange-100 hover:bg-orange-200 text-orange-950'
+                                : 'border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-900'
+                            }`}
+                            title={t.renewHint}
+                          >
+                            <RefreshCw className={`w-4 h-4 ${isUrgent ? 'text-orange-700' : 'text-sky-600'}`} />
+                            <span>{t.renewBtn}</span>
+                          </button>
+                        )}
+
                         {/* İlanı Düzenle Button */}
                         <button
                           type="button"
@@ -295,7 +322,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                         <span>{t.viewsLabel}</span>
                       </span>
                       {listing.confirmationTimeLeft && (
-                        <span className="text-orange-600 font-medium">
+                        <span className={`font-medium ${isUrgent ? 'text-orange-600' : 'text-stone-500'}`}>
                           {listing.confirmationTimeLeft}
                         </span>
                       )}
@@ -339,6 +366,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
             <div className="space-y-4">
               {archivedListings.map((rawListing) => {
                 const listing = getLocalizedListing(rawListing, currentLang);
+                const isExpiredArchive = rawListing.archiveReason === EXPIRED_ARCHIVE_REASON;
                 return (
                   <div
                     key={listing.id}
@@ -346,18 +374,25 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                   >
                     <div className="flex flex-wrap items-start justify-between border-b border-stone-200 pb-3 gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                          <Check className="w-3.5 h-3.5 text-emerald-700" />
-                          <span>{t.tenantFoundArchived}</span>
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs border ${
+                            isExpiredArchive
+                              ? 'bg-amber-100 text-amber-900 border-amber-300'
+                              : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                          }`}
+                        >
+                          {isExpiredArchive ? <RefreshCw className="w-3.5 h-3.5 text-amber-700" /> : <Check className="w-3.5 h-3.5 text-emerald-700" />}
+                          <span>{isExpiredArchive ? t.expiredArchived : t.tenantFoundArchived}</span>
                         </span>
                         <span className="text-xs text-stone-500 font-medium">{listing.district}</span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-stone-500 font-medium">{t.rentedPriceLabel}:</span>
+                        {!isExpiredArchive && <span className="text-xs text-stone-500 font-medium">{t.rentedPriceLabel}:</span>}
                         <span className="text-lg font-bold text-stone-900">
-                          €{rawListing.rentedPrice || rawListing.price}
+                          €{isExpiredArchive ? rawListing.price : rawListing.rentedPrice || rawListing.price}
                         </span>
+                        {isExpiredArchive && <span className="text-xs text-stone-500">{t.perMonth}</span>}
                       </div>
                     </div>
 
@@ -399,14 +434,18 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
 
                     {/* Historical metadata summary */}
                     <div className="pt-2.5 border-t border-stone-200 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-stone-600">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-stone-400" />
-                        <span>{t.rentedOnLabel}: <strong className="text-stone-800">{rawListing.rentedAt || t.recordedValue}</strong></span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{t.tenantTypeLabel}: <strong className="text-stone-800">{rawListing.tenantType ? tenantLabel(rawListing.tenantType) : t.tenantBaMa}</strong></span>
-                      </div>
+                      {!isExpiredArchive && (
+                        <>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                            <span>{t.rentedOnLabel}: <strong className="text-stone-800">{rawListing.rentedAt || t.recordedValue}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{t.tenantTypeLabel}: <strong className="text-stone-800">{rawListing.tenantType ? tenantLabel(rawListing.tenantType) : t.tenantBaMa}</strong></span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-stone-400" />
                         <span>{t.totalViewsLabel}: <strong className="text-stone-800">{viewCounts[listing.id] ?? 0}</strong></span>

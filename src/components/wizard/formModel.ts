@@ -331,7 +331,7 @@ export const buildListing = (
     roomM2: Number(f.roomM2) || 0,
     apartmentM2: Number(f.apartmentM2) || 0,
     bathrooms: f.bathrooms,
-    confirmationTimeLeft: existing?.confirmationTimeLeft ?? TRANSLATIONS.tr.confirmed3Days,
+    confirmationTimeLeft: existing?.confirmationTimeLeft ?? '',
     description: f.description.trim() || existing?.description || '',
     userId: existing?.userId ?? user?.id,
     poster: existing?.poster ?? {

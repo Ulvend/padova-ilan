@@ -346,6 +346,7 @@ interface ListingRow {
   poster: PosterInfo;
   images: string[];
   created_at: string;
+  confirmed_at: string | null;
   updated_at: string | null;
   views: number;
   lat: number | null;
@@ -405,6 +406,7 @@ const listingFromRow = (row: ListingRow): HousingListing => ({
   poster: row.poster,
   images: row.images || [],
   createdAt: row.created_at,
+  confirmedAt: row.confirmed_at || undefined,
   updatedAt: row.updated_at || undefined,
   views: row.views,
   lat: row.lat ?? undefined,
@@ -466,6 +468,7 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
     poster: 'poster',
     images: 'images',
     views: 'views',
+    confirmedAt: 'confirmed_at',
     lat: 'lat',
     lng: 'lng',
     isArchived: 'is_archived',

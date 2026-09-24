@@ -68,12 +68,16 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [usernameSuccessMsg, setUsernameSuccessMsg] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
 
+  // Modal her açıldığında mesajlar sıfırlanır; kayıttan sonra kullanıcı adı değişince başarı mesajı silinmemeli.
   useEffect(() => {
     if (isOpen) {
-      setUsernameInput(currentUser.username);
       setUsernameSuccessMsg(false);
       setUsernameError(null);
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    setUsernameInput(currentUser.username);
   }, [currentUser.username, isOpen]);
 
   // Photo state

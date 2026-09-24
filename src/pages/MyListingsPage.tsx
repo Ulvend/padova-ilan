@@ -16,6 +16,7 @@ export const MyListingsPage: React.FC = () => {
     handleDeleteListing,
     handleMarkListingAsRented,
     handleReactivateListing,
+    handleRenewListing,
     currentLang,
     currentUser,
     isLoggedIn,
@@ -51,6 +52,7 @@ export const MyListingsPage: React.FC = () => {
       onDeleteListing={handleDeleteListing}
       onMarkAsRented={handleMarkListingAsRented}
       onReactivateListing={handleReactivateListing}
+      onRenewListing={handleRenewListing}
       onBackToHome={() => navigate('/')}
       currentLang={currentLang}
       currentUser={currentUser}
