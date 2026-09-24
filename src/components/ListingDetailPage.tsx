@@ -36,7 +36,8 @@ import {
   Car,
   Cigarette,
   Dog,
-  Pencil
+  Pencil,
+  Flag
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import { DISTRICT_BENCHMARKS } from '../data/mockData';
@@ -47,6 +48,7 @@ import { formatPercent } from '../utils/format';
 import { LOW_RATIO, HIGH_RATIO, MIN_COMPARABLE_LISTINGS, type PriceInsight } from '../utils/districtPricing';
 import { marketTrendLabel } from '../utils/marketTrendText';
 import { PadovaMap } from './PadovaMap';
+import { ReportModal } from './ReportModal';
 import { FlatmateIcon } from './FlatmateIcon';
 
 interface ListingDetailPageProps {
@@ -63,6 +65,8 @@ interface ListingDetailPageProps {
   isAdmin?: boolean;
   // Aynı bölge ve oda tipindeki diğer ilanların ortalamasına göre fiyat karşılaştırması.
   priceInsight: PriceInsight;
+  // Giriş yapmamış kullanıcı "Bildir"e basınca giriş penceresini açar.
+  onRequireLogin?: () => void;
   currentLang: Language;
 }
 
@@ -78,6 +82,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   isLoggedIn = false,
   isAdmin = false,
   priceInsight,
+  onRequireLogin,
   currentLang,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
@@ -88,6 +93,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // Embedded Video Tour State
   const [isPlayingVideo, setIsPlayingVideo] = useState(false);
@@ -106,6 +112,11 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const priceRatio = regionalAverage ? listing.price / regionalAverage : 1;
   // Ölçek ortalamanın %75–%125'i; renk bölgeleri "uygun" (≤%95) / "ortalama" / "yüksek" (≥%110) eşikleriyle aynı.
   const gaugePct = (r: number) => ((Math.min(1.25, Math.max(0.75, r)) - 0.75) / 0.5) * 100;
+
+  // Kendi ilanını bildiremez (sunucu politikası da reddeder).
+  const isOwnReportTarget = Boolean(
+    currentUser?.id && (rawListing.userId === currentUser.id || rawListing.poster?.id === currentUser.id)
+  );
 
   // Video progress timer simulation
   useEffect(() => {
@@ -213,8 +224,31 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           >
             <Heart className={`w-4 h-4 ${isFavorite ? 'fill-rose-600 text-rose-600' : 'text-stone-700'}`} />
           </button>
+
+          {/* Şikayet (kendi ilanında gösterilmez) */}
+          {!isOwnReportTarget && (
+            <button
+              type="button"
+              onClick={() => (isLoggedIn ? setIsReportOpen(true) : onRequireLogin?.())}
+              className="border border-stone-200 bg-white hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 min-h-[42px] px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 rounded-xl shadow-xs transition cursor-pointer active:translate-y-0.5 text-stone-700"
+              title={t.reportTitle}
+            >
+              <Flag className="w-4 h-4" />
+              <span className="hidden sm:inline">{t.reportBtn}</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {isLoggedIn && currentUser?.id && (
+        <ReportModal
+          isOpen={isReportOpen}
+          onClose={() => setIsReportOpen(false)}
+          listingId={rawListing.id}
+          reporterId={currentUser.id}
+          t={t}
+        />
+      )}
 
       {/* 4. Unified Media Gallery (Photos & Interactive Video Tour) */}
       <div id="detail-gallery" className="scroll-mt-24 p-4 md:p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
@@ -977,6 +1011,18 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Şikayet et (kendi ilanında gösterilmez) */}
+            {!isOwnReportTarget && (
+              <button
+                type="button"
+                onClick={() => (isLoggedIn ? setIsReportOpen(true) : onRequireLogin?.())}
+                className="w-full min-h-[44px] border border-stone-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-stone-600 hover:text-rose-700 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition active:scale-[0.98]"
+              >
+                <Flag className="w-4 h-4" />
+                <span>{t.reportTitle}</span>
+              </button>
+            )}
           </div>
 
           {/* Current Flatmates & Match Algorithm */}

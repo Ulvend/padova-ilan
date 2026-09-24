@@ -4,6 +4,12 @@ import { TRANSLATIONS } from '../utils/translations';
 
 const coded = (code: string, message: string) => Object.assign(new Error(message), { code });
 
+// Yalnızca raster görseller kabul edilir. SVG dosyaları <script> / inline JavaScript içerebildiği (XSS) ve
+// canvas sıkıştırmasından geçmediği için, GIF ise sıkıştırılamadığı için reddedilir.
+// supabase/migrations/0009_storage_raster_only.sql içindeki bucket izinleriyle uyumlu tutulmalıdır.
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const isAllowedImageType = (type: string): boolean => ALLOWED_IMAGE_TYPES.includes(type);
+
 /** Yükleme hatasını kullanıcının diline çevirir; bilinmeyen hatalarda genel mesaj döner. */
 export function describeUploadError(err: unknown, lang: Language = 'tr'): string {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
@@ -35,9 +41,9 @@ export async function compressImage(
   quality = 0.85
 ): Promise<{ blob: Blob; contentType: string }> {
   return new Promise((resolve, reject) => {
-    // If browser doesn't support canvas or image is an svg/gif, return as is
-    if (file.type === 'image/svg+xml' || file.type === 'image/gif') {
-      resolve({ blob: file, contentType: file.type });
+    // Yalnızca izin verilen raster tipler buraya gelir; hepsi canvas'tan geçirilip yeniden kodlanır.
+    if (!isAllowedImageType(file.type)) {
+      reject(coded('upload/not-image', 'Only JPEG, PNG or WebP images can be uploaded.'));
       return;
     }
 
@@ -155,8 +161,8 @@ export async function uploadProfilePhoto(
   }
 
   // 1. Check file type
-  if (!file.type.startsWith('image/')) {
-    throw coded('upload/not-image', 'Only image files can be uploaded.');
+  if (!isAllowedImageType(file.type)) {
+    throw coded('upload/not-image', 'Only JPEG, PNG or WebP images can be uploaded.');
   }
 
   // 2. Client-side compression
@@ -215,8 +221,8 @@ export async function uploadListingPhoto(
   if (!userId) {
     throw coded('upload/need-login', 'Sign in to upload.');
   }
-  if (!file.type.startsWith('image/')) {
-    throw coded('upload/not-image', 'Only image files can be uploaded.');
+  if (!isAllowedImageType(file.type)) {
+    throw coded('upload/not-image', 'Only JPEG, PNG or WebP images can be uploaded.');
   }
 
   // Compress to max 1280x850 at 0.78 quality to keep size small (<90KB)

@@ -17,6 +17,8 @@ import { MessagesPage } from './pages/MessagesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminPage } from './pages/AdminPage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { Footer } from './components/Footer';
 import { ActiveView, HousingListing } from './types';
 
 const VIEW_TO_PATH: Record<ActiveView, string> = {
@@ -159,7 +161,7 @@ const AppLayout: React.FC = () => {
       />
 
       {/* Main Canvas with React Router Routes */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-3.5 sm:p-5 md:p-8 space-y-6 sm:space-y-8 pb-28 sm:pb-12">
+      <div className="flex-1 max-w-7xl w-full mx-auto p-3.5 sm:p-5 md:p-8 space-y-6 sm:space-y-8 pb-6 sm:pb-12">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/ilan/:id" element={<ListingDetailPage />} />
@@ -168,9 +170,13 @@ const AppLayout: React.FC = () => {
           <Route path="/profil" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/bildirimler" element={<NotificationsPage />} />
+          <Route path="/gizlilik" element={<PrivacyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+
+      {/* Alt bilgi: gizlilik ve çerez politikası (mobilde alt menünün üstünde kalması için kendi boşluğunu taşır) */}
+      <Footer />
 
       {/* Mobile Filter Drawer */}
       <MobileFilterDrawer

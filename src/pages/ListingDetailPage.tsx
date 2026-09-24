@@ -24,6 +24,7 @@ export const ListingDetailPage: React.FC = () => {
     authReady,
     isAdmin,
     getPriceInsight,
+    handleOpenAuthModal,
     t
   } = useApp();
 
@@ -89,6 +90,7 @@ export const ListingDetailPage: React.FC = () => {
       isLoggedIn={isLoggedIn}
       isAdmin={isAdmin}
       priceInsight={getPriceInsight(listing)}
+      onRequireLogin={() => handleOpenAuthModal('login', 'default')}
       currentLang={currentLang}
     />
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   ShieldCheck, 
   AlertTriangle, 
@@ -25,11 +25,14 @@ import {
   Calendar,
   Clock,
   TrendingUp,
-  FileCheck
+  FileCheck,
+  Flag
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import type { PublicUserProfile } from '../services/supabaseService';
 import { useApp } from '../context/AppContext';
+import { ReportsPanel } from './ReportsPanel';
+import { getReports, updateReportStatus, type Report, type ReportStatus } from '../services/supabaseService';
 
 
 interface AdminPanelProps {
@@ -70,7 +73,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Navigation tabs without PostgreSQL database
   const { getPriceInsight } = useApp();
   const isPricedHigh = (l: HousingListing) => getPriceInsight(l).status === 'higher';
-  const [activeTab, setActiveTab] = useState<'listings' | 'ssoLogs' | 'fairPrice' | 'adminAuth' | 'pastListings'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'ssoLogs' | 'fairPrice' | 'adminAuth' | 'pastListings' | 'reports'>('listings');
+
+  // Şikayetler: yalnızca yöneticiler okuyabilir (RLS); sekme etiketindeki bekleyen sayısı için baştan yüklenir.
+  const [reports, setReports] = useState<Report[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(true);
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    getReports().then((list) => {
+      if (cancelled) return;
+      setReports(list);
+      setReportsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+  const pendingReportCount = reports.filter((r) => r.status === 'pending').length;
+  const handleReportStatus = async (id: string, status: ReportStatus) => {
+    await updateReportStatus(id, status);
+    setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'unverified' | 'highPrice'>('all');
   const [adminNotification, setAdminNotification] = useState<string | null>(null);
@@ -371,6 +395,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <span>Geçmiş İlanlar & Piyasa Veri Ambarı ({archivedCount})</span>
         </button>
 
+        <button
+          type="button"
+          onClick={() => setActiveTab('reports')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'reports'
+              ? 'bg-rose-700 text-white shadow-sm'
+              : 'text-stone-600 hover:bg-stone-100'
+          }`}
+        >
+          <Flag className="w-4 h-4" />
+          <span>Şikayetler{pendingReportCount > 0 ? ` (${pendingReportCount})` : ''}</span>
+        </button>
+
         {/* REQ 3: Admin Authorization (yalnızca ana admin) */}
         {isSuperAdmin && (
         <button
@@ -387,6 +424,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </button>
         )}
       </div>
+
+      {activeTab === 'reports' && (
+        <ReportsPanel reports={reports} loading={reportsLoading} onChangeStatus={handleReportStatus} />
+      )}
 
       {/* TAB 1: LISTINGS MODERATION */}
       {activeTab === 'listings' && (

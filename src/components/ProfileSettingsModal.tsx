@@ -15,13 +15,17 @@ import {
   RefreshCw,
   GraduationCap,
   ChevronDown,
-  BookOpen
+  BookOpen,
+  Trash2
 } from 'lucide-react';
 import { Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
-import { uploadProfilePhoto, describeUploadError } from '../services/storageService';
-import { updateUserProfilePhoto } from '../services/supabaseService';
+import { uploadProfilePhoto, describeUploadError, isAllowedImageType } from '../services/storageService';
+import { updateUserProfilePhoto, deleteMyAccount } from '../services/supabaseService';
+import { clearLocalData, LOCAL_DATA_GROUPS } from '../utils/localData';
+import { LANG_LOCALE } from '../utils/wizardText';
+import { Link } from 'react-router-dom';
 import { supabase, changePassword, describeAuthError } from '../lib/supabase';
 import { UsernameField, UsernameStatus } from './UsernameField';
 import { normalizeUsername } from '../utils/username';
@@ -46,7 +50,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<'department' | 'username' | 'photo' | 'password'>('department');
+  const [activeTab, setActiveTab] = useState<'department' | 'username' | 'photo' | 'password' | 'account'>('department');
 
   // UniPD Department state
   const [selectedDepartment, setSelectedDepartment] = useState<string>(
@@ -79,6 +83,11 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   useEffect(() => {
     setUsernameInput(currentUser.username);
   }, [currentUser.username, isOpen]);
+
+  // Account deletion state
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Photo state
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
@@ -120,7 +129,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (!isAllowedImageType(file.type)) {
       setPhotoError(t.errNotImage);
       return;
     }
@@ -218,6 +227,38 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       setUsernameError(t.usernameSaveFail);
     } finally {
       setIsSavingUsername(false);
+    }
+  };
+
+  const confirmWord = t.deleteConfirmWord;
+  const canDeleteAccount =
+    deleteConfirm.trim().toLocaleUpperCase(LANG_LOCALE[currentLang]) === confirmWord.toLocaleUpperCase(LANG_LOCALE[currentLang]);
+
+  // GDPR md. 17: hesap ve tüm veriler sunucuda silinir, ardından bu tarayıcıdaki yerel veriler ve oturum temizlenir.
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canDeleteAccount || isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const result = await deleteMyAccount();
+      if (result === 'superadmin') {
+        setDeleteError(t.deleteSuperadminBlocked);
+        return;
+      }
+      clearLocalData(LOCAL_DATA_GROUPS.map((g) => g.id));
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+      try {
+        sessionStorage.setItem('padova_account_deleted', '1');
+      } catch {
+        // gizli modda yazılamayabilir; yalnızca bilgi mesajı kaybolur
+      }
+      window.location.assign('/');
+    } catch (err) {
+      console.warn('Account deletion failed:', err);
+      setDeleteError(t.deleteAccountFail);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -388,6 +429,24 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
           <button
             type="button"
             onClick={() => {
+              setActiveTab('account');
+              setPhotoSuccessMsg(false);
+              setPasswordSuccessMsg(false);
+              setDepartmentSuccessMsg(false);
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer ${
+              activeTab === 'account'
+                ? 'bg-white text-rose-600 shadow-xs font-bold border border-stone-200'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/70'
+            }`}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>{t.profileTabAccount}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
               setActiveTab('password');
               setPhotoSuccessMsg(false);
               setPasswordSuccessMsg(false);
@@ -515,6 +574,56 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   )}
                 </button>
               </div>
+            </form>
+          )}
+
+          {/* TAB: Hesap (silme) */}
+          {activeTab === 'account' && (
+            <form onSubmit={handleDeleteAccount} className="space-y-4">
+              <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/60 space-y-3">
+                <h4 className="text-sm font-bold text-rose-900">{t.deleteAccountTitle}</h4>
+                <p className="text-xs text-rose-900/90 leading-relaxed">{t.deleteAccountIntro}</p>
+                <ul className="list-disc pl-5 space-y-1 text-xs text-stone-700 leading-relaxed">
+                  {t.deleteAccountItems.split('|').map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="input-delete-confirm" className="block text-xs font-bold text-stone-800">
+                  {t.deleteConfirmPrompt.replace('{word}', confirmWord)}
+                </label>
+                <input
+                  id="input-delete-confirm"
+                  type="text"
+                  value={deleteConfirm}
+                  onChange={(e) => setDeleteConfirm(e.target.value)}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  className="w-full min-h-[44px] px-3.5 text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                />
+              </div>
+
+              {deleteError && (
+                <div role="alert" className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs text-rose-800">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="font-semibold">{deleteError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={!canDeleteAccount || isDeleting}
+                className="w-full min-h-[46px] bg-rose-600 hover:bg-rose-700 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition cursor-pointer"
+              >
+                {isDeleting ? t.deleteAccountWorking : t.deleteAccountBtn}
+              </button>
+
+              <Link to="/gizlilik" onClick={onClose} className="block text-center text-[11px] text-stone-500 hover:text-orange-700 underline">
+                {t.privacyLinkInModal}
+              </Link>
             </form>
           )}
 

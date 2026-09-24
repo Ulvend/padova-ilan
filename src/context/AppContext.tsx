@@ -20,7 +20,6 @@ import { buildPriceIndex, type PriceInsight, type PriceTarget } from '../utils/d
 import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/username';
 import { EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
 import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
-import { isSuperAdminEmail } from '../config';
 import {
   supabase,
   logOut,
@@ -48,6 +47,7 @@ import {
   markNotificationsRead,
   deleteNotificationFromFirestore,
   subscribeToAdminStatus,
+  type AdminRole,
   subscribeToAdminGrants,
   grantAdmin,
   revokeAdmin,
@@ -269,12 +269,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authReady, setAuthReady] = useState(false);
   const [listingsLoaded, setListingsLoaded] = useState(false);
   const [profileExtras, setProfileExtras] = useState<Partial<UserProfile>>({});
-  const [hasAdminGrant, setHasAdminGrant] = useState(false);
+  // Rol public.admins tablosundan okunur (superadmin e-postası istemcide tutulmaz).
+  const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const lastSyncedKey = useRef<string>('');
 
   const isLoggedIn = Boolean(authUser);
-  const isSuperAdmin = Boolean(authUser?.emailVerified && isSuperAdminEmail(authUser.email));
-  const isAdmin = isSuperAdmin || hasAdminGrant;
+  const isSuperAdmin = Boolean(authUser?.emailVerified && adminRole === 'superadmin');
+  const isAdmin = adminRole !== null;
 
   const currentUser: UserProfile = useMemo(() => {
     if (!authUser) return DEFAULT_GUEST_USER;
@@ -290,9 +291,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       studentIdVerified: authUser.unipdVerified,
       ssoVerified: authUser.unipdVerified,
       ssoProvider: authUser.unipdVerified ? 'UniPD e-posta doğrulaması' : undefined,
-      role: isSuperAdmin ? 'superadmin' : hasAdminGrant ? 'admin' : 'student',
+      role: isSuperAdmin ? 'superadmin' : adminRole === 'admin' ? 'admin' : 'student',
     };
-  }, [authUser, profileExtras, isSuperAdmin, hasAdminGrant]);
+  }, [authUser, profileExtras, isSuperAdmin, adminRole]);
 
   // 3. Listings State (Firestore gerçek zamanlı; açılışta son bilinen liste önbellekten gösterilir)
   const [allListings, setAllListings] = useState<HousingListing[]>(() => {
@@ -370,6 +371,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authModalReason, setAuthModalReason] = useState<'chat' | 'createListing' | 'default' | null>(null);
   const [pendingCreateListingAfterAuth, setPendingCreateListingAfterAuth] = useState(false);
 
+  // Hesap silme sonrası yeniden yüklenen sayfada kısa bir bilgi mesajı göster.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('padova_account_deleted')) {
+        sessionStorage.removeItem('padova_account_deleted');
+        showToast(t.deleteAccountDone, 'success');
+      }
+    } catch {
+      // sessionStorage kullanılamıyorsa mesaj atlanır
+    }
+    // yalnızca açılışta bir kez
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Eski sürümden kalan yerel verileri bir kez temizle
   useEffect(() => {
     LEGACY_STORAGE_KEYS.forEach((key) => {
@@ -403,7 +418,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!user) {
         setAuthUser(null);
         setProfileExtras({});
-        setHasAdminGrant(false);
+        setAdminRole(null);
         lastSyncedKey.current = '';
         return;
       }
@@ -475,7 +490,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Admin yetkisi (admins/{uid} belgesinin varlığı)
   useEffect(() => {
     if (!authUser) return;
-    return subscribeToAdminStatus(authUser.uid, setHasAdminGrant);
+    return subscribeToAdminStatus(authUser.uid, setAdminRole);
   }, [authUser?.uid]);
 
   // Ana admin: tüm admin yetkilerini listele
@@ -484,7 +499,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAdminGrantUids([]);
       return;
     }
-    return subscribeToAdminGrants((grants) => setAdminGrantUids(grants.map((g) => g.uid)));
+    // Yalnızca 'admin' rolündekiler listelenir; superadmin satırı arayüzden yönetilemez.
+    return subscribeToAdminGrants((grants) => setAdminGrantUids(grants.filter((g) => g.role === 'admin').map((g) => g.uid)));
   }, [isSuperAdmin]);
 
   // Firestore Real-Time Listings Synchronization
@@ -787,7 +803,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       subject: contact.subject,
     }).catch((err) => {
       console.warn('Message send error:', err);
-      showToast(t.toastMessageSendFail);
+      // Sunucudaki hız sınırı tetikleyicisi (0011_rate_limiting.sql) 'rate_limit_exceeded' ile reddeder.
+      showToast(/rate_limit_exceeded/.test(String((err as Error)?.message)) ? t.errTooFast : t.toastMessageSendFail);
     });
   };
 

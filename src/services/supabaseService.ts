@@ -215,11 +215,14 @@ export function subscribeToVerifiedUsers(onUpdate: (users: PublicUserProfile[]) 
  * 2. Admin Yetkileri: admins/{userId}
  * Yalnızca ana admin yazabilir (RLS). Satırın varlığı admin olmak demektir.
  */
+export type AdminRole = 'admin' | 'superadmin';
+
 export interface AdminGrant {
   uid: string;
   note?: string;
   grantedBy: string;
   createdAt: string;
+  role: AdminRole;
 }
 
 interface AdminRow {
@@ -227,12 +230,14 @@ interface AdminRow {
   note: string | null;
   granted_by: string;
   created_at: string;
+  role: AdminRole;
 }
 
-export function subscribeToAdminStatus(userId: string, onUpdate: (isAdmin: boolean) => void): () => void {
+/** Kullanıcının admin rolünü izler; admins tablosunda satırı yoksa null. */
+export function subscribeToAdminStatus(userId: string, onUpdate: (role: AdminRole | null) => void): () => void {
   const load = async () => {
-    const { data, error } = await supabase.from('admins').select('uid').eq('uid', userId).maybeSingle();
-    onUpdate(!error && Boolean(data));
+    const { data, error } = await supabase.from('admins').select('role').eq('uid', userId).maybeSingle();
+    onUpdate(error || !data ? null : ((data as { role: AdminRole }).role));
   };
   load();
   const channel = supabase
@@ -257,6 +262,7 @@ export function subscribeToAdminGrants(onUpdate: (grants: AdminGrant[]) => void)
         note: r.note || undefined,
         grantedBy: r.granted_by,
         createdAt: r.created_at,
+        role: r.role,
       }))
     );
   };
@@ -771,4 +777,102 @@ export async function getListingViewCounts(listingIds: string[]): Promise<Record
     return {};
   }
   return Object.fromEntries((data as { listing_id: string; views: number }[]).map((r) => [r.listing_id, r.views]));
+}
+
+/**
+ * Şikayetler (reports): kullanıcılar ilan/kullanıcı bildirir, yalnızca yöneticiler okur ve yönetir (RLS).
+ */
+export type ReportCategory = 'scam' | 'fake_photo' | 'inappropriate' | 'spam' | 'other';
+export type ReportStatus = 'pending' | 'reviewed' | 'dismissed';
+
+export interface Report {
+  id: string;
+  reporterId: string;
+  targetListingId?: string;
+  targetListingTitle?: string;
+  targetUserId?: string;
+  category: ReportCategory;
+  reason: string;
+  status: ReportStatus;
+  createdAt: string;
+  reviewedAt?: string;
+}
+
+interface ReportRow {
+  id: string;
+  reporter_id: string;
+  target_listing_id: string | null;
+  target_user_id: string | null;
+  category: ReportCategory;
+  reason: string;
+  status: ReportStatus;
+  created_at: string;
+  reviewed_at: string | null;
+  listings?: { title: string } | null;
+}
+
+/** Bir ilanı bildirir. Aynı ilan için bekleyen şikayet varsa 'duplicate' döner. */
+export async function submitListingReport(input: {
+  reporterId: string;
+  listingId: string;
+  category: ReportCategory;
+  reason: string;
+}): Promise<'ok' | 'duplicate'> {
+  const { error } = await supabase.from('reports').insert({
+    reporter_id: input.reporterId,
+    target_listing_id: input.listingId,
+    category: input.category,
+    reason: input.reason.trim().slice(0, 500),
+  });
+  if (!error) return 'ok';
+  if (error.code === '23505') return 'duplicate';
+  throw error;
+}
+
+/** Yöneticiler için tüm şikayetler (en yeni önce), ilan başlığıyla birlikte. */
+export async function getReports(): Promise<Report[]> {
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*, listings(title)')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) {
+    console.warn('Could not load reports:', error);
+    return [];
+  }
+  return (data as ReportRow[]).map((r) => ({
+    id: r.id,
+    reporterId: r.reporter_id,
+    targetListingId: r.target_listing_id ?? undefined,
+    targetListingTitle: r.listings?.title,
+    targetUserId: r.target_user_id ?? undefined,
+    category: r.category,
+    reason: r.reason,
+    status: r.status,
+    createdAt: r.created_at,
+    reviewedAt: r.reviewed_at ?? undefined,
+  }));
+}
+
+export async function updateReportStatus(id: string, status: ReportStatus): Promise<void> {
+  const { error } = await supabase.from('reports').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+/**
+ * Hesabı ve ilişkili tüm verileri kalıcı olarak siler (GDPR md. 17).
+ * Silme, service role anahtarına ihtiyaç duyduğu için sunucudaki `delete-account` Edge Function'ında yapılır.
+ * Ana yönetici hesabı silinemez: 'superadmin' döner.
+ */
+export async function deleteMyAccount(): Promise<'ok' | 'superadmin'> {
+  const { error } = await supabase.functions.invoke('delete-account', { body: { confirm: true } });
+  if (!error) return 'ok';
+  let code: string | undefined;
+  try {
+    code = ((await (error as { context?: Response }).context?.json()) as { error?: string } | undefined)?.error;
+  } catch {
+    // gövde okunamazsa genel hata olarak fırlatılır
+  }
+  if (code === 'superadmin_cannot_delete') return 'superadmin';
+  throw error;
 }

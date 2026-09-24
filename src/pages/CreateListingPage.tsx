@@ -19,6 +19,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { HousingListing } from '../types';
 import { WIZARD_TEXT, fill } from '../utils/wizardText';
+import { TRANSLATIONS } from '../utils/translations';
 import { uploadListingPhoto, describeUploadError } from '../services/storageService';
 import { ListingCard } from '../components/ListingCard';
 import { Card, InfoBox, SectionTitle } from '../components/ui/kit';
@@ -251,7 +252,12 @@ const CreateListingPage: React.FC = () => {
       setDone({ id: listing.id, listing });
     } catch (err) {
       const msg = (err as Error)?.message || '';
-      setSubmitError(msg.startsWith('{') ? w.fixFields : msg || w.uploadFailed);
+      // Sunucudaki hız sınırı (saatte en fazla 5 yeni ilan) 'rate_limit_exceeded' ile reddeder.
+      if (/rate_limit_exceeded/.test(msg)) {
+        setSubmitError(TRANSLATIONS[lang].errTooFast);
+      } else {
+        setSubmitError(msg.startsWith('{') ? w.fixFields : msg || w.uploadFailed);
+      }
     } finally {
       setSubmitting(false);
     }

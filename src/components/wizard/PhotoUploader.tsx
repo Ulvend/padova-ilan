@@ -3,6 +3,7 @@ import { AlertCircle, ArrowLeft, ArrowRight, Link as LinkIcon, Loader2, RotateCw
 import { WizardText, fill } from '../../utils/wizardText';
 import { PhotoItem } from './formModel';
 import { HelpTip, inputClass } from '../ui/kit';
+import { isAllowedImageType } from '../../services/storageService';
 
 interface PhotoUploaderProps {
   photos: PhotoItem[];
@@ -24,7 +25,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({ photos, w, error, 
   const [showUrl, setShowUrl] = useState(false);
 
   const takeFiles = (list: FileList | null) => {
-    const files = Array.from(list ?? []).filter((f) => f.type.startsWith('image/'));
+    const files = Array.from(list ?? []).filter((f) => isAllowedImageType(f.type));
     if (files.length) onAddFiles(files);
   };
 
@@ -68,7 +69,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({ photos, w, error, 
           dragOver ? 'border-orange-500 bg-orange-50' : error ? 'border-rose-300 bg-rose-50/40' : 'border-stone-300 bg-stone-50 hover:border-stone-400'
         }`}
       >
-        <input ref={input} type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
+        <input ref={input} type="file" multiple accept="image/png, image/jpeg, image/webp" className="hidden" onChange={(e) => {
           takeFiles(e.target.files);
           e.target.value = '';
         }} />

@@ -134,10 +134,11 @@ returns boolean language sql stable security definer set search_path = public as
   select public.email_verified() and public.current_user_email() ~ '^[^@]+@(studenti\.)?unipd\.it$';
 $$;
 
--- Keep this list in sync with src/config.ts SUPERADMIN_EMAILS.
+-- Placeholder: superadmin is defined by a public.admins row with role = 'superadmin'
+-- (see 0010_superadmin_by_uid.sql, which replaces this function). No e-mail address is stored here.
 create or replace function public.is_superadmin()
 returns boolean language sql stable security definer set search_path = public as $$
-  select public.email_verified() and public.current_user_email() = 'cnkborasimsek@gmail.com';
+  select false;
 $$;
 
 create or replace function public.is_admin()
