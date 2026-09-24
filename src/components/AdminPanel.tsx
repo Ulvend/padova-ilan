@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import type { PublicUserProfile } from '../services/supabaseService';
+import { useApp } from '../context/AppContext';
 
 
 interface AdminPanelProps {
@@ -67,6 +68,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onRevokeAdminHash,
 }) => {
   // Navigation tabs without PostgreSQL database
+  const { getPriceInsight } = useApp();
+  const isPricedHigh = (l: HousingListing) => getPriceInsight(l).status === 'higher';
   const [activeTab, setActiveTab] = useState<'listings' | 'ssoLogs' | 'fairPrice' | 'adminAuth' | 'pastListings'>('listings');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'unverified' | 'highPrice'>('all');
@@ -181,7 +184,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (!matchesSearch) return false;
     if (statusFilter === 'verified') return item.isStudentCardVerified;
     if (statusFilter === 'unverified') return !item.isStudentCardVerified;
-    if (statusFilter === 'highPrice') return item.fairPriceStatus === 'higher' || item.price > 450;
+    if (statusFilter === 'highPrice') return isPricedHigh(item) || item.price > 450;
     return true;
   });
 
@@ -190,7 +193,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const verifiedListingsCount = listings.filter(l => l.isStudentCardVerified).length;
   const videoVerifiedCount = listings.filter(l => l.hasVideoTour).length;
   const averageRent = Math.round(listings.reduce((acc, l) => acc + l.price, 0) / (listings.length || 1));
-  const highPriceCount = listings.filter(l => l.price > 450 || l.fairPriceStatus === 'higher').length;
+  const highPriceCount = listings.filter(l => l.price > 450 || isPricedHigh(l)).length;
   const archivedCount = archivedListings.length;
 
   return (

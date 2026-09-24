@@ -244,31 +244,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </button>
           </div>
         )}
-
-        {/* Compatibility Preferences Grid */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400">
-            {t.algorithmPreferences}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefQuietHours}</span>
-              <strong className="text-stone-900 block mt-0.5">{currentUser.compatibilityPreferences.quietHours}</strong>
-            </div>
-            <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefHabits}</span>
-              <strong className="text-stone-900 block mt-0.5">{currentUser.compatibilityPreferences.smoking}</strong>
-            </div>
-            <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefStudyRhythm}</span>
-              <strong className="text-stone-900 block mt-0.5">{currentUser.compatibilityPreferences.studyVibe}</strong>
-            </div>
-            <div className="p-3 bg-stone-50/60 border border-stone-150 rounded-xl">
-              <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.prefCleanliness}</span>
-              <strong className="text-emerald-700 block mt-0.5">{currentUser.compatibilityPreferences.cleanlinessRating}</strong>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Saved Favorites Section */}

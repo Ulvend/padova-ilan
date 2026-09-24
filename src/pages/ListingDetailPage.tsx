@@ -22,6 +22,8 @@ export const ListingDetailPage: React.FC = () => {
     currentLang,
     listingsLoaded,
     authReady,
+    isAdmin,
+    getPriceInsight,
     t
   } = useApp();
 
@@ -85,6 +87,8 @@ export const ListingDetailPage: React.FC = () => {
       onEditListing={(l) => handleOpenEditListingModal(l)}
       currentUser={currentUser}
       isLoggedIn={isLoggedIn}
+      isAdmin={isAdmin}
+      priceInsight={getPriceInsight(listing)}
       currentLang={currentLang}
     />
   );

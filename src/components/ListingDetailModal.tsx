@@ -5,6 +5,7 @@ import { HousingListing, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { HOME_TEXT } from '../utils/homeText';
 import { getLocalizedListing } from '../utils/listingTranslator';
+import { useApp } from '../context/AppContext';
 import { formatGenderDistribution } from '../utils/genderDistribution';
 
 interface ListingPreviewModalProps {
@@ -38,7 +39,9 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
-  const listing = getLocalizedListing(rawListing, currentLang);
+  const { getPriceInsight } = useApp();
+  const insight = getPriceInsight(rawListing);
+  const listing = getLocalizedListing(rawListing, currentLang, insight);
   // Escape bu bileşenin kendi klavye işleyicisinde ele alınır; burada yalnızca kaydırma kilidi.
   useModalBehavior(Boolean(isOpen ?? true), onClose, false);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
@@ -204,13 +207,15 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
               </span>
             </div>
 
-            <span
-              className={`inline-block px-3 py-1.5 rounded-[10px] border text-[13px] font-bold ${
-                isPricey ? 'bg-orange-50 border-orange-300 text-orange-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              }`}
-            >
-              {listing.fairPriceText}
-            </span>
+            {insight.status !== 'unknown' && (
+              <span
+                className={`inline-block px-3 py-1.5 rounded-[10px] border text-[13px] font-bold ${
+                  isPricey ? 'bg-orange-50 border-orange-300 text-orange-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                }`}
+              >
+                {listing.fairPriceText}
+              </span>
+            )}
 
             <div className="space-y-1.5">
               <h3

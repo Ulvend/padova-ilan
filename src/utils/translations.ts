@@ -5,18 +5,15 @@ export interface TranslationDictionary {
   radarBadge: string;
   networkTitle: string;
   mainHeading: string;
-  tagline: string;
   homeNav: string;
   myListingsNav: string;
   messagesNav: string;
   profileNav: string;
   postAdBtn: string;
-  statAveragePrice: string;
   statVideoTours: string;
   statConfirmation: string;
   statOfficialContracts: string;
   fairPriceBannerTitle: string;
-  fairPriceBannerText: string;
   fairPriceRadarTag: string;
   tabAll: string;
   tabVideo: string;
@@ -36,13 +33,11 @@ export interface TranslationDictionary {
   shieldLabel: string;
   videoShieldOption: string;
   studentIdShieldOption: string;
-  compatibilityShieldOption: string;
   areaProximityLabel: string;
   roomTypeLabel: string;
   budgetLabel: string;
   sortLabel: string;
   sortRelevance: string;
-  sortCompatDesc: string;
   sortPriceAsc: string;
   sortPriceDesc: string;
   sortNewest: string;
@@ -51,7 +46,6 @@ export interface TranslationDictionary {
   detailsBtn: string;
   messageBtn: string;
   currentRoommates: string;
-  compatibilityText: string;
   verifiedUniPD: string;
   noListingsFound: string;
   twoColumnsMode: string;
@@ -123,8 +117,6 @@ export interface TranslationDictionary {
   roomArea: string;
   apartmentArea: string;
   bathroomsCount: string;
-  compatibilityScore: string;
-  compatible: string;
   shortDescription: string;
   sendMessage: string;
   closePreview: string;
@@ -146,7 +138,6 @@ export interface TranslationDictionary {
   unipdStudentDesc: string;
   chatWithUser: string;
   flatmatesAndMatch: string;
-  highCompatibility: string;
   securityShield: string;
   securityWarning: string;
   myListingsTitle: string;
@@ -158,7 +149,6 @@ export interface TranslationDictionary {
   noListingsYet: string;
   studentIdVerification: string;
   activeMatricola: string;
-  algorithmPreferences: string;
   favoritedListings: string;
   noFavoritesYet: string;
   navFeed: string;
@@ -221,7 +211,6 @@ export interface TranslationDictionary {
   sharedBedOption: string;
   studioOption: string;
   maxBudgetPrefix: string;
-  canoneConcordatoLabel: string;
   contractOptionStudent: string;
   contractOptionSubentro: string;
   contractOptionTransitorio: string;
@@ -265,8 +254,6 @@ export interface TranslationDictionary {
   economicLabel: string;
   expensiveLabel: string;
   thisListingLabel: string;
-  priceGuaranteeTitle: string;
-  priceGuaranteeBody: string;
   livePadovaMap: string;
   stationTram: string;
   studentRoomLegend: string;
@@ -363,18 +350,15 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     radarBadge: 'CANLI RADAR',
     networkTitle: 'PADOVA GÜVENLİ ÖĞRENCİ AĞI',
     mainHeading: 'PADOVA STUDENT HOUSING',
-    tagline: 'Fiyat Endeksi Denetimi • Doğrulanmış Video Tur • Uyum Skoru Algoritması',
     homeNav: 'Anasayfa',
     myListingsNav: 'İlanlarım',
     messagesNav: 'Mesajlar',
     profileNav: 'Profil',
     postAdBtn: '+ YENİ İLAN YAYINLA',
-    statAveragePrice: 'Padova Rayiç Ortalaması',
     statVideoTours: 'Video Turlu İlanlar',
     statConfirmation: '3 Günlük Teyit Oranı',
     statOfficialContracts: 'Resmi Sözleşmeli (Cedolare)',
     fairPriceBannerTitle: 'Fiyat Radarı Aktif:',
-    fairPriceBannerText: 'İlanların fiyatları Padova Belediyesi öğrenci kira tablosuyla (Canone Concordato) otomatik kıyaslanır. Fahiş fiyatlar bayrakla uyarılır.',
     fairPriceRadarTag: 'FAIR PRICE RADAR',
     tabAll: 'Tümü',
     tabVideo: 'Sadece Video Turlular',
@@ -394,13 +378,11 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shieldLabel: 'İlan Doğrulama Kalkanı',
     videoShieldOption: '30 Saniyelik Canlı Video Turu Olanlar',
     studentIdShieldOption: 'UniPD Onaylı',
-    compatibilityShieldOption: 'En Yüksek Ev Arkadaşı Uyum Skoru (>%85)',
     areaProximityLabel: 'Bölge & Fakülte Yakınlığı',
     roomTypeLabel: 'Oda Tipi',
     budgetLabel: 'Maksimum Aylık Kira (€)',
     sortLabel: 'Sıralama Ölçütü',
     sortRelevance: 'Önerilen & Rayiç Uyumlu',
-    sortCompatDesc: 'En Yüksek Uyum Skoru (%90+)',
     sortPriceAsc: 'Fiyata Göre (Önce En Düşük)',
     sortPriceDesc: 'Fiyata Göre (Önce En Yüksek)',
     sortNewest: 'En Yeni Yayınlananlar',
@@ -409,7 +391,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detailsBtn: 'İlan Detayı',
     messageBtn: 'Mesajlar',
     currentRoommates: 'EVİN MEVCUT SAKİNLERİ',
-    compatibilityText: 'SENİNLE UYUMLU',
     verifiedUniPD: 'UniPD Teyitli Öğrenci',
     noListingsFound: 'Aradığınız kriterlere uygun ilan bulunamadı',
     twoColumnsMode: 'İki sütunlu görünüm',
@@ -480,8 +461,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     roomArea: 'Oda Alanı',
     apartmentArea: 'Daire Alanı',
     bathroomsCount: 'Banyo Sayısı',
-    compatibilityScore: 'Uyum Skoru',
-    compatible: 'Uyumlu',
     shortDescription: 'Kısa Açıklama',
     sendMessage: 'Mesaj At',
     closePreview: 'Önizlemeyi Kapat',
@@ -502,8 +481,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     unipdVerifiedProfile: 'UniPD Doğrulanmış Profil',
     unipdStudentDesc: 'Öğrenci belgesi ve Padova Üniversitesi e-posta adresi (@studenti.unipd.it) doğrulanmıştır.',
     chatWithUser: 'ile Mesajlaş',
-    flatmatesAndMatch: 'Uyum Skoru & Ev Sakinleri',
-    highCompatibility: 'Yüksek Uyum',
+    flatmatesAndMatch: 'Ev Sakinleri',
     securityShield: 'Güvenlik Kalkanı',
     securityWarning: 'Resmi kira sözleşmesi görmeden ve ev sahibiyle yüz yüze/video teyit yapmadan asla nakit veya kişisel hesaba kapora transfer etmeyiniz.',
     myListingsTitle: 'Yayınladığım İlanlar & Devir Masası',
@@ -515,7 +493,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noListingsYet: 'Henüz aktif bir ilanınız bulunmuyor',
     studentIdVerification: 'ÖĞRENCİ KİMLİK DOĞRULAMASI',
     activeMatricola: 'Aktif UniPD Matricola',
-    algorithmPreferences: 'Ev Arkadaşı Uyum Algoritması Tercihleriniz',
     favoritedListings: 'Favoriye Eklediğiniz İlanlar',
     noFavoritesYet: 'Henüz favori ilan eklemediniz',
     navFeed: 'İlanlar',
@@ -562,7 +539,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     heatingCentralizzato: 'Merkezi Sistem',
     airConditioningLabel: 'Klima (A/C)',
     washingMachineLabel: 'Çamaşır Makinesi',
-    wifiLabel: 'Yüksek Hızlı Wi-Fi (Fiber)',
+    wifiLabel: 'Wi-Fi',
     bikeParkingLabel: 'Bisiklet Park Yeri (Posto Bici)',
     bikeParkingBadge: 'Padova Bisiklet Park Yeri Mevcut',
     parkingLabel: 'Otopark / Garaj',
@@ -578,7 +555,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     sharedBedOption: 'Posto Letto (Paylaşımlı Oda Yatağı)',
     studioOption: 'Monolocale (Stüdyo Daire)',
     maxBudgetPrefix: 'Maks:',
-    canoneConcordatoLabel: 'Belediye Rayiç Kirası (Canone Concordato)',
     contractOptionStudent: 'Öğrenci Sözleşmesi (Canone Concordato - Rayiç Kira)',
     contractOptionSubentro: 'Sözleşme Devri (Subentro)',
     contractOptionTransitorio: 'Geçici Öğrenci Sözleşmesi (1-18 Ay)',
@@ -622,8 +598,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Ekonomik',
     expensiveLabel: 'Pahalı',
     thisListingLabel: 'Bu İlan',
-    priceGuaranteeTitle: 'Fiyat Güvencesi:',
-    priceGuaranteeBody: 'Bu ilan Padova Belediyesi öğrenci kira tablosu (Canone Concordato) sınırları içerisinde olup ESU bursu ve İkametgah başvuruları için %100 geçerlidir.',
     livePadovaMap: 'CANLI PADOVA HARİTASI',
     stationTram: 'İstasyon / Tram',
     studentRoomLegend: 'Öğrenci Odası',
@@ -718,18 +692,15 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     radarBadge: 'LIVE RADAR',
     networkTitle: 'PADOVA SAFE STUDENT NETWORK',
     mainHeading: 'PADOVA STUDENT HOUSING',
-    tagline: 'Rent Index Audit • Verified Video Tours • Flatmate Match Score',
     homeNav: 'Home',
     myListingsNav: 'My Listings',
     messagesNav: 'Messages',
     profileNav: 'Profile',
     postAdBtn: '+ POST NEW ROOM',
-    statAveragePrice: 'Padova Average Benchmark',
     statVideoTours: 'Video Tour Listings',
     statConfirmation: '3-Day Reconfirmation Rate',
     statOfficialContracts: 'Registered Contracts (Cedolare)',
     fairPriceBannerTitle: 'Fair Price Radar Active:',
-    fairPriceBannerText: 'Room rates are continuously benchmarked against the Padova Municipality Canone Concordato table. Overpriced rents are flagged.',
     fairPriceRadarTag: 'FAIR PRICE RADAR',
     tabAll: 'All',
     tabVideo: 'Video Tours Only',
@@ -749,13 +720,11 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shieldLabel: 'Verification Shield',
     videoShieldOption: '30-Second Live Verified Video Tours',
     studentIdShieldOption: 'UniPD Verified',
-    compatibilityShieldOption: 'High Flatmate Compatibility Score (>85%)',
     areaProximityLabel: 'District & Faculty Proximity',
     roomTypeLabel: 'Room Type',
     budgetLabel: 'Maximum Monthly Rent (€)',
     sortLabel: 'Sort Criteria',
     sortRelevance: 'Recommended & Fair Price',
-    sortCompatDesc: 'Highest Compatibility (90%+)',
     sortPriceAsc: 'Price (Lowest First)',
     sortPriceDesc: 'Price (Highest First)',
     sortNewest: 'Recently Published',
@@ -764,7 +733,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detailsBtn: 'View Details',
     messageBtn: 'Messages',
     currentRoommates: 'CURRENT FLATMATES',
-    compatibilityText: 'COMPATIBLE WITH YOU',
     verifiedUniPD: 'UniPD Verified Student',
     noListingsFound: 'No housing listings matched your criteria',
     twoColumnsMode: 'Two-column view',
@@ -835,8 +803,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     roomArea: 'Room Area',
     apartmentArea: 'Apartment Area',
     bathroomsCount: 'Bathrooms',
-    compatibilityScore: 'Match Score',
-    compatible: 'Compatible',
     shortDescription: 'Short Description',
     sendMessage: 'Send Message',
     closePreview: 'Close Preview',
@@ -857,8 +823,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     unipdVerifiedProfile: 'UniPD Verified Profile',
     unipdStudentDesc: 'Student certificate and University of Padova email address (@studenti.unipd.it) verified.',
     chatWithUser: 'Chat with',
-    flatmatesAndMatch: 'Match Score & Flatmates',
-    highCompatibility: 'High Compatibility',
+    flatmatesAndMatch: 'Flatmates',
     securityShield: 'Security Shield',
     securityWarning: 'Never transfer deposits to personal accounts without a registered lease contract and identity verification.',
     myListingsTitle: 'My Published Listings & Sublease Desk',
@@ -870,7 +835,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noListingsYet: 'You do not have any active listings yet',
     studentIdVerification: 'STUDENT ID VERIFICATION',
     activeMatricola: 'Active UniPD Matricola',
-    algorithmPreferences: 'Flatmate Compatibility Preferences',
     favoritedListings: 'Saved Favorite Listings',
     noFavoritesYet: 'No favorite listings added yet',
     navFeed: 'Listings',
@@ -917,7 +881,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     heatingCentralizzato: 'Centralized Heating',
     airConditioningLabel: 'Air Conditioning (A/C)',
     washingMachineLabel: 'Washing Machine',
-    wifiLabel: 'High-Speed Wi-Fi (Fiber)',
+    wifiLabel: 'Wi-Fi',
     bikeParkingLabel: 'Bike Parking (Padova Posto Bici)',
     bikeParkingBadge: 'Padova Bike Parking Available',
     parkingLabel: 'Car Parking / Garage',
@@ -933,7 +897,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     sharedBedOption: 'Posto Letto (Shared Room Bed)',
     studioOption: 'Monolocale (Studio Apartment)',
     maxBudgetPrefix: 'Max:',
-    canoneConcordatoLabel: 'Agreed Regulated Rent (Canone Concordato)',
     contractOptionStudent: 'Student Contract (Agreed Regulated Rent - Canone Concordato)',
     contractOptionSubentro: 'Sublease / Subentro (Official Contract Transfer)',
     contractOptionTransitorio: 'Transitory Student Contract (1-18 Months)',
@@ -977,8 +940,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Affordable',
     expensiveLabel: 'Pricey',
     thisListingLabel: 'This Listing',
-    priceGuaranteeTitle: 'Price Assurance:',
-    priceGuaranteeBody: 'This listing strictly complies with the Padova Municipality Agreed Rent (Canone Concordato) benchmarks and is 100% valid for ESU scholarship & residency applications.',
     livePadovaMap: 'LIVE PADOVA MAP',
     stationTram: 'Station / Tram',
     studentRoomLegend: 'Student Room',
@@ -1073,18 +1034,15 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     radarBadge: 'RADAR LIVE',
     networkTitle: 'RETE STUDENTI SICURA PADOVA',
     mainHeading: 'PADOVA STUDENT HOUSING',
-    tagline: 'Audit Canone Concordato • Video Tour Certificato • Algoritmo Affinità',
     homeNav: 'Home',
     myListingsNav: 'I Miei Annunci',
     messagesNav: 'Messaggi',
     profileNav: 'Profilo',
     postAdBtn: '+ PUBBLICA NUOVA STANZA',
-    statAveragePrice: 'Media Canone Padova',
     statVideoTours: 'Annunci con Video Tour',
     statConfirmation: 'Tasso di Conferma a 3 Giorni',
     statOfficialContracts: 'Contratti Registrati (Cedolare)',
     fairPriceBannerTitle: 'Radar Canone Equo Attivo:',
-    fairPriceBannerText: 'I prezzi delle stanze sono confrontati con le tabelle del Comune di Padova (Canone Concordato). Gli affitti fuori mercato vengono segnalati.',
     fairPriceRadarTag: 'RADAR CANONE EQUO',
     tabAll: 'Tutti',
     tabVideo: 'Solo Video Tour',
@@ -1104,13 +1062,11 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shieldLabel: 'Scudo di Verifica',
     videoShieldOption: 'Video Tour Certificati da 30 Secondi',
     studentIdShieldOption: 'UniPD Verificato',
-    compatibilityShieldOption: 'Alta Affinità Coinquilini (>85%)',
     areaProximityLabel: 'Zona & Vicinanza ai Dipartimenti',
     roomTypeLabel: 'Tipo di Stanza',
     budgetLabel: 'Affitto Mensile Massimo (€)',
     sortLabel: 'Ordina per',
     sortRelevance: 'Consigliati & Canone Equo',
-    sortCompatDesc: 'Affinità Più Alta (90%+)',
     sortPriceAsc: 'Prezzo (Dal più basso)',
     sortPriceDesc: 'Prezzo (Dal più alto)',
     sortNewest: 'Più Recenti',
@@ -1119,7 +1075,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detailsBtn: 'Dettagli',
     messageBtn: 'Messaggi',
     currentRoommates: 'ATTUALI INQUILINI',
-    compatibilityText: 'COMPATIBILE CON TE',
     verifiedUniPD: 'Studente UniPD Verificato',
     noListingsFound: 'Nessun alloggio trovato per i filtri selezionati',
     twoColumnsMode: 'Vista a due colonne',
@@ -1190,8 +1145,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     roomArea: 'Superficie Stanza',
     apartmentArea: 'Superficie Appartamento',
     bathroomsCount: 'Bagni',
-    compatibilityScore: 'Punteggio Affinità',
-    compatible: 'Compatibile',
     shortDescription: 'Breve Descrizione',
     sendMessage: 'Invia Messaggio',
     closePreview: 'Chiudi Anteprima',
@@ -1212,8 +1165,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     unipdVerifiedProfile: 'Profilo Verificato UniPD',
     unipdStudentDesc: 'Certificato di iscrizione ed email Università di Padova (@studenti.unipd.it) verificati.',
     chatWithUser: 'Chatta con',
-    flatmatesAndMatch: 'Punteggio Affinità & Inquilini',
-    highCompatibility: 'Alta Affinità',
+    flatmatesAndMatch: 'Coinquilini',
     securityShield: 'Scudo di Sicurezza',
     securityWarning: 'Non trasferire mai caparre prima di verificare il contratto registrato e l’identità.',
     myListingsTitle: 'I Miei Annunci & Subentro',
@@ -1225,7 +1177,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noListingsYet: 'Non hai ancora annunci attivi',
     studentIdVerification: 'VERIFICA IDENTITÀ STUDENTE',
     activeMatricola: 'Matricola UniPD Attiva',
-    algorithmPreferences: 'Preferenze Algoritmo Compatibilità Coinquilini',
     favoritedListings: 'Annunci Salvati tra i Preferiti',
     noFavoritesYet: 'Nessun annuncio preferito ancora',
     navFeed: 'Annunci',
@@ -1272,7 +1223,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     heatingCentralizzato: 'Centralizzato',
     airConditioningLabel: 'Aria Condizionata',
     washingMachineLabel: 'Lavatrice',
-    wifiLabel: 'Wi-Fi Alta Velocità (Fibra)',
+    wifiLabel: 'Wi-Fi',
     bikeParkingLabel: 'Posto Bici (Indispensabile a Padova)',
     bikeParkingBadge: 'Posto Bici Sicuro Disponibile',
     parkingLabel: 'Posto Auto / Garage',
@@ -1288,7 +1239,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     sharedBedOption: 'Posto Letto (Posto in Stanza Condivisa)',
     studioOption: 'Monolocale (Monolocale Indipendente)',
     maxBudgetPrefix: 'Max:',
-    canoneConcordatoLabel: 'Canone Concordato',
     contractOptionStudent: 'Contratto per Studenti (Canone Concordato)',
     contractOptionSubentro: 'Subentro (Cessione Ufficiale di Contratto)',
     contractOptionTransitorio: 'Contratto Transitorio (1-18 Mesi)',
@@ -1332,8 +1282,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Economico',
     expensiveLabel: 'Costoso',
     thisListingLabel: 'Questo Annuncio',
-    priceGuaranteeTitle: 'Garanzia di Prezzo:',
-    priceGuaranteeBody: 'Questo annuncio rispetta i limiti del Canone Concordato del Comune di Padova ed è valido al 100% per borsa ESU e residenza.',
     livePadovaMap: 'MAPPA LIVE DI PADOVA',
     stationTram: 'Stazione / Tram',
     studentRoomLegend: 'Stanza Studente',
@@ -1428,18 +1376,15 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     radarBadge: 'LIVE-RADAR',
     networkTitle: 'PADUA SICHERES STUDENTENNETZWERK',
     mainHeading: 'PADOVA STUDENT HOUSING',
-    tagline: 'Mietspiegel-Prüfung • Verifizierte Videotouren • Mitbewohner-Matching',
     homeNav: 'Startseite',
     myListingsNav: 'Meine Inserate',
     messagesNav: 'Nachrichten',
     profileNav: 'Profil',
     postAdBtn: '+ NEUES ZIMMER INSERIEREN',
-    statAveragePrice: 'Durchschnittlicher Mietspiegel',
     statVideoTours: 'Angebote mit Videotour',
     statConfirmation: '3-Tage-Bestätigungsrate',
     statOfficialContracts: 'Offiziell registrierte Verträge',
     fairPriceBannerTitle: 'Mietpreis-Radar aktiv:',
-    fairPriceBannerText: 'Preise werden mit dem offiziellen Mietspiegel der Stadt Padua verglichen. Überteuerte Mieten werden gekennzeichnet.',
     fairPriceRadarTag: 'FAIR PRICE RADAR',
     tabAll: 'Alle',
     tabVideo: 'Nur Videotouren',
@@ -1459,13 +1404,11 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shieldLabel: 'Sicherheitsschild',
     videoShieldOption: 'Verifizierte 30-Sekunden-Videotour',
     studentIdShieldOption: 'UniPD verifiziert',
-    compatibilityShieldOption: 'Hohe Mitbewohner-Übereinstimmung (>85%)',
     areaProximityLabel: 'Stadtteil & Campusnähe',
     roomTypeLabel: 'Zimmertyp',
     budgetLabel: 'Maximale Miete (€)',
     sortLabel: 'Sortierung',
     sortRelevance: 'Empfohlen & Fairer Preis',
-    sortCompatDesc: 'Höchste Übereinstimmung (90%+)',
     sortPriceAsc: 'Preis (Aufsteigend)',
     sortPriceDesc: 'Preis (Absteigend)',
     sortNewest: 'Neueste zuerst',
@@ -1474,7 +1417,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detailsBtn: 'Details',
     messageBtn: 'Nachrichten',
     currentRoommates: 'AKTUELLE MITBEWOHNER',
-    compatibilityText: 'KOMPATIBEL MIT DIR',
     verifiedUniPD: 'Verifizierter UniPD-Student',
     noListingsFound: 'Keine passenden Angebote gefunden',
     twoColumnsMode: 'Zweispaltige Ansicht',
@@ -1545,8 +1487,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     roomArea: 'Zimmergröße',
     apartmentArea: 'Wohnungsgröße',
     bathroomsCount: 'Badezimmer',
-    compatibilityScore: 'Übereinstimmung',
-    compatible: 'Kompatibel',
     shortDescription: 'Kurzbeschreibung',
     sendMessage: 'Nachricht senden',
     closePreview: 'Vorschau schließen',
@@ -1567,8 +1507,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     unipdVerifiedProfile: 'Verifiziertes UniPD-Profil',
     unipdStudentDesc: 'Studienbescheinigung und UniPD-E-Mail (@studenti.unipd.it) verifiziert.',
     chatWithUser: 'Chatten mit',
-    flatmatesAndMatch: 'Übereinstimmung & Mitbewohner',
-    highCompatibility: 'Hohe Übereinstimmung',
+    flatmatesAndMatch: 'Mitbewohner',
     securityShield: 'Sicherheitsschild',
     securityWarning: 'Überweisen Sie niemals Kautionen ohne registrierten Mietvertrag und Überprüfung.',
     myListingsTitle: 'Meine Inserate & Nachmieter-Tisch',
@@ -1580,7 +1519,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noListingsYet: 'Du hast noch keine aktiven Inserate',
     studentIdVerification: 'STUDENTENAUSWEIS-VERIFIKATION',
     activeMatricola: 'Aktive UniPD Matrikelnummer',
-    algorithmPreferences: 'Präferenzen für Mitbewohner-Kompatibilität',
     favoritedListings: 'Gespeicherte Favoriten',
     noFavoritesYet: 'Noch keine Favoriten hinzugefügt',
     navFeed: 'Angebote',
@@ -1627,7 +1565,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     heatingCentralizzato: 'Zentralheizung',
     airConditioningLabel: 'Klimaanlage (A/C)',
     washingMachineLabel: 'Waschmaschine',
-    wifiLabel: 'High-Speed WLAN (Glasfaser)',
+    wifiLabel: 'WLAN',
     bikeParkingLabel: 'Fahrradstellplatz (Padua Essential)',
     bikeParkingBadge: 'Fahrradstellplatz vorhanden',
     parkingLabel: 'Pkw-Stellplatz / Garage',
@@ -1643,7 +1581,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     sharedBedOption: 'Posto Letto (Bett im Mehrbettzimmer)',
     studioOption: 'Monolocale (Studio-Apartment)',
     maxBudgetPrefix: 'Max:',
-    canoneConcordatoLabel: 'Mietpreisgebundene Miete (Canone Concordato)',
     contractOptionStudent: 'Studentenmietvertrag (Mietpreisgebundene Miete - Canone Concordato)',
     contractOptionSubentro: 'Vertragsübernahme (Subentro)',
     contractOptionTransitorio: 'Befristeter Studentenvertrag (1-18 Monate)',
@@ -1687,8 +1624,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Günstig',
     expensiveLabel: 'Teuer',
     thisListingLabel: 'Dieses Angebot',
-    priceGuaranteeTitle: 'Preisgarantie:',
-    priceGuaranteeBody: 'Dieses Angebot entspricht den Obergrenzen der Mietpreisbindung (Canone Concordato) der Stadt Padua und ist für ESU-Stipendien und Wohnsitzanträge zu 100% gültig.',
     livePadovaMap: 'LIVE-KARTE PADUA',
     stationTram: 'Bahnhof / Straßenbahn',
     studentRoomLegend: 'Studentenzimmer',
@@ -1783,18 +1718,15 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     radarBadge: 'ЖИВОЙ РАДАР',
     networkTitle: 'БЕЗОПАСНАЯ СТУДЕНЧЕСКАЯ СЕТЬ ПАДУИ',
     mainHeading: 'PADOVA STUDENT HOUSING',
-    tagline: 'Контроль цен • Проверенные видеотуры • Алгоритм совместимости',
     homeNav: 'Главная',
     myListingsNav: 'Мои объявления',
     messagesNav: 'Сообщения',
     profileNav: 'Профиль',
     postAdBtn: '+ РАЗМЕСТИТЬ ОБЪЯВЛЕНИЕ',
-    statAveragePrice: 'Средний тариф в Падуе',
     statVideoTours: 'Объявления с видеотуром',
     statConfirmation: 'Подтверждение за 3 дня',
     statOfficialContracts: 'Официальные контракты (Cedolare)',
     fairPriceBannerTitle: 'Радар честной цены активен:',
-    fairPriceBannerText: 'Цены сверяются со студенческой таблицей аренды муниципалитета Падуи.',
     fairPriceRadarTag: 'ЧЕСТНАЯ ЦЕНА',
     tabAll: 'Все',
     tabVideo: 'С видеотуром',
@@ -1814,13 +1746,11 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shieldLabel: 'Щит безопасности',
     videoShieldOption: '30-секундный видеотур',
     studentIdShieldOption: 'Верифицировано UniPD',
-    compatibilityShieldOption: 'Высокая совместимость (>85%)',
     areaProximityLabel: 'Район и близость к кампусу',
     roomTypeLabel: 'Тип комнаты',
     budgetLabel: 'Максимальная аренда (€)',
     sortLabel: 'Сортировка',
     sortRelevance: 'Рекомендуемые',
-    sortCompatDesc: 'Лучшая совместимость',
     sortPriceAsc: 'Сначала дешевые',
     sortPriceDesc: 'Сначала дорогие',
     sortNewest: 'Свежие',
@@ -1829,7 +1759,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detailsBtn: 'Детали',
     messageBtn: 'Сообщения',
     currentRoommates: 'ТЕКУЩИЕ СОСЕДИ',
-    compatibilityText: 'СОВМЕСТИМОСТЬ',
     verifiedUniPD: 'Студент UniPD',
     noListingsFound: 'Объявлений не найдено',
     twoColumnsMode: 'Две колонки',
@@ -1900,8 +1829,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     roomArea: 'Площадь комнаты',
     apartmentArea: 'Площадь квартиры',
     bathroomsCount: 'Ванные комнаты',
-    compatibilityScore: 'Совместимость',
-    compatible: 'Совместимо',
     shortDescription: 'Краткое описание',
     sendMessage: 'Написать',
     closePreview: 'Закрыть просмотр',
@@ -1922,8 +1849,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     unipdVerifiedProfile: 'Подтвержденный профиль UniPD',
     unipdStudentDesc: 'Справка об обучении и студенческая почта Падуи (@studenti.unipd.it) проверены.',
     chatWithUser: 'Написать',
-    flatmatesAndMatch: 'Совместимость и соседи',
-    highCompatibility: 'Высокая совместимость',
+    flatmatesAndMatch: 'Соседи',
     securityShield: 'Щит безопасности',
     securityWarning: 'Никогда не переводите залог без зарегистрированного договора и проверки.',
     myListingsTitle: 'Мои объявления и переуступка',
@@ -1935,7 +1861,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noListingsYet: 'У вас пока нет активных объявлений',
     studentIdVerification: 'ПРОВЕРКА СТУДЕНЧЕСКОГО БИЛЕТА',
     activeMatricola: 'Активный номер зачетки UniPD',
-    algorithmPreferences: 'Настройки алгоритма совместимости соседей',
     favoritedListings: 'Избранные объявления',
     noFavoritesYet: 'В избранном пока ничего нет',
     navFeed: 'Объявления',
@@ -1982,7 +1907,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     heatingCentralizzato: 'Центральное',
     airConditioningLabel: 'Кондиционер',
     washingMachineLabel: 'Стиральная машина',
-    wifiLabel: 'Высокоскоростной Wi-Fi (оптоволокно)',
+    wifiLabel: 'Wi-Fi',
     bikeParkingLabel: 'Парковка для велосипеда (Posto Bici)',
     bikeParkingBadge: 'Парковка для велосипеда доступна',
     parkingLabel: 'Парковочное место / Гараж',
@@ -1998,7 +1923,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     sharedBedOption: 'Posto Letto (Место в комнате)',
     studioOption: 'Monolocale (Квартира-студия)',
     maxBudgetPrefix: 'Макс:',
-    canoneConcordatoLabel: 'Согласованная аренда (Canone Concordato)',
     contractOptionStudent: 'Студенческий договор (Согласованная аренда Canone Concordato)',
     contractOptionSubentro: 'Переуступка аренды (Субэнтро)',
     contractOptionTransitorio: 'Временный договор для студентов (1-18 месяцев)',
@@ -2042,8 +1966,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Выгодно',
     expensiveLabel: 'Выше среднего',
     thisListingLabel: 'Это жилье',
-    priceGuaranteeTitle: 'Ценовая гарантия:',
-    priceGuaranteeBody: 'Это объявление соответствует нормам согласованной аренды (Canone Concordato) муниципалитета Падуи и полностью подходит для стипендии ESU и ВНЖ.',
     livePadovaMap: 'ЖИВАЯ КАРТА ПАДУИ',
     stationTram: 'Вокзал / Трамвай',
     studentRoomLegend: 'Комната студента',
@@ -2138,18 +2060,15 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     radarBadge: 'लाइव रडार',
     networkTitle: 'पादोवा सुरक्षित छात्र नेटवर्क',
     mainHeading: 'PADOVA STUDENT HOUSING',
-    tagline: 'किराया मूल्य जांच • सत्यापित वीडियो टूर • रूममेट मिलान स्कोर',
     homeNav: 'मुख्य पृष्ठ',
     myListingsNav: 'मेरे विज्ञापन',
     messagesNav: 'संदेश',
     profileNav: 'प्रोफ़ाइल',
     postAdBtn: '+ नया कमरा जोड़ें',
-    statAveragePrice: 'पादोवा औसत किराया',
     statVideoTours: 'वीडियो टूर वाले कमरे',
     statConfirmation: '3-दिवसीय पुष्टि दर',
     statOfficialContracts: 'पंजीकृत अनुबंध',
     fairPriceBannerTitle: 'उचित मूल्य रडार सक्रिय:',
-    fairPriceBannerText: 'कमरे के किराए की जांच पादोवा नगर पालिका छात्र किराया दरों के साथ की जाती है।',
     fairPriceRadarTag: 'उचित मूल्य',
     tabAll: 'सभी',
     tabVideo: 'केवल वीडियो टूर',
@@ -2169,13 +2088,11 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shieldLabel: 'सत्यापन सुरक्षा ढाल',
     videoShieldOption: '30-सेकंड लाइव सत्यापित वीडियो टूर',
     studentIdShieldOption: 'UniPD सत्यापित',
-    compatibilityShieldOption: 'उच्च रूममेट मिलान (>85%)',
     areaProximityLabel: 'क्षेत्र और परिसर निकटता',
     roomTypeLabel: 'कमरे का प्रकार',
     budgetLabel: 'अधिकतम मासिक किराया (€)',
     sortLabel: 'क्रमबद्ध करें',
     sortRelevance: 'अनुशंसित और उचित किराया',
-    sortCompatDesc: 'उच्चतम मिलान स्कोर (90%+)',
     sortPriceAsc: 'कीमत (कम से ज्यादा)',
     sortPriceDesc: 'कीमत (ज्यादा से कम)',
     sortNewest: 'सबसे नया',
@@ -2184,7 +2101,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detailsBtn: 'विवरण',
     messageBtn: 'संदेश',
     currentRoommates: 'वर्तमान रूममेट्स',
-    compatibilityText: 'आपके अनुकूल',
     verifiedUniPD: 'UniPD सत्यापित छात्र',
     noListingsFound: 'कोई विज्ञापन नहीं मिला',
     twoColumnsMode: 'दो कॉलम दृश्य',
@@ -2255,8 +2171,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     roomArea: 'कमरे का क्षेत्रफल',
     apartmentArea: 'अपार्टमेंट का क्षेत्रफल',
     bathroomsCount: 'बाथरूम की संख्या',
-    compatibilityScore: 'अनुकूलता स्कोर',
-    compatible: 'अनुकूल',
     shortDescription: 'संक्षिप्त विवरण',
     sendMessage: 'संदेश भेजें',
     closePreview: 'पूर्वावलोकन बंद करें',
@@ -2277,8 +2191,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     unipdVerifiedProfile: 'UniPD सत्यापित प्रोफ़ाइल',
     unipdStudentDesc: 'छात्र प्रमाणपत्र और पादोवा विश्वविद्यालय ईमेल (@studenti.unipd.it) सत्यापित है।',
     chatWithUser: 'के साथ चैट करें',
-    flatmatesAndMatch: 'अनुकूलता स्कोर और रूममेट्स',
-    highCompatibility: 'उच्च अनुकूलता',
+    flatmatesAndMatch: 'रूममेट्स',
     securityShield: 'सुरक्षा ढाल',
     securityWarning: 'पंजीकृत अनुबंध और पहचान सत्यापन के बिना कभी भी अग्रिम राशि हस्तांतरित न करें।',
     myListingsTitle: 'मेरे प्रकाशित विज्ञापन और स्थानांतरण',
@@ -2290,7 +2203,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noListingsYet: 'आपके पास अभी कोई सक्रिय विज्ञापन नहीं है',
     studentIdVerification: 'छात्र आईडी सत्यापन',
     activeMatricola: 'सक्रिय UniPD छात्र संख्या',
-    algorithmPreferences: 'रूममेट अनुकूलता प्राथमिकताएं',
     favoritedListings: 'पसंदीदा में जोड़े गए विज्ञापन',
     noFavoritesYet: 'अभी तक कोई पसंदीदा नहीं जोड़ा गया',
     navFeed: 'विज्ञापन',
@@ -2337,7 +2249,7 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     heatingCentralizzato: 'केंद्रीकृत हीटिंग',
     airConditioningLabel: 'एयर कंडीशनिंग (A/C)',
     washingMachineLabel: 'वाशिंग मशीन',
-    wifiLabel: 'हाई-स्पीड वाई-फ़ाई (फाइबर)',
+    wifiLabel: 'वाई-फाई',
     bikeParkingLabel: 'साइकिल पार्किंग (पोस्टो बीची)',
     bikeParkingBadge: 'साइकिल पार्किंग उपलब्ध',
     parkingLabel: 'कार पार्किंग / गैरेज',
@@ -2353,7 +2265,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     sharedBedOption: 'Posto Letto (साझा कमरे का बिस्तर)',
     studioOption: 'Monolocale (स्टूडियो अपार्टमेंट)',
     maxBudgetPrefix: 'अधिकतम:',
-    canoneConcordatoLabel: 'विनियमित सहमति किराया (Canone Concordato)',
     contractOptionStudent: 'छात्र अनुबंध (विनियमित सहमति किराया - Canone Concordato)',
     contractOptionSubentro: 'अनुबंध हस्तांतरण (Subentro)',
     contractOptionTransitorio: 'अस्थायी छात्र अनुबंध (1-18 महीने)',
@@ -2397,8 +2308,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'किफायती',
     expensiveLabel: 'महंगा',
     thisListingLabel: 'यह विज्ञापन',
-    priceGuaranteeTitle: 'मूल्य गारंटी:',
-    priceGuaranteeBody: 'यह विज्ञापन पादोवा नगर पालिका के विनियमित सहमति किराए (Canone Concordato) के मानदंडों के अनुसार है और ESU छात्रवृत्ति और निवास के लिए 100% मान्य है।',
     livePadovaMap: 'लाइव पादोवा मानचित्र',
     stationTram: 'स्टेशन / ट्राम',
     studentRoomLegend: 'छात्र कमरा',

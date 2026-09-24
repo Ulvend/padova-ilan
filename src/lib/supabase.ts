@@ -150,6 +150,8 @@ export const describeAuthError = (error: unknown, lang: Language = 'tr'): string
   if (/invalid email/i.test(message)) return t.errInvalidEmail;
   if (/password should be at least/i.test(message)) return t.errPasswordShort;
   if (/rate limit|too many requests/i.test(message)) return t.errRateLimit;
+  // Yerleşik SMTP yalnızca ekip üyelerine gönderir / gönderim hatası: kayıt oluşmadan bu hata döner.
+  if (/error sending|not authorized|email_address_not_authorized|smtp/i.test(message)) return t.errEmailSendFail;
   if (/email not confirmed/i.test(message)) return t.errEmailNotConfirmed;
   if (/network/i.test(message)) return t.errNetwork;
   if (/popup/i.test(message)) return t.errPopup;

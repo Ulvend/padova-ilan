@@ -320,8 +320,6 @@ interface ListingRow {
   video_url: string | null;
   video_angles: VideoAngle[] | null;
   is_student_card_verified: boolean;
-  compatibility_score: number;
-  compatibility_reason: string;
   current_flatmates: Flatmate[] | null;
   total_housemates: number | null;
   gender_preference: string | null;
@@ -380,8 +378,6 @@ const listingFromRow = (row: ListingRow): HousingListing => ({
   videoUrl: row.video_url || undefined,
   videoAngles: row.video_angles || undefined,
   isStudentCardVerified: row.is_student_card_verified,
-  compatibilityScore: row.compatibility_score,
-  compatibilityReason: row.compatibility_reason,
   currentFlatmates: row.current_flatmates || [],
   totalHousemates: row.total_housemates || undefined,
   genderPreference: (row.gender_preference as HousingListing['genderPreference']) || undefined,
@@ -442,8 +438,6 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
     videoUrl: 'video_url',
     videoAngles: 'video_angles',
     isStudentCardVerified: 'is_student_card_verified',
-    compatibilityScore: 'compatibility_score',
-    compatibilityReason: 'compatibility_reason',
     currentFlatmates: 'current_flatmates',
     totalHousemates: 'total_housemates',
     genderPreference: 'gender_preference',

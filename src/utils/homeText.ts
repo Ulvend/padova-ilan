@@ -5,7 +5,7 @@ import { Language } from '../types';
 const tr = {
   heroTitleA: "Padova'da öğrenci evi,",
   heroTitleB: 'adil fiyata.',
-  heroSub: 'Video turlu, UniPD onaylı ilanlar. Kiralar Padova öğrenci kira tablosuyla otomatik karşılaştırılır.',
+  heroSub: 'Video turlu, UniPD onaylı ilanlar. Kiralar, bölgedeki diğer ilanların fiyatlarıyla otomatik karşılaştırılır.',
   radarLabel: 'Fiyat Radarı',
   radarNote: 'için Padova rayiç ortalaması. Fahiş fiyatlar ilanda işaretlenir.',
   searchBtn: 'Ara',
@@ -47,7 +47,7 @@ type Dict = typeof tr;
 const en: Dict = {
   heroTitleA: 'Student housing in Padova,',
   heroTitleB: 'at a fair price.',
-  heroSub: 'Video-toured, UniPD-verified listings. Rents are compared with the Padova student rent table automatically.',
+  heroSub: 'Video-toured, UniPD-verified listings. Rents are automatically compared with other listings in the same area.',
   radarLabel: 'Price radar',
   radarNote: 'is the Padova market average. Overpriced listings get flagged.',
   searchBtn: 'Search',
@@ -87,7 +87,7 @@ const en: Dict = {
 const it: Dict = {
   heroTitleA: 'Casa per studenti a Padova,',
   heroTitleB: 'a un prezzo giusto.',
-  heroSub: 'Annunci con video tour e verificati UniPD. Gli affitti sono confrontati con la tabella affitti studenti di Padova.',
+  heroSub: 'Annunci con video tour e verificati UniPD. Gli affitti sono confrontati automaticamente con gli altri annunci della zona.',
   radarLabel: 'Radar prezzi',
   radarNote: 'è la media di mercato a Padova. Gli annunci troppo cari vengono segnalati.',
   searchBtn: 'Cerca',
@@ -127,7 +127,7 @@ const it: Dict = {
 const de: Dict = {
   heroTitleA: 'Studentenwohnen in Padua,',
   heroTitleB: 'zum fairen Preis.',
-  heroSub: 'Inserate mit Video-Tour und UniPD-Verifizierung. Die Mieten werden automatisch mit der Miettabelle für Studierende in Padua verglichen.',
+  heroSub: 'Inserate mit Video-Tour und UniPD-Verifizierung. Die Mieten werden automatisch mit anderen Anzeigen im selben Gebiet verglichen.',
   radarLabel: 'Preisradar',
   radarNote: 'ist der Marktdurchschnitt in Padua. Überteuerte Inserate werden markiert.',
   searchBtn: 'Suchen',
@@ -167,7 +167,7 @@ const de: Dict = {
 const ru: Dict = {
   heroTitleA: 'Студенческое жильё в Падуе',
   heroTitleB: 'по честной цене.',
-  heroSub: 'Объявления с видеотуром и подтверждением UniPD. Аренда автоматически сравнивается с таблицей студенческих цен Падуи.',
+  heroSub: 'Объявления с видеотуром и подтверждением UniPD. Аренда автоматически сравнивается с другими объявлениями в этом районе.',
   radarLabel: 'Радар цен',
   radarNote: '— средняя рыночная цена в Падуе. Завышенные цены отмечаются.',
   searchBtn: 'Найти',
@@ -207,7 +207,7 @@ const ru: Dict = {
 const hi: Dict = {
   heroTitleA: 'पादोवा में छात्र आवास,',
   heroTitleB: 'सही कीमत पर।',
-  heroSub: 'वीडियो टूर और UniPD सत्यापन वाले विज्ञापन। किराया पादोवा की छात्र किराया तालिका से अपने आप मिलाया जाता है।',
+  heroSub: 'वीडियो टूर और UniPD सत्यापन वाले विज्ञापन। किराए की तुलना उसी क्षेत्र के अन्य विज्ञापनों से अपने आप की जाती है।',
   radarLabel: 'प्राइस रडार',
   radarNote: 'पादोवा का औसत बाज़ार किराया है। ज़्यादा कीमत वाले विज्ञापन चिह्नित होते हैं।',
   searchBtn: 'खोजें',

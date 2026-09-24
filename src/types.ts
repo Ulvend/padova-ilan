@@ -72,8 +72,6 @@ export interface HousingListing {
   videoUrl?: string;
   videoAngles?: VideoAngle[];
   isStudentCardVerified: boolean;
-  compatibilityScore: number;
-  compatibilityReason: string;
   currentFlatmates: Flatmate[];
   // Roommate & Flat Profile
   totalHousemates?: number;
@@ -123,9 +121,8 @@ export interface FilterState {
   maxPrice: number;
   onlyVideoTour: boolean;
   onlyStudentVerified: boolean;
-  onlyHighCompatibility: boolean;
   roomType: string;
-  sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'compatibility-desc' | 'newest';
+  sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'newest';
   contractStartDateFilter?: string;
   genderPreferenceFilter?: 'all' | 'female_only' | 'male_only' | 'any';
   heatingTypeFilter?: 'all' | 'autonomo' | 'centralizzato';
@@ -213,10 +210,4 @@ export interface UserProfile {
   pendingApproval: number;
   savedListings?: string[];
   savedListingIds?: string[];
-  compatibilityPreferences: {
-    quietHours: string;
-    smoking: string;
-    studyVibe: string;
-    cleanlinessRating: string;
-  };
 }

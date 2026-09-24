@@ -10,7 +10,6 @@ import {
 import { DISTRICT_COORDINATES_MAP } from '../../data/mockData';
 import { calculateNearestFaculty } from '../../services/geocodingService';
 import { landmarkLabel } from '../../utils/landmarkText';
-import { evaluateFairPrice } from '../../utils/fairPrice';
 import { WIZARD_TEXT, LANG_LOCALE } from '../../utils/wizardText';
 import { TRANSLATIONS } from '../../utils/translations';
 
@@ -280,7 +279,6 @@ export const buildListing = (
 ): HousingListing => {
   const { lang, user, existing } = opts;
   const price = Number(f.price) || 0;
-  const fair = evaluateFairPrice(price, f.district, f.roomType);
   const videoAngles = f.hasVideoTour ? buildAngles(f) : undefined;
   const videoUrl = f.hasVideoTour ? f.videoUrl.trim() || undefined : undefined;
   const travel = travelEstimate(f.lat, f.lng, lang);
@@ -298,7 +296,9 @@ export const buildListing = (
     distanceToFaculty: travel.text,
     price,
     expenses: formatExpenses(f, lang),
-    ...fair,
+    // Fiyat karşılaştırması artık sitedeki güncel ilanlardan hesaplanır; bu alanlar yalnızca eski kayıtlar için durur.
+    fairPriceStatus: existing?.fairPriceStatus ?? 'average',
+    fairPriceText: existing?.fairPriceText ?? '',
     roomType: f.roomType,
     contractType: f.contractType,
     contractStartDate: f.isImmediate ? undefined : formatDate(f.startDate, lang),
@@ -310,8 +310,6 @@ export const buildListing = (
     videoAngles,
     videoTitle: f.hasVideoTour ? existing?.videoTitle || w.videoTitle : undefined,
     isStudentCardVerified: existing?.isStudentCardVerified ?? Boolean(user?.studentIdVerified),
-    compatibilityScore: existing?.compatibilityScore ?? 0,
-    compatibilityReason: existing?.compatibilityReason ?? '',
     currentFlatmates: existing?.currentFlatmates ?? [],
     totalHousemates: f.totalHousemates,
     genderPreference: f.genderPreference,

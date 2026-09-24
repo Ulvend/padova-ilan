@@ -303,6 +303,18 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* Ziyaretçi için "Kayıt Ol" (mobilde alt menüde zaten var) */}
+          {!isLoggedIn && (
+            <button
+              type="button"
+              id="btn-nav-register"
+              onClick={() => onOpenAuthModal && onOpenAuthModal('register')}
+              className="hidden sm:flex items-center min-h-[44px] px-3.5 xl:px-4 text-[15px] font-bold text-stone-900 border border-stone-300 hover:border-stone-500 hover:bg-stone-50 rounded-xl transition cursor-pointer whitespace-nowrap"
+            >
+              {t.registerNav}
+            </button>
+          )}
+
           <button
             id="btn-post-ad"
             type="button"

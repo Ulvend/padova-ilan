@@ -16,7 +16,7 @@ import {
 import { TRANSLATIONS } from '../utils/translations';
 import { LANG_LOCALE } from '../utils/wizardText';
 import { formatDeviceTime } from '../utils/deviceTime';
-import { evaluateFairPrice } from '../utils/fairPrice';
+import { buildPriceIndex, type PriceInsight, type PriceTarget } from '../utils/districtPricing';
 import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/username';
 import { EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
 import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
@@ -79,7 +79,6 @@ export const DEFAULT_FILTERS: FilterState = {
   maxPrice: MAX_PRICE_UNLIMITED,
   onlyVideoTour: false,
   onlyStudentVerified: false,
-  onlyHighCompatibility: false,
   roomType: 'all',
   sortBy: 'relevance',
 };
@@ -159,6 +158,10 @@ interface AppContextType {
   listings: HousingListing[];
   // Sözleşme aralığı bitmemiş, herkese açık akışta gösterilecek ilanlar.
   publicListings: HousingListing[];
+  // Bölge + oda tipi bazında, sitedeki diğer ilanların ortalamasıyla fiyat karşılaştırması.
+  getPriceInsight: (target: PriceTarget) => PriceInsight;
+  // Tüm bölgelerde verilen oda tipinin ortalaması (yeterli ilan yoksa null).
+  getCityAverage: (roomType: string) => { average: number; count: number } | null;
   archivedListings: HousingListing[];
   favoriteIds: string[];
   filters: FilterState;
@@ -815,7 +818,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const user = requireVerifiedUser();
     const listing: HousingListing = withCoords({
       ...newListing,
-      ...evaluateFairPrice(newListing.price, newListing.district, newListing.roomType),
       userId: user.uid,
       isStudentCardVerified: user.unipdVerified,
       poster: { ...newListing.poster, id: user.uid, verifiedUniPD: user.unipdVerified },
@@ -829,9 +831,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const current = allListings.find((l) => l.id === listingId);
     const merged = { ...current, ...updates } as HousingListing;
     const next: Partial<HousingListing> = { ...updates };
-    if (updates.price !== undefined || updates.district || updates.roomType) {
-      Object.assign(next, evaluateFairPrice(merged.price, merged.district, merged.roomType));
-    }
     if ((updates.streetAddress || updates.district) && !(updates.lat && updates.lng)) {
       const [lat, lng] = resolveListingCoords(merged);
       next.lat = lat;
@@ -910,7 +909,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleUpdateListingPrice = (id: string, newPrice: number) =>
     adminUpdateListing(
       id,
-      (l) => ({ price: newPrice, ...evaluateFairPrice(newPrice, l.district, l.roomType) }),
+      () => ({ price: newPrice }),
       (l) => ['İlan fiyatı güncellendi', `"${l.title}" ilanınızın fiyatı yönetici tarafından €${newPrice} olarak güncellendi.`]
     );
 
@@ -1036,6 +1035,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [allListings, isAdmin, isMine, nowMs]
   );
 
+  // Fiyat ortalamaları herkese açık (yayındaki, süresi dolmamış) ilanların gerçek kiralarından hesaplanır.
+  const priceIndex = useMemo(() => buildPriceIndex(publicListings), [publicListings]);
+
   const filteredListings = useMemo(() => {
     const result = publicListings.filter((l) => {
       if (filters.searchQuery) {
@@ -1069,7 +1071,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (filters.maxPrice < MAX_PRICE_UNLIMITED && l.price > filters.maxPrice) return false;
       if (filters.onlyVideoTour && !l.hasVideoTour) return false;
       if (filters.onlyStudentVerified && !l.isStudentCardVerified) return false;
-      if (filters.onlyHighCompatibility && (l.compatibilityScore || 0) < 85) return false;
 
       const start = filters.contractStartDateFilter;
       if (start && start !== 'all') {
@@ -1101,8 +1102,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return result.sort((a, b) => a.price - b.price);
       case 'price-desc':
         return result.sort((a, b) => b.price - a.price);
-      case 'compatibility-desc':
-        return result.sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
       case 'newest':
         return result.sort((a, b) => createdAtMs(b) - createdAtMs(a));
       default:
@@ -1143,6 +1142,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleRevokeAdminHash,
     listings,
     publicListings,
+    getPriceInsight: priceIndex.insightFor,
+    getCityAverage: priceIndex.cityAverage,
     archivedListings,
     favoriteIds,
     filters,

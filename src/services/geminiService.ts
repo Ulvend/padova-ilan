@@ -49,19 +49,3 @@ export async function translateWithGemini(
   // Strip surrounding quotes if the model wrapped output in quotes
   return output ? output.replace(/^["']|["']$/g, '').trim() : null;
 }
-
-/**
- * Generates an AI compatibility summary between a student and a flatmate/listing using Gemini.
- */
-export async function generateCompatibilityInsight(
-  studentFaculty: string,
-  listingDistrict: string,
-  flatmates: string[]
-): Promise<string | null> {
-  return callProxy({
-    action: 'compatibility',
-    studentFaculty,
-    listingDistrict,
-    flatmates,
-  });
-}

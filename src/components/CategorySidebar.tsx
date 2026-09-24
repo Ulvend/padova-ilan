@@ -128,19 +128,6 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 {t.studentIdShieldOption}
               </span>
             </label>
-
-            <label className="flex items-center gap-2.5 cursor-pointer select-none p-2 rounded-xl hover:bg-stone-50 transition">
-              <input 
-                id="check-only-high-compatibility"
-                type="checkbox" 
-                checked={filters.onlyHighCompatibility}
-                onChange={(e) => onFilterChange({ onlyHighCompatibility: e.target.checked })}
-                className="accent-stone-900 w-4 h-4 rounded cursor-pointer" 
-              />
-              <span className="font-medium text-stone-800">
-                {t.compatibilityShieldOption}
-              </span>
-            </label>
           </div>
         </div>
 
@@ -240,7 +227,6 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
             className="w-full min-h-[42px] border border-stone-200 px-3 bg-stone-50/60 rounded-xl outline-none text-xs text-stone-900 cursor-pointer focus:bg-white focus:border-stone-400 transition-colors"
           >
             <option value="relevance">{t.sortRelevance}</option>
-            <option value="compatibility-desc">{t.sortCompatDesc}</option>
             <option value="price-asc">{t.sortPriceAsc}</option>
             <option value="price-desc">{t.sortPriceDesc}</option>
             <option value="newest">{t.sortNewest}</option>

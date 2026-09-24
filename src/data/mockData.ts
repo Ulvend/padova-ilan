@@ -1,7 +1,6 @@
 import { HousingListing, UserProfile, UserNotification } from '../types';
 
 export const PADOVA_STATS = {
-  averageSingolaPrice: '€435 / Singola',
   videoToursCount: '142 Doğrulandı',
   confirmationRate: '%98.4 Güncel',
   officialContractsCount: '310 İlan',
@@ -100,58 +99,34 @@ export const INITIAL_HOUSING_LISTINGS: HousingListing[] = [];
 export const INITIAL_CONVERSATIONS: import('../types').ConversationContact[] = [];
 
 export const DISTRICT_BENCHMARKS: Record<string, {
-  avgPriceSingola: number;
-  avgPriceDoppia: number;
-  canoneConcordatoRange: string;
   districtLabel: string;
   marketTrend: string;
 }> = {
   'Policlinico / Tıp Fakültesi (< 500m)': {
-    avgPriceSingola: 455,
-    avgPriceDoppia: 320,
-    canoneConcordatoRange: '€380 - €460',
     districtLabel: 'Policlinico & Giustiniani Bölgesi',
     marketTrend: 'Tıp fakültesi ve hastane yakınlığı sebebiyle talep çok yüksek',
   },
   'Portello / Mühendislik & Fen (< 500m)': {
-    avgPriceSingola: 460,
-    avgPriceDoppia: 330,
-    canoneConcordatoRange: '€390 - €470',
     districtLabel: 'Portello & Piovego Kampüs Bölgesi',
     marketTrend: 'Mühendislik binaları ve kütüphanelere yürüme mesafesinde',
   },
   'Beato Pellegrino / Beşeri Bilimler': {
-    avgPriceSingola: 430,
-    avgPriceDoppia: 300,
-    canoneConcordatoRange: '€370 - €440',
     districtLabel: 'Beato Pellegrino & Carmine',
     marketTrend: 'Edebiyat ve felsefe kompleksine yakın sakin yerleşim',
   },
   'Centro Storico / Prato della Valle': {
-    avgPriceSingola: 480,
-    avgPriceDoppia: 340,
-    canoneConcordatoRange: '€410 - €500',
     districtLabel: 'Centro Storico / Prato della Valle',
     marketTrend: 'Tarihi merkez, sosyal hayat ve tramvay hattı üzerinde',
   },
   'Forcellini': {
-    avgPriceSingola: 440,
-    avgPriceDoppia: 310,
-    canoneConcordatoRange: '€375 - €445',
     districtLabel: 'Forcellini & Nazareth Bölgesi',
     marketTrend: 'Hastanelere yakın, yeşil alanlı ve bisiklet dostu bölge',
   },
   'Arcella': {
-    avgPriceSingola: 380,
-    avgPriceDoppia: 270,
-    canoneConcordatoRange: '€320 - €395',
     districtLabel: 'Arcella & Stanga',
     marketTrend: 'Tren istasyonuna yakın, tramvay ile merkeze 8 dk',
   },
   'Guizza': {
-    avgPriceSingola: 390,
-    avgPriceDoppia: 280,
-    canoneConcordatoRange: '€330 - €400',
     districtLabel: 'Guizza & Bassanello',
     marketTrend: 'Tramvay güney son durağı, sakin ve ekonomik',
   },
@@ -171,12 +146,6 @@ export const DEFAULT_GUEST_USER: UserProfile = {
   myListingsCount: 0,
   pendingApproval: 0,
   savedListings: [],
-  compatibilityPreferences: {
-    quietHours: '23:00 - 08:00',
-    smoking: 'Sigarasız',
-    studyVibe: 'Sessiz Çalışma',
-    cleanlinessRating: '5/5 Titiz',
-  },
 };
 
 export const CURRENT_USER: UserProfile = DEFAULT_GUEST_USER;

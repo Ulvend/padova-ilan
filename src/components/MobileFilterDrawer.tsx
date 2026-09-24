@@ -1,7 +1,7 @@
 import { useModalBehavior } from '../utils/useModalBehavior';
 import React from 'react';
 import { MAX_PRICE_UNLIMITED } from '../context/AppContext';
-import { X, RotateCcw, ShieldCheck, Video, Users, Check, ArrowUpDown, Filter, GraduationCap, Calendar } from 'lucide-react';
+import { X, RotateCcw, ShieldCheck, Video, Check, ArrowUpDown, Filter, GraduationCap, Calendar } from 'lucide-react';
 import { FilterState, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 
@@ -214,24 +214,6 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                 {filters.onlyStudentVerified && <Check className="w-3.5 h-3.5 stroke-[3]" />}
               </div>
             </div>
-
-            {/* High Compatibility Card */}
-            <div 
-              onClick={() => onFilterChange({ onlyHighCompatibility: !filters.onlyHighCompatibility })}
-              className={`min-h-[48px] p-3 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
-                filters.onlyHighCompatibility ? 'bg-amber-50 border-amber-300 shadow-xs' : 'bg-white border-stone-200 hover:bg-stone-50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-amber-700 shrink-0" />
-                <span className="font-semibold text-xs text-stone-800">{t.compatibilityShieldOption}</span>
-              </div>
-              <div className={`w-6 h-6 rounded-lg border flex items-center justify-center ${
-                filters.onlyHighCompatibility ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-300 bg-stone-50'
-              }`}>
-                {filters.onlyHighCompatibility && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-              </div>
-            </div>
           </div>
 
           {/* Contract Type */}
@@ -272,7 +254,6 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
               className="w-full min-h-[46px] px-3 text-xs border border-stone-200 bg-stone-50/50 rounded-xl outline-none text-stone-900 cursor-pointer focus:bg-white focus:border-stone-400 transition-colors"
             >
               <option value="relevance">{t.sortRelevance}</option>
-              <option value="compatibility-desc">{t.sortCompatDesc}</option>
               <option value="price-asc">{t.sortPriceAsc}</option>
               <option value="price-desc">{t.sortPriceDesc}</option>
               <option value="newest">{t.sortNewest}</option>

@@ -44,6 +44,7 @@ import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { formatGenderDistribution } from '../utils/genderDistribution';
 import { formatPercent } from '../utils/format';
+import { LOW_RATIO, HIGH_RATIO, MIN_COMPARABLE_LISTINGS, type PriceInsight } from '../utils/districtPricing';
 import { marketTrendLabel } from '../utils/marketTrendText';
 import { PadovaMap } from './PadovaMap';
 import { FlatmateIcon } from './FlatmateIcon';
@@ -58,6 +59,10 @@ interface ListingDetailPageProps {
   onEditListing?: (listing: HousingListing) => void;
   currentUser?: UserProfile;
   isLoggedIn?: boolean;
+  // İlan numarası yalnızca adminlere gösterilir.
+  isAdmin?: boolean;
+  // Aynı bölge ve oda tipindeki diğer ilanların ortalamasına göre fiyat karşılaştırması.
+  priceInsight: PriceInsight;
   currentLang: Language;
 }
 
@@ -71,10 +76,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   onEditListing,
   currentUser,
   isLoggedIn = false,
+  isAdmin = false,
+  priceInsight,
   currentLang,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
-  const listing = getLocalizedListing(rawListing, currentLang);
+  const listing = getLocalizedListing(rawListing, currentLang, priceInsight);
 
   // Image & Video Gallery State
   const [activeMediaTab, setActiveMediaTab] = useState<'photos' | 'video'>('photos');
@@ -87,19 +94,18 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const [videoCameraAngle, setVideoCameraAngle] = useState<'wide' | 'desk' | 'shared'>('wide');
   const [videoProgress, setVideoProgress] = useState(12);
 
-  // Benchmarks & District Calculation
-  // Karşılaştırma tablosu özgün (çevrilmemiş) ilçe ve oda tipiyle aranır; yerelleştirilmiş değerler anahtarla eşleşmez.
+  // Bölge ortalaması sabit tablodan değil, sitedeki aynı bölge ve oda tipindeki DİĞER ilanlardan hesaplanır.
+  // Yeterli ilan yoksa (priceInsight.status === 'unknown') ortalama gösterilmez.
+  // Belediye kira aralığı ve bölge özeti yine çevrilmemiş ilçe anahtarıyla sabit tablodan gelir.
   const benchmark = DISTRICT_BENCHMARKS[rawListing.district];
-  const isDoppia = rawListing.roomType === 'Doppia' || rawListing.roomType === 'Posto Letto';
-  const hasRoomBenchmark = isDoppia || rawListing.roomType === 'Singola';
-  const showPriceRadar = Boolean(benchmark) && hasRoomBenchmark;
-  const regionalAverage = benchmark ? (isDoppia ? benchmark.avgPriceDoppia : benchmark.avgPriceSingola) : 0;
+  const hasInsight = priceInsight.status !== 'unknown';
+  const showPriceRadar = Boolean(benchmark);
+  const regionalAverage = priceInsight.average;
   const priceDifference = listing.price - regionalAverage;
-  const percentageRatio = regionalAverage ? Math.round((Math.abs(priceDifference) / regionalAverage) * 100) : 0;
-  const rangeMatch = benchmark ? /(\d+)\D+(\d+)/.exec(benchmark.canoneConcordatoRange) : null;
-  const isWithinConcordatoRange = rangeMatch
-    ? listing.price >= Number(rangeMatch[1]) && listing.price <= Number(rangeMatch[2])
-    : false;
+  const percentageRatio = priceInsight.percentDiff;
+  const priceRatio = regionalAverage ? listing.price / regionalAverage : 1;
+  // Ölçek ortalamanın %75–%125'i; renk bölgeleri "uygun" (≤%95) / "ortalama" / "yüksek" (≥%110) eşikleriyle aynı.
+  const gaugePct = (r: number) => ((Math.min(1.25, Math.max(0.75, r)) - 0.75) / 0.5) * 100;
 
   // Video progress timer simulation
   useEffect(() => {
@@ -643,7 +649,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <div>
                   <span className="text-stone-900 font-bold block">{t.wifiLabel}</span>
                   <span className="text-stone-600 text-[11px]">
-                    {listing.hasWifi !== false ? t.wifiLabel : t.wifiNo}
+                    {listing.hasWifi !== false ? t.wifiAvailable : t.wifiNo}
                   </span>
                 </div>
               </div>
@@ -660,12 +666,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-xs border-collapse">
                 <tbody>
+                  {isAdmin && (
+                    <tr className="border-b border-stone-100">
+                      <td className="py-2.5 text-stone-400 font-medium uppercase w-1/3">{t.listingNumber}</td>
+                      <td className="py-2.5 font-bold text-stone-900">{listing.id}</td>
+                    </tr>
+                  )}
                   <tr className="border-b border-stone-100">
-                    <td className="py-2.5 text-stone-400 font-medium uppercase w-1/3">{t.listingNumber}</td>
-                    <td className="py-2.5 font-bold text-stone-900">{listing.id}</td>
-                  </tr>
-                  <tr className="border-b border-stone-100">
-                    <td className="py-2.5 text-stone-400 font-medium uppercase">{t.roomTypeLabel}</td>
+                    <td className={`py-2.5 text-stone-400 font-medium uppercase ${isAdmin ? '' : 'w-1/3'}`}>{t.roomTypeLabel}</td>
                     <td className="py-2.5 font-semibold text-stone-800">{listing.roomType}</td>
                   </tr>
                   <tr className="border-b border-stone-100">
@@ -715,7 +723,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   </tr>
                   <tr className="border-b border-stone-100">
                     <td className="py-2.5 text-stone-400 font-medium uppercase">{t.contractModel}</td>
-                    <td className="py-2.5 font-semibold text-emerald-800">{listing.contractType}</td>
+                    <td className="py-2.5 font-semibold text-emerald-800">{listing.contractType.replace(/\s*\([^)]*\)\s*$/, '')}</td>
                   </tr>
                   <tr className="border-b border-stone-100 bg-orange-50/40">
                     <td className="py-2.5 text-orange-900 font-semibold uppercase">{t.contractStartDateLabel}</td>
@@ -779,9 +787,6 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   {t.regionalPriceRatioTitle}
                 </h2>
               </div>
-              <span className="bg-emerald-800 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                {t.rentTableBadge}
-              </span>
             </div>
 
             {/* Big Ratio Badge and Key Comparison Figures */}
@@ -793,6 +798,11 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   {benchmark.districtLabel}
                 </span>
               
+                {!hasInsight ? (
+                  <p className="text-xs text-stone-600 leading-snug">
+                    {t.priceNoDataNote.replace('{min}', String(MIN_COMPARABLE_LISTINGS))}
+                  </p>
+                ) : (
                 <div className="flex items-center gap-2.5">
                   {priceDifference <= 0 ? (
                     <div className="bg-emerald-600 text-white p-2 rounded-xl">
@@ -817,64 +827,68 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     <span className="text-[11px] text-stone-500 font-medium block">
                       {t.regionalAverage}: €{regionalAverage} ({priceDifference < 0 ? `-€${Math.abs(priceDifference)}` : `+€${priceDifference}`})
                     </span>
+                    <span className="text-[10px] text-stone-400 font-medium block">
+                      {t.priceBasedOn.replace('{n}', String(priceInsight.count))}
+                    </span>
                   </div>
                 </div>
+                )}
               </div>
 
               {/* Right Comparison Metrics Grid (7 cols) */}
-              <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="md:col-span-7 grid grid-cols-2 gap-2.5 text-xs">
                 <div className="bg-white border border-stone-200 rounded-xl p-2.5">
                   <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.rentOfThisRoom}</span>
                   <span className="text-base font-bold text-stone-900">€{listing.price}</span>
                   <span className="text-[9px] text-emerald-700 block font-semibold">{listing.contractType.split(' ')[0]}</span>
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-xl p-2.5">
-                  <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.regionalAverage}</span>
-                  <span className="text-base font-bold text-stone-800">€{regionalAverage}</span>
-                  <span className="text-[9px] text-stone-500 block">{listing.roomType}</span>
-                </div>
-
-                <div className="bg-white border border-stone-200 rounded-xl p-2.5 col-span-2 sm:col-span-1">
-                  <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.canoneConcordatoLabel}</span>
-                  <span className="text-sm font-bold text-stone-800">{benchmark.canoneConcordatoRange}</span>
-                  <span className="text-[9px] text-emerald-800 block font-semibold">{t.rentTableBadge}</span>
-                </div>
+                {hasInsight && (
+                  <div className="bg-white border border-stone-200 rounded-xl p-2.5">
+                    <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.regionalAverage}</span>
+                    <span className="text-base font-bold text-stone-800">€{regionalAverage}</span>
+                    <span className="text-[9px] text-stone-500 block">{listing.roomType}</span>
+                  </div>
+                )}
               </div>
 
             </div>
 
             {/* Visual Gauge Bar */}
             <div className="space-y-1.5 pt-1">
-              <div className="flex justify-between text-[10px] font-semibold text-stone-500">
-                <span>€350 ({t.economicLabel})</span>
-                <span className="text-emerald-800 font-bold flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-emerald-800" />
-                  <span>{t.thisListingLabel}: €{listing.price}</span>
-                </span>
-                <span className="text-stone-700">{t.regionalAverage}: €{regionalAverage}</span>
-                <span>€550+ ({t.expensiveLabel})</span>
-              </div>
+              {hasInsight && (
+                <>
+                  <div className="flex justify-between text-[10px] font-semibold text-stone-500">
+                    <span>≤ €{Math.round(regionalAverage * LOW_RATIO)} ({t.economicLabel})</span>
+                    <span className="text-emerald-800 font-bold flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-emerald-800" />
+                      <span>{t.thisListingLabel}: €{listing.price}</span>
+                    </span>
+                    <span className="text-stone-700">{t.regionalAverage}: €{regionalAverage}</span>
+                    <span>≥ €{Math.round(regionalAverage * HIGH_RATIO)} ({t.expensiveLabel})</span>
+                  </div>
 
-              <div className="h-2.5 w-full bg-stone-200 rounded-full relative overflow-hidden">
-                {/* Scale zone */}
-                <div className="absolute inset-y-0 left-0 w-2/5 bg-emerald-300"></div>
-                <div className="absolute inset-y-0 left-2/5 w-1/3 bg-amber-200"></div>
-                <div className="absolute inset-y-0 right-0 w-4/15 bg-rose-300"></div>
+                  <div className="h-2.5 w-full bg-stone-200 rounded-full relative overflow-hidden">
+                    {/* Scale zone */}
+                    <div className="absolute inset-y-0 left-0 bg-emerald-300" style={{ width: `${gaugePct(LOW_RATIO)}%` }}></div>
+                    <div className="absolute inset-y-0 bg-amber-200" style={{ left: `${gaugePct(LOW_RATIO)}%`, width: `${gaugePct(HIGH_RATIO) - gaugePct(LOW_RATIO)}%` }}></div>
+                    <div className="absolute inset-y-0 right-0 bg-rose-300" style={{ width: `${100 - gaugePct(HIGH_RATIO)}%` }}></div>
 
-                {/* Marker for this listing */}
-                <div 
-                  className="absolute top-0 bottom-0 w-2 bg-stone-900 -translate-x-1/2 rounded-full shadow-md"
-                  style={{ 
-                    left: `${Math.min(95, Math.max(5, ((listing.price - 300) / 300) * 100))}%` 
-                  }}
-                  title={`${t.thisListingLabel}: €${listing.price}`}
-                ></div>
-              </div>
+                    {/* Bölge ortalaması */}
+                    <div className="absolute top-0 bottom-0 w-px bg-stone-900/40" style={{ left: `${gaugePct(1)}%` }}></div>
+
+                    {/* Marker for this listing */}
+                    <div
+                      className="absolute top-0 bottom-0 w-2 bg-stone-900 -translate-x-1/2 rounded-full shadow-md"
+                      style={{ left: `${Math.min(95, Math.max(5, gaugePct(priceRatio)))}%` }}
+                      title={`${t.thisListingLabel}: €${listing.price}`}
+                    ></div>
+                  </div>
+                </>
+              )}
 
               <p className="text-[11px] text-stone-600 leading-snug pt-1">
                 <strong>*{t.priceNoteTitle}:</strong> {marketTrendLabel(rawListing.district, benchmark.marketTrend, currentLang)}.
-                {isWithinConcordatoRange && <> {t.priceNoteBody}</>}
               </p>
             </div>
           </div>
@@ -891,15 +905,17 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <span className="text-4xl font-extrabold tracking-tight text-stone-900">€{listing.price}</span>
               <span className="text-[15px] text-stone-500">{t.perMonth} · {listing.expenses}</span>
             </div>
-            <span
-              className={`inline-block px-3 py-1.5 rounded-[10px] border text-[13px] font-bold ${
-                listing.fairPriceStatus === 'lower' || listing.fairPriceStatus === 'average'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                  : 'bg-orange-50 border-orange-300 text-orange-800'
-              }`}
-            >
-              {listing.fairPriceText}
-            </span>
+            {hasInsight && (
+              <span
+                className={`inline-block px-3 py-1.5 rounded-[10px] border text-[13px] font-bold ${
+                  listing.fairPriceStatus === 'lower' || listing.fairPriceStatus === 'average'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                    : 'bg-orange-50 border-orange-300 text-orange-800'
+                }`}
+              >
+                {listing.fairPriceText}
+              </span>
+            )}
             {listing.contractStartDate && (
               <div className="flex items-center justify-between gap-3 px-4 py-3 border border-stone-200 rounded-[14px] text-sm">
                 <span className="text-stone-500">{t.contractStartDateLabel}</span>
@@ -930,46 +946,37 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             {listing.confirmationTimeLeft && (
               <p className="text-[13px] text-stone-500 leading-snug">{listing.confirmationTimeLeft}</p>
             )}
-          </div>
 
-          {/* Poster Profile Card */}
-          <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
-            <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block">
-              {t.listedByStudent}
-            </span>
+            {/* İlanı veren öğrenci (fiyat kartına entegre) */}
+            <div className="border-t border-stone-100 pt-4 space-y-4">
+              <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block">
+                {t.listedByStudent}
+              </span>
 
-            <div className="flex items-center gap-3.5">
-              <img 
-                src={listing.poster.avatar} 
-                alt={listing.poster.name}
-                className="w-14 h-14 rounded-full border border-stone-200 object-cover shadow-xs" 
-              />
-              <div>
-                <h3 className="font-bold text-sm text-stone-900">{listing.poster.name}</h3>
-                <span className="text-xs text-orange-600 font-semibold block">@{listing.poster.username}</span>
-                <span className="text-[10px] text-stone-500 block">{listing.poster.department}</span>
-              </div>
-            </div>
-
-            {listing.poster.verifiedUniPD && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-[11px] text-emerald-950 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                  <span>{t.unipdVerifiedProfile}</span>
+              <div className="flex items-center gap-3.5">
+                <img
+                  src={listing.poster.avatar}
+                  alt={listing.poster.name}
+                  className="w-14 h-14 rounded-full border border-stone-200 object-cover shadow-xs"
+                />
+                <div>
+                  <h3 className="font-bold text-sm text-stone-900">{listing.poster.name}</h3>
+                  <span className="text-xs text-orange-600 font-semibold block">@{listing.poster.username}</span>
                 </div>
-                <p className="text-[10px] text-emerald-800 leading-tight">
-                  {t.unipdStudentDesc}
-                </p>
               </div>
-            )}
 
-            <button
-              onClick={() => onOpenChat(listing.poster.username, listing.title, listing.id)}
-              className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5 shadow-xs"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>{t.chatWithUser} {listing.poster.name}</span>
-            </button>
+              {listing.poster.verifiedUniPD && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-[11px] text-emerald-950 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                    <span>{t.unipdVerifiedProfile}</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-800 leading-tight">
+                    {t.unipdStudentDesc}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Current Flatmates & Match Algorithm */}
@@ -978,12 +985,6 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block">
                 {t.flatmatesAndMatch}
               </span>
-              {listing.compatibilityScore > 0 && (
-                <div className="flex items-baseline justify-between pt-1">
-                  <span className="text-2xl font-bold text-emerald-700">%{listing.compatibilityScore}</span>
-                  <span className="text-xs font-medium text-stone-600">{t.highCompatibility} ({listing.compatibilityReason})</span>
-                </div>
-              )}
             </div>
 
             {/* Oda Arkadaşı & Ev Profili Özeti */}

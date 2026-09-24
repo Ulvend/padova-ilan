@@ -5,7 +5,7 @@ import { RecentlyAddedSection } from '../components/RecentlyAddedSection';
 import { PadovaMap } from '../components/PadovaMap';
 import { ListingCard } from '../components/ListingCard';
 import { Pagination } from '../components/Pagination';
-import { PADOVA_STATS } from '../data/mockData';
+import { MaxRentField } from '../components/MaxRentField';
 import { HOME_TEXT, fillText } from '../utils/homeText';
 import {
   Map as MapIcon,
@@ -14,7 +14,6 @@ import {
   Search,
   X,
   Video,
-  Star,
   GraduationCap,
   Building2,
   RefreshCw,
@@ -38,6 +37,7 @@ export const HomePage: React.FC = () => {
     t,
     currentLang,
     publicListings,
+    getCityAverage,
     filteredListings,
     filters,
     setFilters,
@@ -88,12 +88,13 @@ export const HomePage: React.FC = () => {
     filters.maxPrice < MAX_PRICE_UNLIMITED,
     filters.onlyVideoTour,
     filters.onlyStudentVerified,
-    filters.onlyHighCompatibility,
     filters.roomType !== 'all',
     Boolean(filters.contractStartDateFilter && filters.contractStartDateFilter !== 'all'),
   ].filter(Boolean).length;
 
-  const [radarPrice, radarRoom] = PADOVA_STATS.averageSingolaPrice.split(' / ');
+  // Fiyat radarı: sitedeki tüm Singola ilanlarının ortalaması. Yeterli ilan yoksa kart gösterilmez.
+  const radarRoom = 'Singola';
+  const cityAverage = getCityAverage(radarRoom);
 
   const chip = (active: boolean) =>
     `min-h-[44px] px-4 rounded-full border text-sm font-semibold shrink-0 flex items-center gap-2 transition cursor-pointer active:scale-95 ${
@@ -105,26 +106,28 @@ export const HomePage: React.FC = () => {
       {/* Hero */}
       <section className="pt-2 sm:pt-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div className="max-w-2xl">
-          <h1 className="font-display font-black text-[32px] sm:text-5xl lg:text-[60px] leading-[1.06] tracking-tight text-stone-900">
+          <h1 className="font-display font-black text-[28px] sm:text-[42px] lg:text-[50px] leading-[1.08] tracking-tight text-stone-900">
             {h.heroTitleA}
             <br className="hidden sm:block" /> {h.heroTitleB}
           </h1>
           <p className="mt-4 sm:mt-5 text-base sm:text-lg leading-relaxed text-stone-600 max-w-xl">{h.heroSub}</p>
         </div>
 
+        {cityAverage && (
         <div className="hidden lg:flex w-80 shrink-0 flex-col gap-1.5 bg-white border border-stone-200 rounded-[20px] px-[22px] py-5">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700">
             <Scale className="w-4 h-4" />
             {h.radarLabel}
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-stone-900">{radarPrice}</span>
+            <span className="text-4xl font-extrabold tracking-tight text-stone-900">€{cityAverage.average}</span>
             <span className="text-sm text-stone-500">{t.perMonth}</span>
           </div>
           <p className="text-sm leading-snug text-stone-600">
             {radarRoom} {h.radarNote}
           </p>
         </div>
+        )}
       </section>
 
       {/* Masaüstü arama çubuğu */}
@@ -194,20 +197,12 @@ export const HomePage: React.FC = () => {
         </label>
 
         <div className="w-px my-5 bg-stone-200" />
-        <label className="w-[150px] px-6 flex flex-col justify-center gap-1">
-          <span className={fieldLabel}>{h.maxRentField}</span>
-          <div className="relative">
-            <select id="select-max-price" value={filters.maxPrice} onChange={(e) => update({ maxPrice: Number(e.target.value) })} className={fieldSelect}>
-              {[300, 400, 500, 600, 700, 800, MAX_PRICE_UNLIMITED].map((v) => (
-                <option key={v} value={v}>
-                  €{v}
-                  {v === MAX_PRICE_UNLIMITED ? '+' : ''}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-stone-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        </label>
+        <MaxRentField
+          label={h.maxRentField}
+          value={filters.maxPrice}
+          onChange={(maxPrice) => update({ maxPrice })}
+          labelClassName={fieldLabel}
+        />
 
         <button
           type="button"
@@ -262,10 +257,6 @@ export const HomePage: React.FC = () => {
             <GraduationCap className="w-4 h-4" />
             {t.verifiedStudent}
           </button>
-          <button type="button" onClick={() => update({ onlyHighCompatibility: !filters.onlyHighCompatibility })} className={chip(filters.onlyHighCompatibility)} aria-pressed={filters.onlyHighCompatibility}>
-            <Star className="w-4 h-4" />
-            {t.highCompatibility}
-          </button>
           <button type="button" onClick={() => update({ contractType: filters.contractType === CONTRACT_STUDENT ? 'all' : CONTRACT_STUDENT })} className={chip(filters.contractType === CONTRACT_STUDENT)} aria-pressed={filters.contractType === CONTRACT_STUDENT}>
             {t.contractOptionStudent.split(' (')[0]}
           </button>
@@ -319,7 +310,6 @@ export const HomePage: React.FC = () => {
                 className="min-h-[44px] pl-3 pr-8 bg-transparent text-sm font-semibold text-stone-900 outline-none cursor-pointer appearance-none"
               >
                 <option value="relevance">{t.sortRelevance}</option>
-                <option value="compatibility-desc">{t.sortCompatDesc}</option>
                 <option value="price-asc">{t.sortPriceAsc}</option>
                 <option value="price-desc">{t.sortPriceDesc}</option>
                 <option value="newest">{t.sortNewest}</option>

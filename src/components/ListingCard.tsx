@@ -4,6 +4,7 @@ import { HousingListing, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { HOME_TEXT } from '../utils/homeText';
 import { getLocalizedListing } from '../utils/listingTranslator';
+import { useApp } from '../context/AppContext';
 import { formatGenderDistribution } from '../utils/genderDistribution';
 import { formatBathrooms } from '../utils/format';
 
@@ -36,7 +37,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
-  const listing = getLocalizedListing(rawListing, currentLang);
+  const { getPriceInsight } = useApp();
+  const insight = getPriceInsight(rawListing);
+  const listing = getLocalizedListing(rawListing, currentLang, insight);
 
   const handleToggleFav = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -147,13 +150,15 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             <span className="text-[13px] text-stone-500">{listing.expenses}</span>
           </div>
 
-          <span
-            className={`max-w-[150px] text-center px-2.5 py-1.5 rounded-[10px] border text-xs font-bold leading-tight ${
-              isPricey ? 'bg-orange-50 border-orange-300 text-orange-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            }`}
-          >
-            {listing.fairPriceText}
-          </span>
+          {insight.status !== 'unknown' && (
+            <span
+              className={`max-w-[150px] text-center px-2.5 py-1.5 rounded-[10px] border text-xs font-bold leading-tight ${
+                isPricey ? 'bg-orange-50 border-orange-300 text-orange-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              }`}
+            >
+              {listing.fairPriceText}
+            </span>
+          )}
         </div>
 
         <div className="space-y-1.5">

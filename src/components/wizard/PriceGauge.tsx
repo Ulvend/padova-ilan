@@ -1,6 +1,8 @@
 import React from 'react';
 import { Scale } from 'lucide-react';
-import { DISTRICT_BENCHMARKS } from '../../data/mockData';
+import { useParams } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
+import { LOW_RATIO, HIGH_RATIO } from '../../utils/districtPricing';
 import { Language, RoomType } from '../../types';
 import { WIZARD_TEXT } from '../../utils/wizardText';
 
@@ -11,17 +13,20 @@ interface PriceGaugeProps {
   lang: Language;
 }
 
-// Aralık ortalamanın %75–%125'i; bölgeler evaluateFairPrice ile aynı eşikleri kullanır (%95 / %110).
+// Aralık ortalamanın %75–%125'i; eşikler ilan sayfasındaki karşılaştırmayla aynıdır (%95 / %110).
 const MIN = 0.75;
 const MAX = 1.25;
-const LOW = 0.95;
-const HIGH = 1.1;
+const LOW = LOW_RATIO;
+const HIGH = HIGH_RATIO;
 const pct = (r: number) => ((Math.min(MAX, Math.max(MIN, r)) - MIN) / (MAX - MIN)) * 100;
 
 export const PriceGauge: React.FC<PriceGaugeProps> = ({ price, district, roomType, lang }) => {
   const w = WIZARD_TEXT[lang];
-  const b = DISTRICT_BENCHMARKS[district];
-  const avg = !b ? undefined : roomType === 'Singola' ? b.avgPriceSingola : roomType === 'Doppia' || roomType === 'Posto Letto' ? b.avgPriceDoppia : undefined;
+  const { getPriceInsight } = useApp();
+  // Düzenlenen ilanın kendi fiyatı ortalamaya girmesin; fiyat boşken de ortalama gösterilebilsin diye 1 verilir.
+  const { id: editingId } = useParams<{ id?: string }>();
+  const insight = getPriceInsight({ id: editingId, district, roomType, price: price > 0 ? price : 1 });
+  const avg = insight.status === 'unknown' ? undefined : insight.average;
 
   const shell = 'rounded-xl border border-stone-200 bg-stone-50 px-4 py-3.5';
 

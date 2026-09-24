@@ -1,5 +1,6 @@
 import { HousingListing, Language, ContractType, DistrictArea, RoomType } from '../types';
-import { localizedFairPriceText } from './fairPrice';
+import { insightText } from './fairPrice';
+import type { PriceInsight } from './districtPricing';
 import { calculateNearestFaculty } from '../services/geocodingService';
 import { WIZARD_TEXT } from './wizardText';
 import { TRANSLATIONS } from './translations';
@@ -185,7 +186,6 @@ interface ListingLocalization {
   videoTitle?: Record<Language, string>;
   distanceToFaculty?: Record<Language, string>;
   confirmationTimeLeft?: Record<Language, string>;
-  compatibilityReason?: Record<Language, string>;
 }
 
 const LISTINGS_I18N: Record<string, ListingLocalization> = {
@@ -246,14 +246,6 @@ const LISTINGS_I18N: Record<string, ListingLocalization> = {
       ru: 'Подтверждено: осталось 58ч',
       hi: 'सत्यापित: 58 घंटे शेष',
     },
-    compatibilityReason: {
-      tr: 'Tıp & Sessiz Çalışma Saatleri',
-      en: 'Medicine & Quiet Study Hours',
-      it: 'Medicina e Orari di Studio Silenziosi',
-      de: 'Medizin & Ruhige Lernzeiten',
-      ru: 'Медицина и тихие часы для учебы',
-      hi: 'चिकित्सा और शांत अध्ययन घंटे',
-    },
   },
   'PD-PORT-102': {
     title: {
@@ -303,14 +295,6 @@ const LISTINGS_I18N: Record<string, ListingLocalization> = {
       de: 'Bestätigt: Noch 42 Std.',
       ru: 'Подтверждено: осталось 42ч',
       hi: 'सत्यापित: 42 घंटे शेष',
-    },
-    compatibilityReason: {
-      tr: 'Mühendislik & Proje Çalışmaları',
-      en: 'Engineering & Collaborative Projects',
-      it: 'Ingegneria e Studio Progetti',
-      de: 'Ingenieurwesen & Projektarbeit',
-      ru: 'Инженерия и совместные учебные проекты',
-      hi: 'इंजीनियरिंग और सहयोगी परियोजनाएं',
     },
   },
   'PD-BEAT-103': {
@@ -362,14 +346,6 @@ const LISTINGS_I18N: Record<string, ListingLocalization> = {
       ru: 'Подтверждено: осталось 71ч',
       hi: 'सत्यापित: 71 घंटे शेष',
     },
-    compatibilityReason: {
-      tr: 'Edebiyat, Kitap ve Yabancı Dil',
-      en: 'Literature, Reading & Foreign Languages',
-      it: 'Letteratura, Lettura e Lingue Straniere',
-      de: 'Literatur, Lesen und Fremdsprachen',
-      ru: 'Литература, чтение и иностранные языки',
-      hi: 'साहित्य, अध्ययन और विदेशी भाषाएं',
-    },
   },
   'PD-PRATO-104': {
     title: {
@@ -419,14 +395,6 @@ const LISTINGS_I18N: Record<string, ListingLocalization> = {
       de: 'Bestätigt: Noch 64 Std.',
       ru: 'Подтверждено: осталось 64ч',
       hi: 'सत्यापित: 64 घंटे शेष',
-    },
-    compatibilityReason: {
-      tr: 'Bireysel Çalışma & Tam Bağımsızlık',
-      en: 'Independent Study & Full Privacy',
-      it: 'Studio Individuale e Massima Privacy',
-      de: 'Individuelles Lernen & Volle Privatsphäre',
-      ru: 'Индивидуальная учеба и полное уединение',
-      hi: 'स्वतंत्र अध्ययन और पूर्ण गोपनीयता',
     },
   },
   'PD-ARC-105': {
@@ -478,14 +446,6 @@ const LISTINGS_I18N: Record<string, ListingLocalization> = {
       ru: 'Подтверждено: осталось 29ч',
       hi: 'सत्यापित: 29 घंटे शेष',
     },
-    compatibilityReason: {
-      tr: 'Ekonomik Bütçe & Ulaşım Kolaylığı',
-      en: 'Budget-Friendly & Easy Transit',
-      it: 'Budget Economico e Massima Mobilità',
-      de: 'Günstiges Budget & Gute Anbindung',
-      ru: 'Экономичный бюджет и удобный транспорт',
-      hi: 'किफायती बजट और आसान परिवहन',
-    },
   },
   'PD-GUIZ-106': {
     title: {
@@ -536,21 +496,13 @@ const LISTINGS_I18N: Record<string, ListingLocalization> = {
       ru: 'Подтверждено: осталось 52ч',
       hi: 'सत्यापित: 52 घंटे शेष',
     },
-    compatibilityReason: {
-      tr: 'Huzurlu Ortam & Düzenli Yaşam',
-      en: 'Peaceful Environment & Structured Lifestyle',
-      it: 'Ambiente Tranquillo e Vita Ordinata',
-      de: 'Ruhige Atmosphäre & Geordneter Alltag',
-      ru: 'Спокойная обстановка и порядок',
-      hi: 'शांत वातावरण और व्यवस्थित जीवनशैली',
-    },
   },
 };
 
 /**
  * Returns a localized clone of a housing listing in the user's active language
  */
-function localizeListingBase(listing: HousingListing, lang: Language): HousingListing {
+function localizeListingBase(listing: HousingListing, lang: Language, insight?: PriceInsight): HousingListing {
   const i18n = LISTINGS_I18N[listing.id];
   const localizedDistrict = DISTRICT_TRANSLATIONS[lang]?.[listing.district] || listing.district;
   const localizedContract = CONTRACT_TYPE_TRANSLATIONS[lang]?.[listing.contractType] || listing.contractType;
@@ -559,7 +511,9 @@ function localizeListingBase(listing: HousingListing, lang: Language): HousingLi
   if (!i18n) {
     return {
       ...listing,
-      fairPriceText: localizedFairPriceText(listing, lang),
+      // Fiyat karşılaştırması sitedeki güncel ilanlardan hesaplanır; sağlanmadıysa kayıtlı metin kullanılır.
+      fairPriceText: insight ? insightText(insight, lang) : listing.fairPriceText,
+      fairPriceStatus: insight ? (insight.status === 'unknown' ? 'average' : insight.status) : listing.fairPriceStatus,
       expenses: localizeExpenses(listing.expenses, lang),
       confirmationTimeLeft: localizeConfirmation(listing, lang),
       // Konum biliniyorsa yürüme süresi metni kullanıcının diliyle yeniden üretilir.
@@ -582,7 +536,6 @@ function localizeListingBase(listing: HousingListing, lang: Language): HousingLi
     videoTitle: i18n.videoTitle ? (i18n.videoTitle[lang] || listing.videoTitle) : listing.videoTitle,
     distanceToFaculty: i18n.distanceToFaculty ? (i18n.distanceToFaculty[lang] || listing.distanceToFaculty) : listing.distanceToFaculty,
     confirmationTimeLeft: i18n.confirmationTimeLeft ? (i18n.confirmationTimeLeft[lang] || listing.confirmationTimeLeft) : listing.confirmationTimeLeft,
-    compatibilityReason: i18n.compatibilityReason ? (i18n.compatibilityReason[lang] || listing.compatibilityReason) : listing.compatibilityReason,
     district: localizedDistrict as DistrictArea,
     contractType: localizedContract as ContractType,
     roomType: localizedRoomType,
@@ -598,8 +551,8 @@ const formatIsoDate = (iso: string | undefined, lang: Language): string | undefi
   );
 };
 
-export function getLocalizedListing(listing: HousingListing, lang: Language): HousingListing {
-  const base = localizeListingBase(listing, lang);
+export function getLocalizedListing(listing: HousingListing, lang: Language, insight?: PriceInsight): HousingListing {
+  const base = localizeListingBase(listing, lang, insight);
   return {
     ...base,
     contractStartDate: formatIsoDate(listing.contractStartISO, lang) ?? base.contractStartDate,
