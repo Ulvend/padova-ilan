@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp, DEFAULT_FILTERS, MAX_PRICE_UNLIMITED } from '../context/AppContext';
 import { RecentlyAddedSection } from '../components/RecentlyAddedSection';
-import { PadovaMap } from '../components/PadovaMap';
 import { ListingCard } from '../components/ListingCard';
 import { Pagination } from '../components/Pagination';
 import { MaxRentField } from '../components/MaxRentField';
@@ -24,6 +23,9 @@ import {
 } from 'lucide-react';
 
 // Tek sayfada gösterilen ilan sayısı.
+// Harita (Leaflet) yalnızca açıldığında indirilir.
+const PadovaMap = lazy(() => import('../components/PadovaMap').then((m) => ({ default: m.PadovaMap })));
+
 export const PAGE_SIZE = 12;
 
 const CONTRACT_STUDENT = 'Contratto per Studenti (Canone Concordato)';
@@ -317,6 +319,8 @@ export const HomePage: React.FC = () => {
                 <option value="price-asc">{t.sortPriceAsc}</option>
                 <option value="price-desc">{t.sortPriceDesc}</option>
                 <option value="newest">{t.sortNewest}</option>
+                <option value="area-desc">{t.sortAreaDesc}</option>
+                <option value="ppm-asc">{t.sortPricePerM2Asc}</option>
               </select>
               <ChevronDown className="w-4 h-4 text-stone-600 absolute right-2 pointer-events-none" />
             </label>
@@ -346,13 +350,15 @@ export const HomePage: React.FC = () => {
 
         {isMapSectionOpen && (
           <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden p-3">
-            <PadovaMap
-              listings={filteredListings}
-              onOpenDetailPage={handleOpenDetailPage}
-              onOpenPreviewModal={setPreviewModalListing}
-              currentLang={currentLang}
-              height="420px"
-            />
+            <Suspense fallback={<div role="status" className="flex h-[420px] items-center justify-center text-sm text-stone-500">…</div>}>
+              <PadovaMap
+                listings={filteredListings}
+                onOpenDetailPage={handleOpenDetailPage}
+                onOpenPreviewModal={setPreviewModalListing}
+                currentLang={currentLang}
+                height="420px"
+              />
+            </Suspense>
           </div>
         )}
 

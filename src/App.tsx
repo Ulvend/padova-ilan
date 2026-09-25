@@ -1,25 +1,44 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AppProvider, useApp, DEFAULT_FILTERS } from './context/AppContext';
 import { Header } from './components/Header';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileFilterDrawer } from './components/MobileFilterDrawer';
-import { VideoTourModal } from './components/VideoTourModal';
-import { ListingDetailModal } from './components/ListingDetailModal';
-import { ProfileSettingsModal } from './components/ProfileSettingsModal';
-import { AuthModal } from './components/AuthModal';
-import { ChatWidget } from './components/ChatWidget';
 import { HomePage } from './pages/HomePage';
-import { CreateListingRoute } from './pages/CreateListingPage';
-import { ListingDetailPage } from './pages/ListingDetailPage';
-import { MyListingsPage } from './pages/MyListingsPage';
-import { MessagesPage } from './pages/MessagesPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { AdminPage } from './pages/AdminPage';
-import { NotificationsPage } from './pages/NotificationsPage';
-import { PrivacyPage } from './pages/PrivacyPage';
 import { Footer } from './components/Footer';
 import { ActiveView } from './types';
+
+// Ana sayfa dışındaki sayfalar ve modallar ilk açılışta indirilmez; ilk kullanıldıklarında ayrı parça olarak yüklenir
+// (ör. yönetim paneli, ilan sihirbazı ve harita kitaplığı yalnızca ihtiyacı olana gider).
+const CreateListingRoute = lazy(() => import('./pages/CreateListingPage').then((m) => ({ default: m.CreateListingRoute })));
+const ListingDetailPage = lazy(() => import('./pages/ListingDetailPage').then((m) => ({ default: m.ListingDetailPage })));
+const MyListingsPage = lazy(() => import('./pages/MyListingsPage').then((m) => ({ default: m.MyListingsPage })));
+const MessagesPage = lazy(() => import('./pages/MessagesPage').then((m) => ({ default: m.MessagesPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
+const VideoTourModal = lazy(() => import('./components/VideoTourModal').then((m) => ({ default: m.VideoTourModal })));
+const ListingDetailModal = lazy(() => import('./components/ListingDetailModal').then((m) => ({ default: m.ListingDetailModal })));
+const ProfileSettingsModal = lazy(() => import('./components/ProfileSettingsModal').then((m) => ({ default: m.ProfileSettingsModal })));
+const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
+const ChatWidget = lazy(() => import('./components/ChatWidget').then((m) => ({ default: m.ChatWidget })));
+
+/** Bir modal ilk kez açılana kadar parçası indirilmez; açıldıktan sonra (kapanış animasyonları için) bağlı kalır. */
+const useEverOpened = (open: boolean): boolean => {
+  const [opened, setOpened] = useState(open);
+  useEffect(() => {
+    if (open) setOpened(true);
+  }, [open]);
+  return opened || open;
+};
+
+const PageFallback: React.FC = () => (
+  <div role="status" aria-live="polite" className="flex min-h-[40vh] items-center justify-center text-sm text-stone-500">
+    <span className="h-5 w-5 animate-spin rounded-full border-2 border-stone-300 border-t-orange-600" aria-hidden="true" />
+    <span className="sr-only">Loading…</span>
+  </div>
+);
 
 const VIEW_TO_PATH: Record<ActiveView, string> = {
   home: '/',
@@ -95,6 +114,11 @@ const AppLayout: React.FC = () => {
     t,
   } = useApp();
 
+  const authModalMounted = useEverOpened(isAuthModalOpen);
+  const profileModalMounted = useEverOpened(isProfileSettingsOpen);
+  const previewModalMounted = useEverOpened(Boolean(previewModalListing));
+  const videoModalMounted = useEverOpened(Boolean(videoModalListing));
+
   const handleNavigateView = (view: ActiveView) => {
     navigate(VIEW_TO_PATH[view] || '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -111,17 +135,23 @@ const AppLayout: React.FC = () => {
   if (location.pathname.startsWith('/ilan-ver')) {
     return (
       <div className="min-h-screen bg-stone-50 text-stone-900 font-sans selection:bg-orange-500/20 selection:text-orange-900">
-        <Routes>
-          <Route path="/ilan-ver/:id?" element={<CreateListingRoute />} />
-        </Routes>
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          initialMode={authModalMode}
-          currentLang={currentLang}
-          onLoginSuccess={handleLoginSuccess}
-          authReason={authModalReason}
-        />
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path="/ilan-ver/:id?" element={<CreateListingRoute />} />
+          </Routes>
+        </Suspense>
+        {authModalMounted && (
+          <Suspense fallback={null}>
+            <AuthModal
+              isOpen={isAuthModalOpen}
+              onClose={() => setIsAuthModalOpen(false)}
+              initialMode={authModalMode}
+              currentLang={currentLang}
+              onLoginSuccess={handleLoginSuccess}
+              authReason={authModalReason}
+            />
+          </Suspense>
+        )}
         {toast && (
           <div
             role={toast.type === 'error' ? 'alert' : 'status'}
@@ -158,6 +188,7 @@ const AppLayout: React.FC = () => {
 
       {/* Main Canvas with React Router Routes */}
       <div className="flex-1 max-w-7xl w-full mx-auto p-3.5 sm:p-5 md:p-8 space-y-6 sm:space-y-8 pb-6 sm:pb-12">
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/ilan/:id" element={<ListingDetailPage />} />
@@ -169,6 +200,7 @@ const AppLayout: React.FC = () => {
           <Route path="/gizlilik" element={<PrivacyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </div>
 
       {/* Alt bilgi: gizlilik ve çerez politikası (mobilde alt menünün üstünde kalması için kendi boşluğunu taşır) */}
@@ -200,12 +232,18 @@ const AppLayout: React.FC = () => {
       />
 
       {/* Modals & Overlays */}
+      {videoModalMounted && (
+      <Suspense fallback={null}>
       <VideoTourModal
         listing={videoModalListing}
         onClose={() => setVideoModalListing(null)}
         currentLang={currentLang}
       />
+      </Suspense>
+      )}
 
+      {previewModalMounted && (
+      <Suspense fallback={null}>
       <ListingDetailModal
         listing={previewModalListing}
         isOpen={!!previewModalListing}
@@ -230,7 +268,11 @@ const AppLayout: React.FC = () => {
           handleOpenChat(user, subject, listingId);
         }}
       />
+      </Suspense>
+      )}
 
+      {profileModalMounted && (
+      <Suspense fallback={null}>
       <ProfileSettingsModal
         isOpen={isProfileSettingsOpen}
         onClose={() => setIsProfileSettingsOpen(false)}
@@ -239,7 +281,11 @@ const AppLayout: React.FC = () => {
         onChangeUsername={handleChangeUsername}
         currentLang={currentLang}
       />
+      </Suspense>
+      )}
 
+      {authModalMounted && (
+      <Suspense fallback={null}>
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
@@ -248,8 +294,11 @@ const AppLayout: React.FC = () => {
         onLoginSuccess={handleLoginSuccess}
         authReason={authModalReason}
       />
+      </Suspense>
+      )}
 
       {isLoggedIn && (
+        <Suspense fallback={null}>
         <ChatWidget
           conversations={conversations}
           activeConversationId={activeConversationId}
@@ -259,6 +308,7 @@ const AppLayout: React.FC = () => {
           onToggle={() => setIsChatOpen(!isChatOpen)}
           currentLang={currentLang}
         />
+        </Suspense>
       )}
 
       {/* Kısa bilgilendirme / hata mesajı */}

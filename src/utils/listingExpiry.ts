@@ -1,4 +1,4 @@
-import { LISTING_CONFIRMATION_DAYS } from '../config';
+import { getListingConfirmationDays } from '../config';
 import type { HousingListing, Language } from '../types';
 
 // Otomatik arşivlenen ilanların `archiveReason` değeri (sunucudaki archive_expired_listings ile aynı).
@@ -6,14 +6,14 @@ export const EXPIRED_ARCHIVE_REASON = 'expired';
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
-export const CONFIRMATION_WINDOW_MS = LISTING_CONFIRMATION_DAYS * DAY_MS;
+const confirmationWindowMs = (): number => getListingConfirmationDays() * DAY_MS;
 
 type ExpiryFields = Pick<HousingListing, 'confirmedAt' | 'createdAt' | 'isArchived'>;
 
 /** Teyit süresinin bittiği an (ms). Teyit kaydı yoksa yayın zamanı esas alınır. */
 export const confirmationDeadlineMs = (l: Pick<HousingListing, 'confirmedAt' | 'createdAt'>): number => {
   const start = Date.parse(l.confirmedAt || l.createdAt);
-  return Number.isNaN(start) ? Infinity : start + CONFIRMATION_WINDOW_MS;
+  return Number.isNaN(start) ? Infinity : start + confirmationWindowMs();
 };
 
 /** Yayında görünen ama teyit süresi dolmuş ilan (sunucu arşivlemeyi henüz yapmamış olabilir). */

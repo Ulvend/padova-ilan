@@ -2,9 +2,8 @@ import { HousingListing, Language, ContractType, DistrictArea, RoomType } from '
 import { insightText } from './fairPrice';
 import type { PriceInsight } from './districtPricing';
 import { calculateNearestFaculty } from '../services/geocodingService';
-import { WIZARD_TEXT } from './wizardText';
 import { TRANSLATIONS } from './translations';
-import { LANG_LOCALE } from './wizardText';
+import { LANG_LOCALE } from './locale';
 import { EXPIRED_ARCHIVE_REASON, confirmationDeadlineMs, formatTimeLeft } from './listingExpiry';
 
 // Kullanıcının yazdığı gider metni ("+€40 Giderler" / "Giderler dahil") kullanıcının diline çevrilir.
@@ -25,9 +24,9 @@ const localizeConfirmation = (listing: HousingListing, lang: Language): string =
 
 const localizeExpenses = (expenses: string, lang: Language): string => {
   if (!expenses) return expenses;
-  const w = WIZARD_TEXT[lang];
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
   const amount = /(\d+(?:[.,]\d+)?)/.exec(expenses);
-  return amount ? `+€${amount[1]} ${w.expensesExtraText}` : w.expensesIncludedText;
+  return amount ? `+€${amount[1]} ${t.expensesExtraText}` : t.expensesIncludedText;
 };
 
 export const CONTRACT_TYPE_TRANSLATIONS: Record<Language, Record<string, string>> = {

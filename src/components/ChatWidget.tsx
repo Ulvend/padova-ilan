@@ -4,6 +4,7 @@ import { ConversationContact, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { formatDeviceTime, formatDeviceRelativeDate, getDeviceRegionInfo } from '../utils/deviceTime';
 import { ChatMessageItem } from './ChatMessageItem';
+import { ScamSafetyBanner } from './ScamSafetyBanner';
 
 interface ChatWidgetProps {
   conversations: ConversationContact[];
@@ -200,6 +201,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                   </div>
                 </div>
               </div>
+
+              <ScamSafetyBanner currentLang={currentLang} compact />
 
               {/* Messages container with Per-Message Translation */}
               <div className="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs">

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { MyListingsView } from '../components/MyListingsView';
 import { LoginRequired } from '../components/LoginRequired';
-import { getListingViewCounts } from '../services/supabaseService';
+import { getListingFavoriteCounts, getListingViewCounts } from '../services/supabaseService';
 
 export const MyListingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +37,19 @@ export const MyListingsPage: React.FC = () => {
     };
   }, [isLoggedIn, listingIdsKey]);
 
+  // Favoriye eklenme sayıları (yalnızca sayı; kimin eklediği sahibe gösterilmez).
+  const [favoriteCounts, setFavoriteCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!isLoggedIn || !listingIdsKey) return;
+    let cancelled = false;
+    getListingFavoriteCounts().then((counts) => {
+      if (!cancelled) setFavoriteCounts(counts);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, listingIdsKey]);
+
   // Oturum yüklenirken giriş kapısı yanıp sönmesin.
   if (!authReady) return null;
   if (!isLoggedIn) return <LoginRequired />;
@@ -57,6 +70,7 @@ export const MyListingsPage: React.FC = () => {
       currentLang={currentLang}
       currentUser={currentUser}
       viewCounts={viewCounts}
+      favoriteCounts={favoriteCounts}
     />
   );
 };

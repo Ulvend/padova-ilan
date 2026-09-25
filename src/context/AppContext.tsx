@@ -13,12 +13,13 @@ import {
   DEFAULT_GUEST_USER,
   resolveListingCoords,
 } from '../data/mockData';
-import { TRANSLATIONS } from '../utils/translations';
-import { LANG_LOCALE } from '../utils/wizardText';
+import { TRANSLATIONS, loadLanguage } from '../utils/translations';
+import { LANG_LOCALE } from '../utils/locale';
 import { formatDeviceTime } from '../utils/deviceTime';
 import { buildPriceIndex, type PriceInsight, type PriceTarget } from '../utils/districtPricing';
 import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/username';
 import { EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
+import { listingAreaM2 } from '../utils/format';
 import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
 import { availableFromISO, stayMonths } from '../utils/contractPeriod';
 import { toISO } from '../components/ui/DateRangePicker';
@@ -42,6 +43,7 @@ import {
   deleteListingFromFirestore,
   subscribeToListings,
   subscribeToMessages,
+  DELETED_USER_ID,
   sendMessageToFirestore,
   markMessagesRead,
   subscribeToNotifications,
@@ -174,7 +176,11 @@ interface AppContextType {
   filteredListings: HousingListing[];
   myListings: HousingListing[];
   handleAddListing: (newListing: HousingListing) => Promise<void>;
-  handleUpdateListing: (listingId: string, updates: Partial<HousingListing>) => Promise<void>;
+  handleUpdateListing: (
+    listingId: string,
+    updates: Partial<HousingListing>,
+    fieldsToRemove?: (keyof HousingListing)[]
+  ) => Promise<void>;
   handleDeleteListing: (id: string) => Promise<boolean>;
   handleToggleVerifyListing: (id: string) => void;
   handleToggleVideoVerified: (id: string) => void;
@@ -251,13 +257,19 @@ const createdAtMs = (listing: HousingListing) => {
 // Sözleşme başlangıç filtresi: ilan oluştururken kaydedilen ISO tarihin ayına bakar.
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. Language State
-  const [currentLang, setCurrentLang] = useState<Language>(() => {
+  const [currentLang, setCurrentLangState] = useState<Language>(() => {
     const saved = safeStorageGet('padova_housing_lang');
     if (saved && ['tr', 'en', 'it', 'de', 'ru', 'hi'].includes(saved)) {
       return saved as Language;
     }
     return 'tr';
   });
+  // Dil değişimi, seçilen dilin sözlüğü indirildikten sonra uygulanır (yüklenene kadar mevcut dil görünür kalır).
+  const setCurrentLang = useCallback((lang: Language) => {
+    loadLanguage(lang)
+      .catch((error) => console.warn('Language pack could not be loaded:', error))
+      .finally(() => setCurrentLangState(lang));
+  }, []);
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
 
@@ -544,7 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const missing = new Set<string>();
     messages.forEach((m) => {
       const other = m.senderId === authUser.uid ? m.recipientId : m.senderId;
-      if (!(other in contactProfiles)) missing.add(other);
+      if (other !== DELETED_USER_ID && !(other in contactProfiles)) missing.add(other);
     });
     if (missing.size === 0) return;
     missing.forEach((uid) => {
@@ -698,10 +710,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         time: formatDeviceTime(m.createdAt),
         timestamp: m.createdAt,
       }));
+      const deleted = otherUid === DELETED_USER_ID;
       return {
         id: otherUid,
-        username: profile?.username || draft?.username || 'kullanici',
-        name: profile?.name || draft?.name || t.defaultStudentName,
+        username: deleted ? '' : profile?.username || draft?.username || 'kullanici',
+        name: deleted ? t.deletedAccountName : profile?.name || draft?.name || t.defaultStudentName,
         avatar: profile?.photoURL || draft?.avatar || DEFAULT_GUEST_USER.avatar,
         department: profile?.faculty || draft?.department || 'UniPD',
         subject: withSubject?.subject || draft?.subject || '',
@@ -792,6 +805,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast(t.toastPickChat, 'info');
       return;
     }
+    if (contact.id === DELETED_USER_ID) {
+      showToast(t.toastRecipientDeleted);
+      return;
+    }
     if (!authUser.emailVerified) {
       showToast(t.toastVerifyEmailToMessage);
       return;
@@ -846,7 +863,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsMapSectionOpen(true);
   };
 
-  const handleUpdateListing = async (listingId: string, updates: Partial<HousingListing>) => {
+  const handleUpdateListing = async (
+    listingId: string,
+    updates: Partial<HousingListing>,
+    fieldsToRemove: (keyof HousingListing)[] = []
+  ) => {
     requireVerifiedUser();
     const current = allListings.find((l) => l.id === listingId);
     const merged = { ...current, ...updates } as HousingListing;
@@ -856,7 +877,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       next.lat = lat;
       next.lng = lng;
     }
-    await updateListingInFirestore(listingId, next);
+    await updateListingInFirestore(listingId, next, fieldsToRemove);
   };
 
   // İlan sahibine admin işlemleri hakkında bildirim gönderir (kurallar adminlere izin verir).
@@ -1117,6 +1138,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return result.sort((a, b) => b.price - a.price);
       case 'newest':
         return result.sort((a, b) => createdAtMs(b) - createdAtMs(a));
+      case 'area-desc':
+        // Metrekaresi girilmemiş (0) ilanlar sona düşer.
+        return result.sort((a, b) => listingAreaM2(b) - listingAreaM2(a));
+      case 'ppm-asc': {
+        // €/m²: metrekaresi bilinmeyen ilanlar sona düşer.
+        const perM2 = (l: HousingListing) => (listingAreaM2(l) > 0 ? l.price / listingAreaM2(l) : Infinity);
+        return result.sort((a, b) => perM2(a) - perM2(b));
+      }
       default:
         return result;
     }

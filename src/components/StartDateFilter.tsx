@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Calendar, ChevronDown } from 'lucide-react';
 import { FilterState, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
-import { LANG_LOCALE } from '../utils/wizardText';
+import { LANG_LOCALE } from '../utils/locale';
 import { fillText } from '../utils/homeText';
 import { DateRangePicker, fromISO, toISO } from './ui/DateRangePicker';
 

@@ -20,7 +20,7 @@ import { useApp } from '../context/AppContext';
 import { HousingListing } from '../types';
 import { WIZARD_TEXT, fill } from '../utils/wizardText';
 import { TRANSLATIONS } from '../utils/translations';
-import { uploadListingPhoto, describeUploadError } from '../services/storageService';
+import { uploadListingPhoto, uploadFloorPlan, deleteListingPhotos, describeUploadError, isAllowedImageType } from '../services/storageService';
 import { ListingCard } from '../components/ListingCard';
 import { Card, InfoBox, SectionTitle } from '../components/ui/kit';
 import {
@@ -41,6 +41,12 @@ import {
 import { StepBasics, StepDetails, StepFlatmates, StepMedia, StepPrice } from '../components/wizard/steps';
 
 const newId = () => `ph-${crypto.randomUUID()}`;
+
+// İlanın Storage'daki dosyaları: fotoğraflar ve kat planı.
+const storageUrlsOf = (l: Pick<HousingListing, 'images' | 'floorPlanUrl'>): string[] => [
+  ...l.images,
+  ...(l.floorPlanUrl ? [l.floorPlanUrl] : []),
+];
 
 // Rota değişince (ör. yayın sonrası "video ekle") sihirbaz sıfırdan kurulsun.
 export const CreateListingRoute: React.FC = () => {
@@ -96,6 +102,28 @@ const CreateListingPage: React.FC = () => {
   const hydratedEdit = useRef(false);
   const formRef = useRef(form);
   formRef.current = form;
+  // Bu oturumda Storage'a yüklenen fotoğraflar; yayınlanmayan/kaldırılanlar Storage'dan silinir.
+  const uploadedRef = useRef<Set<string>>(new Set());
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const doneRef = useRef(false);
+  doneRef.current = Boolean(done);
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
+  const myListingsRef = useRef(myListings);
+  myListingsRef.current = myListings;
+
+  // Adaylardan, `keep` içinde olmayan ve kullanıcının başka bir ilanında kullanılmayan fotoğrafları Storage'dan siler.
+  const releaseUnusedPhotos = useCallback((candidates: Iterable<string>, keep: string[]) => {
+    const inUse = new Set(keep);
+    myListingsRef.current.forEach((l) => {
+      if (l.id !== editingRef.current?.id) storageUrlsOf(l).forEach((u) => inUse.add(u));
+    });
+    const orphans = [...new Set(candidates)].filter((u) => !inUse.has(u));
+    if (orphans.length === 0) return;
+    orphans.forEach((u) => uploadedRef.current.delete(u));
+    void deleteListingPhotos(orphans);
+  }, []);
 
   // Düzenleme: ilan yüklendiğinde formu bir kez doldur
   useEffect(() => {
@@ -106,6 +134,26 @@ const CreateListingPage: React.FC = () => {
   }, [editing]);
 
   useEffect(() => () => setEditingListing(null), [setEditingListing]);
+
+  // Yayınlamadan çıkılırsa: bu oturumda yüklenip taslakta/ilanda yer almayan fotoğraflar silinir.
+  // Yeni ilanda taslak, çıkışta güncel haliyle kaydedilir; böylece silinen bir fotoğrafa işaret etmez.
+  useEffect(
+    () => () => {
+      if (doneRef.current) return;
+      const current = formRef.current;
+      if (editingRef.current) {
+        releaseUnusedPhotos(uploadedRef.current, storageUrlsOf(editingRef.current));
+        return;
+      }
+      if (isDraftMeaningful(current)) saveDraft(current, stepRef.current);
+      else clearDraft();
+      releaseUnusedPhotos(
+        uploadedRef.current,
+        isDraftMeaningful(current) ? [...current.photos.map((p) => p.url), ...(current.floorPlanUrl ? [current.floorPlanUrl] : [])] : []
+      );
+    },
+    [releaseUnusedPhotos]
+  );
 
   const set = useCallback((patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch })), []);
 
@@ -139,8 +187,17 @@ const CreateListingPage: React.FC = () => {
       if (!item.file || !currentUser?.id) return false;
       patchPhoto(item.id, { status: 'uploading', progress: 5 });
       try {
-        const url = await uploadListingPhoto(item.file, currentUser.id, (p) => patchPhoto(item.id, { progress: Math.round(p) }));
-        patchPhoto(item.id, { url, status: 'done', progress: 100, file: undefined });
+        let similar = false;
+        const url = await uploadListingPhoto(
+          item.file,
+          currentUser.id,
+          (p) => patchPhoto(item.id, { progress: Math.round(p) }),
+          () => {
+            similar = true;
+          }
+        );
+        uploadedRef.current.add(url);
+        patchPhoto(item.id, { url, status: 'done', progress: 100, file: undefined, similar });
         return true;
       } catch (err) {
         console.error('Photo upload failed:', err);
@@ -169,6 +226,42 @@ const CreateListingPage: React.FC = () => {
 
   const addUrl = (url: string) =>
     setForm((f) => ({ ...f, photos: [...f.photos, { id: newId(), url, status: 'done', progress: 100 }] }));
+
+  // ---------- Kat planı ----------
+  const [floorPlanBusy, setFloorPlanBusy] = useState(false);
+  const [floorPlanError, setFloorPlanError] = useState<string | null>(null);
+
+  const photoUrls = () => formRef.current.photos.map((p) => p.url);
+
+  const addFloorPlan = async (file: File) => {
+    if (!currentUser?.id) return;
+    if (!isAllowedImageType(file.type)) {
+      setFloorPlanError(describeUploadError({ code: 'upload/not-image' }, lang));
+      return;
+    }
+    setFloorPlanBusy(true);
+    setFloorPlanError(null);
+    try {
+      const url = await uploadFloorPlan(file, currentUser.id);
+      const previous = formRef.current.floorPlanUrl;
+      uploadedRef.current.add(url);
+      set({ floorPlanUrl: url });
+      // Bu oturumda yüklenmiş önceki plan artık kullanılmıyor.
+      if (previous && previous !== url) releaseUnusedPhotos([previous], [...photoUrls(), url]);
+    } catch (err) {
+      console.error('Floor plan upload failed:', err);
+      setFloorPlanError(describeUploadError(err, lang));
+    } finally {
+      setFloorPlanBusy(false);
+    }
+  };
+
+  const removeFloorPlan = () => {
+    const previous = formRef.current.floorPlanUrl;
+    set({ floorPlanUrl: '' });
+    // Düzenlenen ilandaki plan yayın sonrasında (publish) silinir; burada yalnızca bu oturumda yüklenenler.
+    if (previous && uploadedRef.current.has(previous)) releaseUnusedPhotos([previous], photoUrls());
+  };
 
   const removePhoto = (id: string) =>
     setForm((f) => {
@@ -244,10 +337,17 @@ const CreateListingPage: React.FC = () => {
 
       if (editing) {
         const { id, poster, userId, createdAt, views, isStudentCardVerified, confirmationTimeLeft, ...updates } = listing;
-        await handleUpdateListing(editing.id, updates);
+        // Formda boşaltılan isteğe bağlı alanlar veritabanında da boşaltılır (undefined gönderilmez).
+        const cleared = (['floor', 'hasElevator', 'floorPlanUrl'] as const).filter(
+          (k) => editing[k] !== undefined && listing[k] === undefined
+        );
+        await handleUpdateListing(editing.id, updates, [...cleared]);
+        // Düzenlemede çıkarılan eski fotoğraflar/plan ve yüklenip kullanılmayan yenileri Storage'dan silinir.
+        releaseUnusedPhotos([...storageUrlsOf(editing), ...uploadedRef.current], storageUrlsOf(listing));
       } else {
         await handleAddListing(listing);
         clearDraft();
+        releaseUnusedPhotos(uploadedRef.current, storageUrlsOf(listing));
       }
       setDone({ id: listing.id, listing });
     } catch (err) {
@@ -423,6 +523,10 @@ const CreateListingPage: React.FC = () => {
             onRemove={removePhoto}
             onMove={movePhoto}
             onRetry={retryPhoto}
+            onFloorPlanFile={addFloorPlan}
+            onFloorPlanRemove={removeFloorPlan}
+            floorPlanBusy={floorPlanBusy}
+            floorPlanError={floorPlanError}
           />
         );
       case 4:
@@ -571,6 +675,7 @@ const CreateListingPage: React.FC = () => {
                       type="button"
                       onClick={() => {
                         clearDraft();
+                        releaseUnusedPhotos([...uploadedRef.current, ...form.photos.map((p) => p.url), ...(form.floorPlanUrl ? [form.floorPlanUrl] : [])], []);
                         setForm(createInitialForm());
                         setStep(0);
                         setMaxStep(0);

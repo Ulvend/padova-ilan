@@ -32,17 +32,19 @@ import {
   Cigarette,
   Dog,
   Pencil,
-  Flag
+  Flag,
+  FileImage,
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import { DISTRICT_BENCHMARKS } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { formatGenderDistribution } from '../utils/genderDistribution';
-import { formatPercent } from '../utils/format';
+import { formatFloor, formatPercent } from '../utils/format';
 import { LOW_RATIO, HIGH_RATIO, MIN_COMPARABLE_LISTINGS, type PriceInsight } from '../utils/districtPricing';
 import { marketTrendLabel } from '../utils/marketTrendText';
 import { PadovaMap } from './PadovaMap';
+import { EnergyClassBadge } from './EnergyClassBadge';
 import { ReportModal } from './ReportModal';
 import { FlatmateIcon } from './FlatmateIcon';
 
@@ -717,6 +719,43 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     <td className="py-2.5 text-stone-400 font-medium uppercase">{t.bathroomsNumber}</td>
                     <td className="py-2.5 font-semibold text-stone-800">{listing.bathrooms}</td>
                   </tr>
+                  <tr className="border-b border-stone-100">
+                    <td className="py-2.5 text-stone-400 font-medium uppercase">{t.energyClassLabel}</td>
+                    <td className="py-2.5 font-semibold text-stone-800">
+                      {listing.energyClass ? (
+                        <EnergyClassBadge value={listing.energyClass} pendingLabel={t.energyClassPending} />
+                      ) : (
+                        <span className="text-stone-400 font-medium">{t.energyClassNotSet}</span>
+                      )}
+                    </td>
+                  </tr>
+                  {listing.floor !== undefined && (
+                    <tr className="border-b border-stone-100">
+                      <td className="py-2.5 text-stone-400 font-medium uppercase">{t.floorLabel}</td>
+                      <td className="py-2.5 font-semibold text-stone-800">
+                        {formatFloor(listing.floor, t)}
+                        {listing.hasElevator !== undefined && (
+                          <span className="font-medium text-stone-500"> · {listing.hasElevator ? t.elevatorYes : t.elevatorNo}</span>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  {listing.floorPlanUrl && (
+                    <tr className="border-b border-stone-100">
+                      <td className="py-2.5 text-stone-400 font-medium uppercase">{t.floorPlanTitle}</td>
+                      <td className="py-2.5 font-semibold">
+                        <a
+                          href={listing.floorPlanUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-orange-700 underline-offset-2 hover:underline"
+                        >
+                          <FileImage className="w-3.5 h-3.5" />
+                          {t.floorPlanView}
+                        </a>
+                      </td>
+                    </tr>
+                  )}
                   <tr className="border-b border-stone-100">
                     <td className="py-2.5 text-stone-400 font-medium uppercase">{t.heatingTypeLabel}</td>
                     <td className="py-2.5 font-semibold text-stone-800 flex items-center gap-1.5">

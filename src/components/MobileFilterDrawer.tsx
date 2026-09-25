@@ -316,6 +316,8 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
               <option value="price-asc">{t.sortPriceAsc}</option>
               <option value="price-desc">{t.sortPriceDesc}</option>
               <option value="newest">{t.sortNewest}</option>
+              <option value="area-desc">{t.sortAreaDesc}</option>
+              <option value="ppm-asc">{t.sortPricePerM2Asc}</option>
             </select>
           </div>
 

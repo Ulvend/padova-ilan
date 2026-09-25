@@ -16,6 +16,9 @@ export type DistrictArea =
   | 'Arcella'
   | 'Guizza';
 
+// APE enerji sınıfı; 'pending': sertifika yok / hazırlanıyor.
+export type EnergyClass = 'A4' | 'A3' | 'A2' | 'A1' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'pending';
+
 export type RoomType = 'Singola' | 'Doppia' | 'Monolocale' | 'Bilocale';
 
 export interface Flatmate {
@@ -95,6 +98,11 @@ export interface HousingListing {
   roomM2: number;
   apartmentM2: number;
   bathrooms: number;
+  // Ev bilgileri: enerji sınıfı (yasal zorunluluk), kat (0 = zemin, -1 = bodrum), asansör ve kat planı görseli.
+  energyClass?: EnergyClass;
+  floor?: number;
+  hasElevator?: boolean;
+  floorPlanUrl?: string;
   confirmationTimeLeft: string;
   description: string;
   poster: PosterInfo;
@@ -122,7 +130,7 @@ export interface FilterState {
   onlyVideoTour: boolean;
   onlyStudentVerified: boolean;
   roomType: string;
-  sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'newest';
+  sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'newest' | 'area-desc' | 'ppm-asc';
   // Takvimden seçilen başlangıç aralığı (YYYY-MM-DD). Yalnızca `from` varsa o günden sonrası.
   contractStartFrom?: string;
   contractStartTo?: string;

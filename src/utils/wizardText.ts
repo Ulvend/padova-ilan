@@ -117,6 +117,8 @@ const tr = {
   moveRight: 'Sağa taşı',
   uploading: 'Yükleniyor',
   uploadFailed: 'Yüklenemedi',
+  similarBadge: 'Benzer fotoğraf',
+  similarNote: 'Bazı fotoğrafların başka bir ilanda da kullanıldığı görüldü. Yalnızca kendi çektiğin fotoğrafları kullan; başkasına ait fotoğraflar ilanın kaldırılmasına ve hesabın kapatılmasına yol açabilir.',
   retry: 'Tekrar dene',
   photoError: 'En az bir fotoğraf ekle.',
   photoCount: '{n} fotoğraf',
@@ -291,6 +293,8 @@ const en: Dict = {
   moveRight: 'Move right',
   uploading: 'Uploading',
   uploadFailed: 'Upload failed',
+  similarBadge: 'Similar photo',
+  similarNote: 'Some photos appear to be used in another listing too. Only use photos you took yourself; using someone else\'s photos can lead to your listing being removed and your account being closed.',
   retry: 'Retry',
   photoError: 'Add at least one photo.',
   photoCount: '{n} photos',
@@ -463,6 +467,8 @@ const it: Dict = {
   moveRight: 'Sposta a destra',
   uploading: 'Caricamento',
   uploadFailed: 'Caricamento non riuscito',
+  similarBadge: 'Foto simile',
+  similarNote: 'Alcune foto risultano usate anche in un altro annuncio. Usa solo foto scattate da te: usare foto altrui può portare alla rimozione dell\'annuncio e alla chiusura dell\'account.',
   retry: 'Riprova',
   photoError: 'Aggiungi almeno una foto.',
   photoCount: '{n} foto',
@@ -635,6 +641,8 @@ const de: Dict = {
   moveRight: 'Nach rechts',
   uploading: 'Wird hochgeladen',
   uploadFailed: 'Upload fehlgeschlagen',
+  similarBadge: 'Ähnliches Foto',
+  similarNote: 'Einige Fotos werden offenbar auch in einer anderen Anzeige verwendet. Verwende nur selbst aufgenommene Fotos: Fremde Fotos können zur Löschung der Anzeige und zur Sperrung des Kontos führen.',
   retry: 'Erneut versuchen',
   photoError: 'Füge mindestens ein Foto hinzu.',
   photoCount: '{n} Fotos',
@@ -807,6 +815,8 @@ const ru: Dict = {
   moveRight: 'Вправо',
   uploading: 'Загрузка',
   uploadFailed: 'Не удалось загрузить',
+  similarBadge: 'Похожее фото',
+  similarNote: 'Некоторые фото, похоже, используются и в другом объявлении. Используйте только свои фотографии: чужие фото могут привести к удалению объявления и блокировке аккаунта.',
   retry: 'Повторить',
   photoError: 'Добавьте хотя бы одно фото.',
   photoCount: 'Фото: {n}',
@@ -979,6 +989,8 @@ const hi: Dict = {
   moveRight: 'दाएँ ले जाएँ',
   uploading: 'अपलोड हो रहा है',
   uploadFailed: 'अपलोड विफल',
+  similarBadge: 'मिलती-जुलती फ़ोटो',
+  similarNote: 'कुछ फ़ोटो किसी दूसरे विज्ञापन में भी इस्तेमाल हुई दिखती हैं। केवल अपनी खींची हुई फ़ोटो इस्तेमाल करें; दूसरों की फ़ोटो से आपका विज्ञापन हटाया जा सकता है और खाता बंद हो सकता है।',
   retry: 'फिर कोशिश करें',
   photoError: 'कम से कम एक फोटो जोड़ें।',
   photoCount: '{n} फोटो',
@@ -1039,14 +1051,7 @@ const hi: Dict = {
 export const WIZARD_TEXT: Record<Language, Dict> = { tr, en, it, de, ru, hi };
 export type WizardText = Dict;
 
-export const LANG_LOCALE: Record<Language, string> = {
-  tr: 'tr-TR',
-  en: 'en-GB',
-  it: 'it-IT',
-  de: 'de-DE',
-  ru: 'ru-RU',
-  hi: 'hi-IN',
-};
+export { LANG_LOCALE } from './locale';
 
 export const fill = (text: string, vars: Record<string, string | number>) =>
   text.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));

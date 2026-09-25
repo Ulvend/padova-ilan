@@ -7,6 +7,7 @@ import {
   Archive, 
   Sparkles, 
   Eye,
+  Heart,
   RefreshCw,
   X, 
   Check, 
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
-import { LISTING_CONFIRMATION_DAYS } from '../config';
+import { getListingConfirmationDays } from '../config';
 import { EXPIRED_ARCHIVE_REASON, confirmationDeadlineMs } from '../utils/listingExpiry';
 import { getLocalizedListing } from '../utils/listingTranslator';
 
@@ -40,6 +41,8 @@ interface MyListingsViewProps {
   currentUser?: UserProfile;
   // İlan kimliği → görüntülenme sayısı (listing_stats).
   viewCounts?: Record<string, number>;
+  // İlan kimliği → favoriye eklenme sayısı.
+  favoriteCounts?: Record<string, number>;
 }
 
 // Kiracı profili seçenekleri: kayda geçen değer sabit kalır, görünen etiket dile göre değişir.
@@ -73,6 +76,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
   currentLang = 'tr',
   currentUser,
   viewCounts = {},
+  favoriteCounts = {},
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const tenantLabel = (value: string) => {
@@ -195,7 +199,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
             <div className="space-y-4">
               <p className="text-[11px] text-stone-500 flex items-start gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5 text-stone-400 shrink-0 mt-px" />
-                <span>{t.renewNotice.replace('{days}', String(LISTING_CONFIRMATION_DAYS))}</span>
+                <span>{t.renewNotice.replace('{days}', String(getListingConfirmationDays()))}</span>
               </p>
               {myListings.map((rawListing) => {
                 const isUrgent = confirmationDeadlineMs(rawListing) - Date.now() < 24 * 60 * 60 * 1000;
@@ -319,6 +323,11 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                         <Eye className="w-3.5 h-3.5 text-stone-400" />
                         <strong className="text-stone-700">{viewCounts[listing.id] ?? 0}</strong>
                         <span>{t.viewsLabel}</span>
+                      </span>
+                      <span className="flex items-center gap-1.5" title={t.totalFavoritesLabel}>
+                        <Heart className="w-3.5 h-3.5 text-rose-400" />
+                        <strong className="text-stone-700">{favoriteCounts[listing.id] ?? 0}</strong>
+                        <span>{t.favoritesLabel}</span>
                       </span>
                       {listing.confirmationTimeLeft && (
                         <span className={`font-medium ${isUrgent ? 'text-orange-600' : 'text-stone-500'}`}>
@@ -448,6 +457,10 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                       <div className="flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-stone-400" />
                         <span>{t.totalViewsLabel}: <strong className="text-stone-800">{viewCounts[listing.id] ?? 0}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Heart className="w-3.5 h-3.5 text-rose-400" />
+                        <span>{t.totalFavoritesLabel}: <strong className="text-stone-800">{favoriteCounts[listing.id] ?? 0}</strong></span>
                       </div>
                     </div>
                   </div>

@@ -4,7 +4,7 @@ import { ArrowLeft, ShieldCheck, Trash2, Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getPrivacyPolicy, PRIVACY_POLICY_UPDATED } from '../data/privacyPolicy';
 import { PRIVACY_CONTROLLER } from '../config';
-import { LANG_LOCALE } from '../utils/wizardText';
+import { LANG_LOCALE } from '../utils/locale';
 import {
   LOCAL_DATA_GROUPS,
   clearLocalData,

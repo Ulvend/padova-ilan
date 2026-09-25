@@ -11,8 +11,16 @@ export const isUniPdEmail = (email?: string | null): boolean =>
   Boolean(email && UNIPD_EMAIL_PATTERN.test(email.trim()));
 
 // Bir ilan bu kadar gün içinde sahibi tarafından teyit edilmezse (İlanlarım > "Süreyi Yenile") otomatik arşivlenir.
-// supabase/migrations/0008_listing_confirmation_expiry.sql içindeki `interval '5 days'` ile uyumlu tutulmalıdır.
-export const LISTING_CONFIRMATION_DAYS = 5;
+// Tek kaynak sunucudaki public.listing_confirmation_days() fonksiyonudur (supabase/migrations/0016_data_layer_fixes.sql);
+// istemci değeri ilanları ilk yüklerken oradan okur. Buradaki değer yalnızca okunamazsa kullanılan yedektir.
+const DEFAULT_LISTING_CONFIRMATION_DAYS = 5;
+let listingConfirmationDays = DEFAULT_LISTING_CONFIRMATION_DAYS;
+
+export const getListingConfirmationDays = (): number => listingConfirmationDays;
+
+export const setListingConfirmationDays = (days: number): void => {
+  if (Number.isFinite(days) && days > 0) listingConfirmationDays = days;
+};
 
 // Gizlilik politikasında görünen veri sorumlusu bilgisi. Yayına almadan önce doldurulmalıdır
 // (GDPR: veri sorumlusunun kimliği ve iletişim adresi kullanıcıya açıkça bildirilmelidir).

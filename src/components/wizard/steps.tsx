@@ -18,6 +18,10 @@ import {
   Wind,
   WashingMachine,
   CalendarRange,
+  ArrowUpDown,
+  FileImage,
+  Trash2,
+  Zap,
 } from 'lucide-react';
 import { ContractType, Language, RoomType } from '../../types';
 import { TRANSLATIONS } from '../../utils/translations';
@@ -27,7 +31,11 @@ import { DateRangePicker, monthsBetween } from '../ui/DateRangePicker';
 import { LocationField } from './LocationField';
 import { PriceGauge } from './PriceGauge';
 import { PhotoUploader } from './PhotoUploader';
-import { Errors, FormState, formatDate } from './formModel';
+import { Errors, FormState, formatDate, FLOOR_MAX, FLOOR_MIN } from './formModel';
+import type { EnergyClass } from '../../types';
+import { EnergyClassBadge } from '../EnergyClassBadge';
+
+const ENERGY_CLASSES: EnergyClass[] = ['A4', 'A3', 'A2', 'A1', 'B', 'C', 'D', 'E', 'F', 'G', 'pending'];
 
 export interface StepProps {
   form: FormState;
@@ -285,6 +293,66 @@ export const StepDetails: React.FC<StepProps> = ({ form, set, errors, lang }) =>
       </Card>
 
       <Card>
+        <SectionTitle>{t.buildingInfoTitle}</SectionTitle>
+        <div className="space-y-5">
+          <div>
+            <div className="mb-2 flex items-center gap-1">
+              <span className="text-sm font-semibold text-stone-800">{t.energyClassLabel}</span>
+              <span className="text-rose-600" aria-hidden="true">*</span>
+              <HelpTip>{t.energyClassHelp}</HelpTip>
+            </div>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t.energyClassLabel}>
+              {ENERGY_CLASSES.map((c) => (
+                <Chip
+                  key={c}
+                  selected={form.energyClass === c}
+                  onClick={() => set({ energyClass: c })}
+                  icon={c === 'pending' ? undefined : <Zap className="h-4 w-4" />}
+                >
+                  {c === 'pending' ? t.energyClassPending : c}
+                </Chip>
+              ))}
+            </div>
+            {form.energyClass && form.energyClass !== 'pending' && (
+              <div className="mt-2">
+                <EnergyClassBadge value={form.energyClass} pendingLabel={t.energyClassPending} />
+              </div>
+            )}
+            {errors.energyClass && <p role="alert" className="mt-1.5 text-[13px] font-medium text-rose-600">{errors.energyClass}</p>}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t.floorLabel} htmlFor="wiz-floor" optionalText={w.optional} hint={t.floorHint} error={errors.floor}>
+              <input
+                id="wiz-floor"
+                type="number"
+                inputMode="numeric"
+                min={FLOOR_MIN}
+                max={FLOOR_MAX}
+                step={1}
+                value={form.floor}
+                onChange={(e) => set({ floor: e.target.value })}
+                placeholder="2"
+                className={inputClass(Boolean(errors.floor))}
+              />
+            </Field>
+            <div>
+              <p className="mb-1.5 text-sm font-semibold text-stone-800">{t.elevatorLabel}</p>
+              <Segmented
+                ariaLabel={t.elevatorLabel}
+                value={form.hasElevator ? 'yes' : 'no'}
+                onChange={(v) => set({ hasElevator: v === 'yes' })}
+                options={[
+                  { value: 'no', label: t.elevatorNo, icon: <ArrowUpDown className="h-4 w-4 opacity-50" /> },
+                  { value: 'yes', label: t.elevatorYes, icon: <ArrowUpDown className="h-4 w-4" /> },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
         <SectionTitle>{w.amenitiesLabel}</SectionTitle>
 
         <div className="space-y-5">
@@ -419,10 +487,30 @@ interface MediaProps extends StepProps {
   onRemove: (id: string) => void;
   onMove: (from: number, to: number) => void;
   onRetry: (id: string) => void;
+  onFloorPlanFile: (file: File) => void;
+  onFloorPlanRemove: () => void;
+  floorPlanBusy: boolean;
+  floorPlanError: string | null;
 }
 
-export const StepMedia: React.FC<MediaProps> = ({ form, set, errors, lang, onAddFiles, onAddUrl, onRemove, onMove, onRetry }) => {
+export const StepMedia: React.FC<MediaProps> = ({
+  form,
+  set,
+  errors,
+  lang,
+  onAddFiles,
+  onAddUrl,
+  onRemove,
+  onMove,
+  onRetry,
+  onFloorPlanFile,
+  onFloorPlanRemove,
+  floorPlanBusy,
+  floorPlanError,
+}) => {
   const w = WIZARD_TEXT[lang];
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const planInput = React.useRef<HTMLInputElement>(null);
   const [showAngles, setShowAngles] = React.useState(Boolean(form.angles.desk || form.angles.kitchen || form.angles.balcony));
 
   return (
@@ -438,6 +526,49 @@ export const StepMedia: React.FC<MediaProps> = ({ form, set, errors, lang, onAdd
           onMove={onMove}
           onRetry={onRetry}
         />
+      </Card>
+
+      <Card>
+        <SectionTitle>{t.floorPlanTitle}</SectionTitle>
+        <p className="text-[13px] text-stone-500">{t.floorPlanHelp}</p>
+        <input
+          ref={planInput}
+          type="file"
+          accept="image/png, image/jpeg, image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onFloorPlanFile(file);
+            e.target.value = '';
+          }}
+        />
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          {form.floorPlanUrl && (
+            <a href={form.floorPlanUrl} target="_blank" rel="noopener noreferrer" className="block">
+              <img src={form.floorPlanUrl} alt={t.floorPlanTitle} className="h-28 w-40 rounded-lg border border-stone-200 bg-white object-contain" loading="lazy" />
+            </a>
+          )}
+          <button
+            type="button"
+            disabled={floorPlanBusy}
+            onClick={() => planInput.current?.click()}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800 hover:bg-stone-100 disabled:opacity-50 cursor-pointer"
+          >
+            <FileImage className="h-4 w-4" />
+            {floorPlanBusy ? t.floorPlanUploading : form.floorPlanUrl ? t.floorPlanReplace : t.floorPlanUpload}
+          </button>
+          {form.floorPlanUrl && !floorPlanBusy && (
+            <button
+              type="button"
+              onClick={onFloorPlanRemove}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4" />
+              {t.floorPlanRemove}
+            </button>
+          )}
+        </div>
+        {floorPlanError && <p role="alert" className="mt-2 text-[13px] font-medium text-rose-600">{floorPlanError}</p>}
       </Card>
 
       <Card>

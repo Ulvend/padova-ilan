@@ -26,3 +26,9 @@ export const formatBathrooms = (n: number, lang: Language): string => {
       return n === 1 ? '1 Bathroom' : `${n} Bathrooms`;
   }
 };
+
+/** Kat metni: 0 → "Zemin kat", negatif → "Bodrum / seminterrato", diğerleri → "3. kat". */
+export const formatFloor = (
+  floor: number,
+  t: { floorGround: string; floorBasement: string; floorValue: string }
+): string => (floor === 0 ? t.floorGround : floor < 0 ? t.floorBasement : t.floorValue.replace('{n}', String(floor)));

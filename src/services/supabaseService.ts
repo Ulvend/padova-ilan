@@ -1,7 +1,9 @@
 import { supabase, handleDbError, OperationType } from '../lib/supabase';
-import { HousingListing, UserProfile, FirestoreMessage, UserNotification, PosterInfo, Flatmate, VideoAngle } from '../types';
+import { EnergyClass, HousingListing, UserProfile, FirestoreMessage, UserNotification, PosterInfo, Flatmate, VideoAngle } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { defaultUsername } from '../utils/username';
+import { setListingConfirmationDays } from '../config';
+import { deleteListingPhotos } from './storageService';
 
 /**
  * 1. User Profile Management
@@ -58,6 +60,9 @@ const profileFromRow = (row: ProfileRow): PublicUserProfile => ({
 
 // Postgres benzersizlik ihlali (profiles.username üzerindeki unique index).
 const isUniqueViolation = (error: { code?: string } | null | undefined): boolean => error?.code === '23505';
+// Sunucu kullanıcı adını biçim ya da ayrılmış ad kuralıyla reddetti (profiles_username_format).
+const isUsernameRejected = (error: { code?: string; message?: string } | null | undefined): boolean =>
+  error?.code === '23514' && /profiles_username_format/.test(error.message ?? '');
 
 /** Kullanıcı adı boşta mı? Kayıt sırasında (oturum yokken) da çalışır. Ağ/sunucu hatasında fırlatır. */
 export async function isUsernameAvailable(username: string): Promise<boolean> {
@@ -89,7 +94,7 @@ export async function updateUsername(userId: string, username: string): Promise<
     .from('profiles')
     .update({ username, updated_at: new Date().toISOString() })
     .eq('id', userId);
-  if (isUniqueViolation(error)) return 'taken';
+  if (isUniqueViolation(error) || isUsernameRejected(error)) return 'taken';
   if (error) throw error;
   return 'ok';
 }
@@ -128,7 +133,7 @@ export async function syncUserProfile(
 
     let savedUsername = user.username || defaultUsername(user.name || '', user.id);
     let { error: profileError } = await upsertProfile(savedUsername);
-    if (isUniqueViolation(profileError)) {
+    if (isUniqueViolation(profileError) || isUsernameRejected(profileError)) {
       savedUsername = defaultUsername(user.name || '', user.id);
       ({ error: profileError } = await upsertProfile(savedUsername));
     }
@@ -362,6 +367,10 @@ interface ListingRow {
   room_m2: number;
   apartment_m2: number;
   bathrooms: number;
+  energy_class: EnergyClass | null;
+  floor: number | null;
+  has_elevator: boolean | null;
+  floor_plan_url: string | null;
   confirmation_time_left: string;
   description: string;
   poster: PosterInfo;
@@ -420,6 +429,10 @@ const listingFromRow = (row: ListingRow): HousingListing => ({
   roomM2: row.room_m2,
   apartmentM2: row.apartment_m2,
   bathrooms: row.bathrooms,
+  energyClass: row.energy_class || undefined,
+  floor: row.floor ?? undefined,
+  hasElevator: row.has_elevator ?? undefined,
+  floorPlanUrl: row.floor_plan_url || undefined,
   confirmationTimeLeft: row.confirmation_time_left,
   description: row.description,
   poster: row.poster,
@@ -480,6 +493,10 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
     roomM2: 'room_m2',
     apartmentM2: 'apartment_m2',
     bathrooms: 'bathrooms',
+    energyClass: 'energy_class',
+    floor: 'floor',
+    hasElevator: 'has_elevator',
+    floorPlanUrl: 'floor_plan_url',
     confirmationTimeLeft: 'confirmation_time_left',
     description: 'description',
     poster: 'poster',
@@ -550,57 +567,199 @@ export async function deleteListingFromFirestore(listing: HousingListing): Promi
   } catch (error) {
     handleDbError(error, OperationType.DELETE, path);
   }
-  await deleteListingPhotos(listing.images || []);
+  await deleteListingPhotos([...(listing.images || []), ...(listing.floorPlanUrl ? [listing.floorPlanUrl] : [])]);
 }
 
-// İlanın Supabase Storage'daki fotoğraflarını temizler.
-async function deleteListingPhotos(imageUrls: string[]): Promise<void> {
-  const paths = imageUrls
-    .map((url) => extractStoragePath(url, 'listing_photos'))
-    .filter((p): p is string => Boolean(p));
-  if (paths.length === 0) return;
-  const { error } = await supabase.storage.from('listing_photos').remove(paths);
-  if (error) console.warn('Could not delete listing photos from storage:', error.message);
+// PostgREST bir yanıtta en fazla 1000 satır döndürür (Supabase varsayılanı); daha fazlası sayfa sayfa çekilir.
+// Proje ayarlarında "Max rows" düşürülürse PAGE_SIZE de o değere çekilmelidir.
+const PAGE_SIZE = 1000;
+// Aynı kısa aralıktaki gerçek zamanlı olaylar tek bir "değişen satırları çek" isteğinde toplanır.
+const SYNC_DEBOUNCE_MS = 200;
+// Kanal bu sürede bağlanamazsa ilk yükleme yine de yapılır.
+const SYNC_CONNECT_FALLBACK_MS = 3000;
+const IDS_PER_REQUEST = 100;
+
+type SyncResult<Row> = PromiseLike<{ data: Row[] | null; error: unknown }>;
+
+interface TableSyncOptions<Row extends { id: string }, Item extends { id: string }> {
+  channelName: string;
+  table: string;
+  /** Sıralı sayfa: from..to (dahil). Sıralama benzersiz olmalı (ör. created_at, id). */
+  fetchPage: (from: number, to: number) => SyncResult<Row>;
+  fetchByIds: (ids: string[]) => SyncResult<Row>;
+  map: (row: Row) => Item;
+  compare: (a: Item, b: Item) => number;
+  onUpdate: (items: Item[]) => void;
+  onError?: (error: unknown) => void;
 }
 
-function extractStoragePath(url: string, bucket: string): string | null {
-  const marker = `/object/public/${bucket}/`;
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-  return decodeURIComponent(url.slice(idx + marker.length));
+/**
+ * Bir tabloyu istemcide senkron tutar: ilk yüklemede tüm satırlar sayfalanarak çekilir, sonrasında
+ * gerçek zamanlı olaylarda yalnızca değişen satırlar (silinenler için hiç istek atılmadan) güncellenir.
+ * Kanal yeniden bağlandığında kaçırılmış olaylar için baştan yüklenir.
+ */
+function syncTable<Row extends { id: string }, Item extends { id: string }>(
+  o: TableSyncOptions<Row, Item>
+): () => void {
+  const items = new Map<string, Item>();
+  const dirty = new Set<string>();
+  const gone = new Set<string>();
+  let disposed = false;
+  let loadRequested = false;
+  let flushTimer: ReturnType<typeof setTimeout> | undefined;
+  // Yükleme ve tekil güncellemeler sırayla çalışır; böylece birbirinin üzerine yazmaz.
+  let chain: Promise<void> = Promise.resolve();
+  const enqueue = (task: () => Promise<void>) => {
+    chain = chain.then(task).catch((error) => console.warn(`${o.table} sync error:`, error));
+  };
+
+  const emit = () => {
+    if (!disposed) o.onUpdate([...items.values()].sort(o.compare));
+  };
+
+  const reload = async () => {
+    if (disposed) return;
+    try {
+      const rows: Row[] = [];
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await o.fetchPage(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        rows.push(...(data ?? []));
+        if (!data || data.length < PAGE_SIZE) break;
+      }
+      items.clear();
+      rows.forEach((row) => items.set(row.id, o.map(row)));
+      emit();
+    } catch (error) {
+      console.warn(`${o.table} subscription error:`, error);
+      if (!disposed) o.onError?.(error);
+    }
+  };
+
+  const flush = async () => {
+    if (disposed) return;
+    const removedIds = [...gone];
+    const changedIds = [...dirty];
+    gone.clear();
+    dirty.clear();
+    let changed = removedIds.reduce((any, id) => items.delete(id) || any, false);
+    try {
+      for (let i = 0; i < changedIds.length; i += IDS_PER_REQUEST) {
+        const chunk = changedIds.slice(i, i + IDS_PER_REQUEST);
+        const { data, error } = await o.fetchByIds(chunk);
+        if (error) throw error;
+        const found = new Set<string>();
+        (data ?? []).forEach((row) => {
+          items.set(row.id, o.map(row));
+          found.add(row.id);
+        });
+        // Artık okunamayan (silinmiş ya da görünürlüğü kalkmış) satırlar listeden çıkar.
+        chunk.forEach((id) => {
+          if (!found.has(id)) items.delete(id);
+        });
+        changed = true;
+      }
+    } catch (error) {
+      console.warn(`${o.table} incremental sync failed, reloading:`, error);
+      await reload();
+      return;
+    }
+    if (changed) emit();
+  };
+
+  const requestLoad = () => {
+    loadRequested = true;
+    enqueue(reload);
+  };
+
+  const scheduleFlush = () => {
+    if (flushTimer) return;
+    flushTimer = setTimeout(() => {
+      flushTimer = undefined;
+      enqueue(flush);
+    }, SYNC_DEBOUNCE_MS);
+  };
+
+  const channel = supabase
+    .channel(o.channelName)
+    .on('postgres_changes', { event: '*', schema: 'public', table: o.table }, (payload) => {
+      const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) as { id?: string } | undefined;
+      if (!row?.id) {
+        requestLoad();
+        return;
+      }
+      if (payload.eventType === 'DELETE') {
+        dirty.delete(row.id);
+        gone.add(row.id);
+      } else {
+        gone.delete(row.id);
+        dirty.add(row.id);
+      }
+      scheduleFlush();
+    })
+    // Her (yeniden) bağlanışta baştan yükle: abonelikten önce ya da bağlantı kopukken olan değişiklikler kaçmasın.
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') requestLoad();
+    });
+  // Gerçek zamanlı kanal hiç bağlanamazsa liste yine de yüklenir.
+  const fallbackTimer = setTimeout(() => {
+    if (!loadRequested) requestLoad();
+  }, SYNC_CONNECT_FALLBACK_MS);
+
+  return () => {
+    disposed = true;
+    clearTimeout(fallbackTimer);
+    if (flushTimer) clearTimeout(flushTimer);
+    supabase.removeChannel(channel);
+  };
 }
+
+// Teyit süresi sunucudaki public.listing_confirmation_days() fonksiyonundan okunur (tek kaynak).
+// Okunamazsa src/config.ts'deki varsayılan kullanılır.
+let confirmationDaysLoaded: Promise<void> | null = null;
+const loadConfirmationDays = (): Promise<void> => {
+  confirmationDaysLoaded ??= (async () => {
+    const { data, error } = await supabase.rpc('listing_confirmation_days');
+    if (!error && typeof data === 'number') setListingConfirmationDays(data);
+  })().catch(() => undefined);
+  return confirmationDaysLoaded;
+};
 
 export function subscribeToListings(
   onUpdate: (listings: HousingListing[]) => void,
   onError?: (error: unknown) => void
 ): () => void {
-  const load = async () => {
-    const { data, error } = await supabase.from('listings').select('*');
-    if (error) {
-      console.warn('Listings subscription error:', error);
-      if (onError) onError(error);
-      return;
-    }
-    onUpdate((data as ListingRow[]).map(listingFromRow));
-  };
-  load();
-  const channel = supabase
-    .channel('listings-all')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, load)
-    .subscribe();
-  return () => {
-    supabase.removeChannel(channel);
-  };
+  return syncTable<ListingRow, HousingListing>({
+    channelName: 'listings-all',
+    table: 'listings',
+    fetchPage: async (from, to) => {
+      // İlk sayfa istenirken süre de okunur; ilanlar arayüze ulaştığında süre hazır olur.
+      const [, page] = await Promise.all([
+        from === 0 ? loadConfirmationDays() : undefined,
+        supabase.from('listings').select('*').order('created_at', { ascending: true }).order('id').range(from, to),
+      ]);
+      return page as { data: ListingRow[] | null; error: unknown };
+    },
+    fetchByIds: (ids) => supabase.from('listings').select('*').in('id', ids) as SyncResult<ListingRow>,
+    map: listingFromRow,
+    // Eskiden yeniye: yeni ilanlar sona eklenir, mevcut ilanların sırası (ve koordinat yedeği) değişmez.
+    compare: (a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id < b.id ? -1 : 1),
+    onUpdate,
+    onError,
+  });
 }
 
 /**
  * 4. Direct Messages Management: messages
  * Her mesaj iki katılımcı içerir; kullanıcı yalnızca dahil olduğu mesajları okuyabilir.
  */
+// Hesabı silinen kullanıcının mesajlarında sender_id/recipient_id boşalır (karşı tarafın kayıtları korunur).
+export const DELETED_USER_ID = 'deleted-account';
+
 interface MessageRow {
   id: string;
-  sender_id: string;
-  recipient_id: string;
+  sender_id: string | null;
+  recipient_id: string | null;
   text: string;
   listing_id: string | null;
   subject: string | null;
@@ -610,9 +769,9 @@ interface MessageRow {
 
 const messageFromRow = (row: MessageRow): FirestoreMessage => ({
   id: row.id,
-  senderId: row.sender_id,
-  recipientId: row.recipient_id,
-  participants: [row.sender_id, row.recipient_id],
+  senderId: row.sender_id ?? DELETED_USER_ID,
+  recipientId: row.recipient_id ?? DELETED_USER_ID,
+  participants: [row.sender_id ?? DELETED_USER_ID, row.recipient_id ?? DELETED_USER_ID],
   text: row.text,
   listingId: row.listing_id || undefined,
   subject: row.subject || undefined,
@@ -625,28 +784,24 @@ export function subscribeToMessages(
   onUpdate: (messages: FirestoreMessage[]) => void,
   onError?: (error: unknown) => void
 ): () => void {
-  const load = async () => {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`);
-    if (error) {
-      console.warn('Messages subscription error:', error);
-      if (onError) onError(error);
-      return;
-    }
-    const messages = (data as MessageRow[]).map(messageFromRow);
-    messages.sort((a, b) => a.createdAt - b.createdAt);
-    onUpdate(messages);
-  };
-  load();
-  const channel = supabase
-    .channel(`messages-${userId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, load)
-    .subscribe();
-  return () => {
-    supabase.removeChannel(channel);
-  };
+  const mine = `sender_id.eq.${userId},recipient_id.eq.${userId}`;
+  return syncTable<MessageRow, FirestoreMessage>({
+    channelName: `messages-${userId}`,
+    table: 'messages',
+    fetchPage: (from, to) =>
+      supabase
+        .from('messages')
+        .select('*')
+        .or(mine)
+        .order('created_at', { ascending: true })
+        .order('id')
+        .range(from, to) as SyncResult<MessageRow>,
+    fetchByIds: (ids) => supabase.from('messages').select('*').or(mine).in('id', ids) as SyncResult<MessageRow>,
+    map: messageFromRow,
+    compare: (a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1),
+    onUpdate,
+    onError,
+  });
 }
 
 export async function sendMessageToFirestore(
@@ -661,6 +816,7 @@ export async function sendMessageToFirestore(
       listing_id: message.listingId,
       subject: message.subject?.slice(0, 200),
       read: false,
+      // Yalnızca yedek: sunucu tetikleyicisi bu değeri sunucu saatiyle ezer (cihaz saati sıralamayı etkilemez).
       created_at: Date.now(),
     });
     if (error) throw error;
@@ -793,6 +949,18 @@ export type { RealtimeChannel };
 export async function recordListingView(listingId: string): Promise<void> {
   const { error } = await supabase.rpc('record_listing_view', { p_listing_id: listingId });
   if (error) console.warn('Could not record listing view:', error);
+}
+
+/** İlan sahibi için ilan başına favoriye eklenme sayısı (yalnızca sayı; kimin eklediği gösterilmez). */
+export async function getListingFavoriteCounts(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.rpc('listing_favorite_counts');
+  if (error) {
+    console.warn('Could not load listing favorite counts:', error);
+    return {};
+  }
+  return Object.fromEntries(
+    (data as { listing_id: string; favorites: number | string }[]).map((r) => [r.listing_id, Number(r.favorites)])
+  );
 }
 
 /** İlan sahibi (ve admin) için ilan başına görüntülenme sayıları. */
@@ -945,6 +1113,163 @@ export async function getBannedUsers(): Promise<BannedUser[]> {
     reason: r.reason,
     createdAt: r.created_at,
   }));
+}
+
+export type PhotoFlagStatus = 'pending' | 'reviewed' | 'dismissed';
+
+export interface PhotoDuplicateFlag {
+  id: number;
+  createdAt: string;
+  status: PhotoFlagStatus;
+  /** 64 bitlik özette kaç bit fark var (0 = aynı, en fazla 6). */
+  distance: number;
+  /** Yeni yüklenen fotoğraf ve yükleyen. */
+  url: string;
+  ownerId: string;
+  ownerName?: string;
+  ownerUsername?: string;
+  /** Daha önce yüklenmiş, benzeyen fotoğraf ve sahibi. */
+  matchedUrl: string;
+  matchedOwnerId: string;
+  matchedOwnerName?: string;
+  matchedOwnerUsername?: string;
+}
+
+interface PhotoFlagRow {
+  id: number;
+  created_at: string;
+  status: PhotoFlagStatus;
+  distance: number;
+  path: string;
+  owner_id: string;
+  matched_path: string;
+  matched_owner_id: string;
+}
+
+const listingPhotoUrl = (path: string): string => supabase.storage.from('listing_photos').getPublicUrl(path).data.publicUrl;
+
+/** Yöneticiler için başka kullanıcının fotoğrafına benzeyen yüklemeler (en yeni önce). RLS: yalnızca adminler okur. */
+export async function getPhotoDuplicateFlags(status: PhotoFlagStatus = 'pending'): Promise<PhotoDuplicateFlag[]> {
+  const { data, error } = await supabase
+    .from('photo_duplicate_flags')
+    .select('id, created_at, status, distance, path, owner_id, matched_path, matched_owner_id')
+    .eq('status', status)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) {
+    console.warn('Could not load photo duplicate flags:', error);
+    return [];
+  }
+  const rows = data as PhotoFlagRow[];
+  const ids = new Set<string>();
+  rows.forEach((r) => {
+    ids.add(r.owner_id);
+    ids.add(r.matched_owner_id);
+  });
+  const profiles = new Map<string, { name: string; username: string }>();
+  if (ids.size > 0) {
+    const { data: profileRows } = await supabase.from('profiles').select('id, name, username').in('id', [...ids]);
+    for (const p of (profileRows ?? []) as { id: string; name: string; username: string }[]) profiles.set(p.id, p);
+  }
+  return rows.map((r) => ({
+    id: r.id,
+    createdAt: r.created_at,
+    status: r.status,
+    distance: r.distance,
+    url: listingPhotoUrl(r.path),
+    ownerId: r.owner_id,
+    ownerName: profiles.get(r.owner_id)?.name,
+    ownerUsername: profiles.get(r.owner_id)?.username,
+    matchedUrl: listingPhotoUrl(r.matched_path),
+    matchedOwnerId: r.matched_owner_id,
+    matchedOwnerName: profiles.get(r.matched_owner_id)?.name,
+    matchedOwnerUsername: profiles.get(r.matched_owner_id)?.username,
+  }));
+}
+
+export async function updatePhotoFlagStatus(id: number, status: PhotoFlagStatus): Promise<void> {
+  const { error } = await supabase.from('photo_duplicate_flags').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export type AuditAction =
+  | 'admin_granted'
+  | 'admin_revoked'
+  | 'user_banned'
+  | 'user_unbanned'
+  | 'listing_deleted'
+  | 'listing_updated'
+  | 'report_status_changed'
+  | 'photo_flag_reviewed';
+
+export interface AuditLogEntry {
+  id: number;
+  createdAt: string;
+  actorId?: string;
+  actorName?: string;
+  actorUsername?: string;
+  action: AuditAction | string;
+  targetType: string;
+  targetId?: string;
+  targetName?: string;
+  targetUsername?: string;
+  details: Record<string, unknown>;
+}
+
+interface AuditLogRow {
+  id: number;
+  created_at: string;
+  actor_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  details: Record<string, unknown> | null;
+}
+
+/**
+ * Admin işlem kaydı (yalnızca superadmin okuyabilir; RLS diğerlerine boş döner). En yeni önce;
+ * `beforeId` verilirse ondan eski kayıtlar gelir. Kişi adları profillerden ayrıca eşlenir (silinmiş hesaplarda boş kalır).
+ */
+export async function getAdminAuditLog(limit = 50, beforeId?: number): Promise<AuditLogEntry[]> {
+  let query = supabase
+    .from('admin_audit_log')
+    .select('id, created_at, actor_id, action, target_type, target_id, details')
+    .order('id', { ascending: false })
+    .limit(limit);
+  if (beforeId !== undefined) query = query.lt('id', beforeId);
+  const { data, error } = await query;
+  if (error) {
+    console.warn('Could not load admin audit log:', error);
+    throw error;
+  }
+  const rows = (data ?? []) as AuditLogRow[];
+  const userIds = new Set<string>();
+  for (const r of rows) {
+    if (r.actor_id) userIds.add(r.actor_id);
+    if (r.target_type === 'user' && r.target_id) userIds.add(r.target_id);
+  }
+  const profiles = new Map<string, { name: string; username: string }>();
+  if (userIds.size > 0) {
+    const { data: profileRows } = await supabase.from('profiles').select('id, name, username').in('id', [...userIds]);
+    for (const p of (profileRows ?? []) as { id: string; name: string; username: string }[]) profiles.set(p.id, p);
+  }
+  return rows.map((r) => {
+    const actor = r.actor_id ? profiles.get(r.actor_id) : undefined;
+    const target = r.target_type === 'user' && r.target_id ? profiles.get(r.target_id) : undefined;
+    return {
+      id: r.id,
+      createdAt: r.created_at,
+      actorId: r.actor_id ?? undefined,
+      actorName: actor?.name,
+      actorUsername: actor?.username,
+      action: r.action,
+      targetType: r.target_type,
+      targetId: r.target_id ?? undefined,
+      targetName: target?.name,
+      targetUsername: target?.username,
+      details: r.details ?? {},
+    };
+  });
 }
 
 /** Oturum açmış kullanıcı banlı mı? (RLS kullanıcıya yalnızca kendi kaydını gösterir.) */

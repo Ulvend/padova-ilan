@@ -1,6 +1,7 @@
 import {
   ContractType,
   DistrictArea,
+  EnergyClass,
   HousingListing,
   Language,
   RoomType,
@@ -21,6 +22,8 @@ export interface PhotoItem {
   status: PhotoStatus;
   progress: number;
   file?: File;
+  // Başka bir kullanıcının fotoğrafına çok benziyor (sunucu tespiti); yalnızca uyarı, yayını engellemez.
+  similar?: boolean;
 }
 
 export interface AngleForm {
@@ -47,6 +50,11 @@ export interface FormState {
   roomM2: string;
   apartmentM2: string;
   bathrooms: number;
+  // Ev bilgileri: enerji sınıfı zorunlu; kat boş bırakılabilir (0 = zemin, -1 = bodrum).
+  energyClass: EnergyClass | '';
+  floor: string;
+  hasElevator: boolean;
+  floorPlanUrl: string;
   heatingType: 'autonomo' | 'centralizzato';
   hasAirConditioning: boolean;
   hasWashingMachine: boolean;
@@ -98,6 +106,10 @@ export const createInitialForm = (): FormState => {
     roomM2: '',
     apartmentM2: '',
     bathrooms: 1,
+    energyClass: '',
+    floor: '',
+    hasElevator: false,
+    floorPlanUrl: '',
     heatingType: 'autonomo',
     hasAirConditioning: false,
     hasWashingMachine: false,
@@ -205,6 +217,16 @@ const parseExpenses = (s: string | undefined): { included: boolean; amount: stri
 
 // ---------- İlan ↔ form dönüşümleri ----------
 
+export const FLOOR_MIN = -2;
+export const FLOOR_MAX = 60;
+
+/** Kat metnini tam sayıya çevirir; boş ya da geçersizse undefined. */
+const parseFloor = (value: string): number | undefined => {
+  if (value.trim() === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.round(n) : undefined;
+};
+
 const ANGLE_FIELDS: { key: keyof AngleForm; id: VideoAngle['id']; label: string }[] = [
   { key: 'desk', id: 'desk', label: 'Çalışma Masası' },
   { key: 'kitchen', id: 'kitchen', label: 'Mutfak / Ortak Alan' },
@@ -237,6 +259,10 @@ export const formFromListing = (l: HousingListing): FormState => {
     roomM2: l.roomM2 ? String(l.roomM2) : '',
     apartmentM2: l.apartmentM2 ? String(l.apartmentM2) : '',
     bathrooms: l.bathrooms || 1,
+    energyClass: l.energyClass || '',
+    floor: l.floor !== undefined ? String(l.floor) : '',
+    hasElevator: Boolean(l.hasElevator),
+    floorPlanUrl: l.floorPlanUrl || '',
     heatingType: l.heatingType || 'autonomo',
     hasAirConditioning: Boolean(l.hasAirConditioning),
     hasWashingMachine: Boolean(l.hasWashingMachine),
@@ -325,6 +351,11 @@ export const buildListing = (
     roomM2: Number(f.roomM2) || 0,
     apartmentM2: Number(f.apartmentM2) || 0,
     bathrooms: f.bathrooms,
+    energyClass: f.energyClass || undefined,
+    floor: parseFloor(f.floor),
+    // Asansör bilgisi yalnızca kat girildiyse anlamlıdır.
+    hasElevator: parseFloor(f.floor) !== undefined ? f.hasElevator : undefined,
+    floorPlanUrl: f.floorPlanUrl || undefined,
     confirmationTimeLeft: existing?.confirmationTimeLeft ?? '',
     description: f.description.trim() || existing?.description || '',
     userId: existing?.userId ?? user?.id,
@@ -364,6 +395,12 @@ export const validateStep = (step: number, f: FormState, lang: Language): Errors
   if (step === 2) {
     if (!(Number(f.roomM2) > 0)) e.roomM2 = w.areaError;
     if (!(Number(f.apartmentM2) > 0)) e.apartmentM2 = w.areaError;
+    // APE enerji sınıfı yasal olarak belirtilmelidir ('pending' seçeneği sertifikası olmayanlar içindir).
+    if (!f.energyClass) e.energyClass = TRANSLATIONS[lang].energyClassError;
+    if (f.floor.trim() !== '') {
+      const n = Number(f.floor);
+      if (!Number.isFinite(n) || n < FLOOR_MIN || n > FLOOR_MAX) e.floor = TRANSLATIONS[lang].floorError;
+    }
   }
   if (step === 3) {
     if (f.photos.length === 0) e.photos = w.photoError;

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { AlertCircle, ArrowLeft, ArrowRight, Link as LinkIcon, Loader2, RotateCw, Star, Trash2, UploadCloud } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Link as LinkIcon, Loader2, RotateCw, Star, Trash2, UploadCloud } from 'lucide-react';
 import { WizardText, fill } from '../../utils/wizardText';
 import { PhotoItem } from './formModel';
 import { HelpTip, inputClass } from '../ui/kit';
@@ -84,6 +84,12 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({ photos, w, error, 
         </button>
       </div>
       {error && <p role="alert" className="text-[13px] font-medium text-rose-600">{error}</p>}
+      {photos.some((p) => p.similar) && (
+        <p role="alert" className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[13px] font-medium text-amber-900">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{w.similarNote}</span>
+        </p>
+      )}
       <p className="text-[13px] text-stone-500">{w.photosHelp}</p>
 
       {photos.length > 0 && (
@@ -112,6 +118,13 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({ photos, w, error, 
               } ${overIndex === i && dragIndex !== i ? 'scale-[0.97] ring-2 ring-orange-400' : ''} ${dragIndex === i ? 'opacity-40' : ''}`}
             >
               <img src={p.url} alt="" className="h-full w-full object-cover" draggable={false} loading="lazy" />
+
+              {p.similar && (
+                <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-md bg-amber-500 px-2 py-0.5 text-[12px] font-bold text-white shadow-xs">
+                  <AlertTriangle className="h-3 w-3" />
+                  {w.similarBadge}
+                </span>
+              )}
 
               {i === 0 && (
                 <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-orange-600 px-2 py-0.5 text-[12px] font-bold text-white shadow-xs">

@@ -7,7 +7,8 @@ import {
   SUPPORTED_LANGUAGES, 
   TRANSLATE_ACTION_LABELS
 } from '../utils/translator';
-import { Globe, RefreshCw, ChevronDown, Check, Undo2 } from 'lucide-react';
+import { Globe, RefreshCw, ChevronDown, Check, Undo2, AlertTriangle } from 'lucide-react';
+import { detectScamSignals } from '../utils/scamSignals';
 import { formatDeviceRelativeDate, formatDeviceTime } from '../utils/deviceTime';
 
 interface ChatMessageItemProps {
@@ -187,6 +188,17 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         <p className="leading-relaxed break-words whitespace-pre-wrap select-text">
           {displayText}
         </p>
+
+        {/* Karşı taraftan gelen mesaj bilinen bir dolandırıcılık kalıbına benziyorsa uyar (orijinal metne bakılır) */}
+        {!isUser && detectScamSignals(message.text).flagged && (
+          <div role="alert" className="mt-2 flex items-start gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-2 text-[11px] leading-snug text-rose-900 select-none">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-600" />
+            <span>
+              <span className="block font-bold">{t.scamFlagTitle}</span>
+              {t.scamFlagText}
+            </span>
+          </div>
+        )}
 
         {/* Translation Action Toolbar */}
         <div className={`mt-2 pt-2 border-t flex flex-wrap items-center justify-between gap-1.5 text-[11px] ${

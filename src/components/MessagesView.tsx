@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { formatDeviceTime, formatDeviceRelativeDate } from '../utils/deviceTime';
 import { ChatMessageItem } from './ChatMessageItem';
+import { ScamSafetyBanner } from './ScamSafetyBanner';
 
 interface MessagesViewProps {
   conversations: ConversationContact[];
@@ -263,6 +264,8 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
                   </div>
                 </div>
               </div>
+
+              <ScamSafetyBanner currentLang={currentLang} />
 
               {/* Chat Message Stream with In-Line Translation */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3.5">

@@ -135,12 +135,16 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
 
       const isSelected = selectedListing?.id === listing.id;
 
+      // DİKKAT: markerHtml, Leaflet tarafından innerHTML olarak yazılır. Şablona yalnızca sayısal ya da sabit
+      // değerler girmeli; kullanıcının yazdığı metin (title, adres vb.) eklenecekse önce HTML'den kaçırılmalıdır.
+      const price = Number(listing.price) || 0;
+
       // Custom Modern Marker Icon with reliable inline styles
       const markerHtml = `
         <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none;">
           <div style="background: ${isSelected ? '#ea580c' : '#ffffff'}; color: ${isSelected ? '#ffffff' : '#1c1917'}; border: 1.5px solid ${isSelected ? '#c2410c' : '#e7e5e4'}; padding: 3px 8px; font-weight: 700; font-size: 11px; white-space: nowrap; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); border-radius: 9999px; display: flex; align-items: center; gap: 4px; transition: transform 0.15s ease;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span>€${listing.price}</span>
+            <span>€${price}</span>
           </div>
           <div style="width: 6px; height: 6px; background: ${isSelected ? '#ea580c' : '#ffffff'}; border-right: 1.5px solid ${isSelected ? '#c2410c' : '#e7e5e4'}; border-bottom: 1.5px solid ${isSelected ? '#c2410c' : '#e7e5e4'}; transform: rotate(45deg); margin-top: -3.5px;"></div>
         </div>

@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import type { Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
+import { computeImageHashes } from '../utils/imageHash';
 
 const coded = (code: string, message: string) => Object.assign(new Error(message), { code });
 
@@ -213,7 +214,8 @@ export async function uploadProfilePhoto(
 export async function uploadListingPhoto(
   file: File,
   userId: string,
-  onProgress?: UploadProgressCallback
+  onProgress?: UploadProgressCallback,
+  onSimilarFound?: (matches: number) => void
 ): Promise<string> {
   if (!file) {
     throw coded('upload/no-file', 'No file to upload.');
@@ -225,6 +227,9 @@ export async function uploadListingPhoto(
     throw coded('upload/not-image', 'Only JPEG, PNG or WebP images can be uploaded.');
   }
 
+  // Görsel özeti sıkıştırmadan önce, orijinal dosyadan çıkarılır (başarısız olursa yükleme yine devam eder).
+  const hashes = computeImageHashes(file).catch(() => null);
+
   // Compress to max 1280x850 at 0.78 quality to keep size small (<90KB)
   const { blob, contentType } = await compressImage(file, 1280, 850, 0.78);
 
@@ -233,5 +238,65 @@ export async function uploadListingPhoto(
   // Yol, Supabase Storage RLS politikasındaki listing_photos bucket'ının {userId}/{fileName} kuralıyla eşleşmeli.
   const filePath = `${userId}/${Date.now()}_${rand}.${extension}`;
 
-  return uploadToBucket('listing_photos', filePath, blob, contentType, onProgress);
+  const url = await uploadToBucket('listing_photos', filePath, blob, contentType, onProgress);
+
+  // Çalıntı fotoğraf denetimi: özet sunucuya kaydedilir, başka kullanıcıların fotoğraflarıyla karşılaştırılır.
+  // Yükleme bunu beklemez ve hatası yüklemeyi bozmaz.
+  try {
+    const h = await hashes;
+    if (h) {
+      const { data, error } = await supabase.rpc('register_listing_photo', {
+        p_path: filePath,
+        p_hash: h.hash,
+        p_hash_flipped: h.flipped,
+      });
+      if (error) throw error;
+      if (typeof data === 'number' && data > 0) onSimilarFound?.(data);
+    }
+  } catch (err) {
+    console.warn('Photo similarity check skipped:', err);
+  }
+
+  return url;
+}
+
+/**
+ * Kat planı (planimetria) görselini listing_photos kovasına yükler. Oda fotoğraflarından farklı olarak daha büyük
+ * boyutta sıkıştırılır (çizgiler okunaklı kalsın) ve çalıntı fotoğraf denetimine girmez (aynı binadaki daireler
+ * benzer planlar kullanabilir).
+ */
+export async function uploadFloorPlan(file: File, userId: string, onProgress?: UploadProgressCallback): Promise<string> {
+  if (!file) {
+    throw coded('upload/no-file', 'No file to upload.');
+  }
+  if (!userId) {
+    throw coded('upload/need-login', 'Sign in to upload.');
+  }
+  if (!isAllowedImageType(file.type)) {
+    throw coded('upload/not-image', 'Only JPEG, PNG or WebP images can be uploaded.');
+  }
+  const { blob, contentType } = await compressImage(file, 1800, 1800, 0.85);
+  const rand = Math.random().toString(36).substring(2, 7);
+  const extension = contentType === 'image/webp' ? 'webp' : 'jpg';
+  return uploadToBucket('listing_photos', `${userId}/plan_${Date.now()}_${rand}.${extension}`, blob, contentType, onProgress);
+}
+
+function extractStoragePath(url: string, bucket: string): string | null {
+  const marker = `/object/public/${bucket}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.slice(idx + marker.length));
+}
+
+/**
+ * Fotoğrafları Supabase Storage'daki listing_photos bucket'ından siler. Bucket dışı (harici) adresler yok sayılır;
+ * hata, ilan işlemini engellemez (yalnızca uyarı düşülür). Silme politikası yalnızca dosya sahibine izin verir.
+ */
+export async function deleteListingPhotos(imageUrls: string[]): Promise<void> {
+  const paths = imageUrls
+    .map((url) => extractStoragePath(url, 'listing_photos'))
+    .filter((p): p is string => Boolean(p));
+  if (paths.length === 0) return;
+  const { error } = await supabase.storage.from('listing_photos').remove(paths);
+  if (error) console.warn('Could not delete listing photos from storage:', error.message);
 }

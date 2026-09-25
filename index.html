@@ -3,42 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      // Safeguard for environments/extensions attempting to override window.fetch when it has only a getter
-      (function () {
-        try {
-          var _origFetch = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : null;
-          var _activeFetch = _origFetch;
-          Object.defineProperty(window, 'fetch', {
-            get: function () {
-              return _activeFetch;
-            },
-            set: function (newFetch) {
-              _activeFetch = newFetch;
-            },
-            configurable: true,
-            enumerable: true,
-          });
-        } catch (e) {
-          try {
-            if (typeof Window !== 'undefined' && Window.prototype) {
-              var _protoOrig = Window.prototype.fetch;
-              var _protoActive = _protoOrig;
-              Object.defineProperty(Window.prototype, 'fetch', {
-                get: function () {
-                  return _protoActive;
-                },
-                set: function (fn) {
-                  _protoActive = fn;
-                },
-                configurable: true,
-                enumerable: true,
-              });
-            }
-          } catch (e2) {}
-        }
-      })();
-    </script>
     <title>Padova Student Housing & Room Network</title>
     <meta name="description" content="Padova güvenli öğrenci ev ve oda ağı: Fiyat endeksi denetimi, doğrulanmış video tur, uyum skoru algoritması ve modern ilan altyapısı." />
     <meta property="og:title" content="Padova Student Housing & Room Network" />

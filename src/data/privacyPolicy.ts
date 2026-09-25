@@ -37,6 +37,7 @@ const TR: PolicyContent = {
       bullets: [
         'Hizmeti sunmak (hesap, ilan, mesajlaşma): GDPR md. 6(1)(b) – sözleşmenin ifası.',
         'Güvenlik, spam ve dolandırıcılıkla mücadele, şikayetlerin incelenmesi: md. 6(1)(f) – meşru menfaat.',
+        'Hesap silindikten sonra mesajların ve hakkındaki şikayetlerin sınırlı süre (90 gün) saklanması: md. 6(1)(f) – meşru menfaat. Amaç, dolandırıcılık mağdurunun kanıtını korumak ve hesap silerek iz bırakmayı önlemektir (5. bölüme bak).',
         'İsteğe bağlı telefon numarası ve profil bilgileri: md. 6(1)(a) – rıza. Rızanı istediğin an geri çekebilirsin.',
       ],
     },
@@ -63,7 +64,8 @@ const TR: PolicyContent = {
       heading: '5. Ne kadar saklıyoruz?',
       bullets: [
         'Verilerin, hesabın açık olduğu sürece saklanır.',
-        'Hesabını sildiğinde profilin, ilanların ve fotoğrafların, mesajların, bildirimlerin, favorilerin ve şikayetlerin kalıcı olarak silinir.',
+        'Hesabını sildiğinde profilin, telefon numaran, ilanların ve fotoğrafların, bildirimlerin, favorilerin ve senin yaptığın şikayetler hemen ve kalıcı olarak silinir.',
+        'İstisna (dolandırıcılığı önlemek için): gönderdiğin ve aldığın mesajlar hesabınla bağlantısı koparılarak ("Silinmiş hesap" olarak görünür) karşı tarafın sohbetinde hesabın silindiği tarihten itibaren 90 gün saklanır, sonra kalıcı olarak silinir. Hakkında başka bir kullanıcı tarafından yapılmış şikayet kayıtları da şikayet tarihinden itibaren 90 gün saklanır. Bu süre boyunca bu veriler yalnızca ilgili kullanıcıya ve yetkili yöneticilere görünür.',
         'Sunucu güvenlik günlükleri, altyapı sağlayıcısının belirlediği kısa süre boyunca tutulur.',
       ],
     },
@@ -103,6 +105,7 @@ const EN: PolicyContent = {
       bullets: [
         'To provide the service (account, listings, messaging): GDPR Art. 6(1)(b) – performance of a contract.',
         'Security, fighting spam and fraud, reviewing reports: Art. 6(1)(f) – legitimate interests.',
+        'Keeping messages and reports about a deleted account for a limited period (90 days): Art. 6(1)(f) – legitimate interests. The purpose is to preserve a fraud victim\'s evidence and to stop people from erasing their tracks by deleting their account (see section 5).',
         'Optional phone number and profile details: Art. 6(1)(a) – consent, which you can withdraw at any time.',
       ],
     },
@@ -129,7 +132,8 @@ const EN: PolicyContent = {
       heading: '5. How long do we keep it?',
       bullets: [
         'Your data is kept for as long as your account is open.',
-        'When you delete your account, your profile, listings and photos, messages, notifications, favorites and reports are permanently deleted.',
+        'When you delete your account, your profile, phone number, listings and photos, notifications, favorites and the reports you filed are deleted immediately and permanently.',
+        'Exception (to prevent fraud): the messages you sent and received are disconnected from your account (they appear as "Deleted account") and kept in the other person\'s chat for 90 days from the date your account is deleted, then permanently deleted. Reports filed by other users about you are also kept for 90 days from the date of the report. During this time this data is visible only to the other user concerned and to authorised administrators.',
         'Server security logs are kept for the short period set by the infrastructure provider.',
       ],
     },
@@ -169,6 +173,7 @@ const IT: PolicyContent = {
       bullets: [
         'Per fornire il servizio (account, annunci, messaggi): art. 6(1)(b) GDPR – esecuzione di un contratto.',
         'Sicurezza, contrasto a spam e frodi, esame delle segnalazioni: art. 6(1)(f) – legittimo interesse.',
+        'Conservazione, per un periodo limitato (90 giorni), dei messaggi e delle segnalazioni riguardanti un account eliminato: art. 6(1)(f) – legittimo interesse. Lo scopo è tutelare le prove di chi subisce una frode e impedire che eliminando l\'account si cancelli ogni traccia (vedi sezione 5).',
         'Numero di telefono facoltativo e dati del profilo: art. 6(1)(a) – consenso, revocabile in qualsiasi momento.',
       ],
     },
@@ -195,7 +200,8 @@ const IT: PolicyContent = {
       heading: '5. Per quanto tempo li conserviamo?',
       bullets: [
         'I tuoi dati sono conservati finché il tuo account resta attivo.',
-        'Quando elimini l\'account, profilo, annunci e foto, messaggi, notifiche, preferiti e segnalazioni vengono eliminati definitivamente.',
+        'Quando elimini l\'account, profilo, numero di telefono, annunci e foto, notifiche, preferiti e segnalazioni da te inviate vengono eliminati subito e definitivamente.',
+        'Eccezione (per prevenire le frodi): i messaggi inviati e ricevuti vengono scollegati dal tuo account (appaiono come "Account eliminato") e conservati nella chat dell\'altra persona per 90 giorni dalla data di eliminazione dell\'account, poi eliminati definitivamente. Anche le segnalazioni presentate da altri utenti nei tuoi confronti sono conservate per 90 giorni dalla data della segnalazione. In questo periodo tali dati sono visibili solo all\'altro utente interessato e agli amministratori autorizzati.',
         'I log di sicurezza del server sono conservati per il breve periodo stabilito dal fornitore dell\'infrastruttura.',
       ],
     },

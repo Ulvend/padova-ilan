@@ -23,7 +23,7 @@ import { UNIPD_DEPARTMENTS } from '../data/unipdDepartments';
 import { uploadProfilePhoto, describeUploadError, isAllowedImageType } from '../services/storageService';
 import { updateUserProfilePhoto, deleteMyAccount } from '../services/supabaseService';
 import { clearLocalData, LOCAL_DATA_GROUPS } from '../utils/localData';
-import { LANG_LOCALE } from '../utils/wizardText';
+import { LANG_LOCALE } from '../utils/locale';
 import { Link } from 'react-router-dom';
 import { supabase, changePassword, describeAuthError } from '../lib/supabase';
 import { UsernameField, UsernameStatus } from './UsernameField';
@@ -584,6 +584,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 <p className="text-xs text-rose-900/90 leading-relaxed">{t.deleteAccountIntro}</p>
                 <ul className="list-disc pl-5 space-y-1 text-xs text-stone-700 leading-relaxed">
                   {t.deleteAccountItems.split('|').map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <p className="pt-1 text-xs font-semibold text-rose-900/90 leading-relaxed">{t.deleteAccountRetainedIntro}</p>
+                <ul className="list-disc pl-5 space-y-1 text-xs text-stone-700 leading-relaxed">
+                  {t.deleteAccountRetainedItems.split('|').map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>

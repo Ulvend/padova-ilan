@@ -18,12 +18,16 @@ import {
   UserSearch,
   Ban,
   RotateCcw,
-  Flag
+  Flag,
+  ScrollText,
+  ImageOff
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import type { PublicUserProfile } from '../services/supabaseService';
 import { useApp } from '../context/AppContext';
 import { ReportsPanel } from './ReportsPanel';
+import { AuditLogPanel } from './AuditLogPanel';
+import { PhotoFlagsPanel } from './PhotoFlagsPanel';
 import {
   getReports,
   updateReportStatus,
@@ -31,6 +35,10 @@ import {
   adminBanUser,
   adminUnbanUser,
   getBannedUsers,
+  getPhotoDuplicateFlags,
+  updatePhotoFlagStatus,
+  type PhotoDuplicateFlag,
+  type PhotoFlagStatus,
   type Report,
   type ReportStatus,
   type AdminUserMatch,
@@ -74,7 +82,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 }) => {
   const { getPriceInsight } = useApp();
   const isPricedHigh = (l: HousingListing) => getPriceInsight(l).status === 'higher';
-  const [activeTab, setActiveTab] = useState<'listings' | 'ssoLogs' | 'adminAuth' | 'pastListings' | 'reports' | 'userLookup' | 'banned'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'ssoLogs' | 'adminAuth' | 'pastListings' | 'reports' | 'userLookup' | 'banned' | 'auditLog' | 'photoFlags'>('listings');
 
   // Şikayetler: yalnızca yöneticiler okuyabilir (RLS); sekme etiketindeki bekleyen sayısı için baştan yüklenir.
   const [reports, setReports] = useState<Report[]>([]);
@@ -82,13 +90,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Banlı kullanıcılar: "Banlı Kullanıcılar" sekmesinde listelenir; şikayet kartındaki "Banla" / "Banı Kaldır" da buna göre.
   const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
   const bannedIds = bannedUsers.map((u) => u.userId);
+  // Başka kullanıcının fotoğrafına benzeyen yüklemeler (yalnızca bekleyenler listelenir).
+  const [photoFlags, setPhotoFlags] = useState<PhotoDuplicateFlag[]>([]);
   useEffect(() => {
     if (!isAdmin) return;
     let cancelled = false;
-    Promise.all([getReports(), getBannedUsers()]).then(([list, banned]) => {
+    Promise.all([getReports(), getBannedUsers(), getPhotoDuplicateFlags()]).then(([list, banned, flags]) => {
       if (cancelled) return;
       setReports(list);
       setBannedUsers(banned);
+      setPhotoFlags(flags);
       setReportsLoading(false);
     });
     return () => {
@@ -96,6 +107,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     };
   }, [isAdmin]);
   const pendingReportCount = reports.filter((r) => r.status === 'pending').length;
+  const handlePhotoFlagStatus = async (id: number, status: PhotoFlagStatus) => {
+    await updatePhotoFlagStatus(id, status);
+    setPhotoFlags((prev) => prev.filter((f) => f.id !== id));
+  };
+  const handleBanForPhotoFlag = async (userId: string, reason: string): Promise<BanResult> => {
+    const result = await adminBanUser(userId, reason);
+    if (result === 'ok') {
+      getBannedUsers().then(setBannedUsers);
+      showNotification('Kullanıcı banlandı; ilanları yayından kaldırıldı.');
+    }
+    return result;
+  };
   const handleReportStatus = async (id: string, status: ReportStatus) => {
     await updateReportStatus(id, status);
     setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
@@ -461,6 +484,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <span>Kullanıcı Bul</span>
         </button>
 
+        <button
+          type="button"
+          onClick={() => setActiveTab('photoFlags')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'photoFlags'
+              ? 'bg-stone-900 text-white shadow-sm'
+              : 'text-stone-600 hover:bg-stone-100'
+          }`}
+        >
+          <ImageOff className="w-4 h-4" />
+          <span>Şüpheli Fotoğraflar ({photoFlags.length})</span>
+        </button>
+
         {/* Admin yetkilendirme (yalnızca ana admin) */}
         {isSuperAdmin && (
         <button
@@ -476,7 +512,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <span>Admin Yetkilendirme Masası (Ana Admin)</span>
         </button>
         )}
+
+        {/* Admin işlem kaydı (yalnızca ana admin) */}
+        {isSuperAdmin && (
+        <button
+          type="button"
+          onClick={() => setActiveTab('auditLog')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'auditLog'
+              ? 'bg-amber-600 text-white shadow-sm'
+              : 'text-amber-800 bg-amber-50 hover:bg-amber-100'
+          }`}
+        >
+          <ScrollText className="w-4 h-4" />
+          <span>İşlem Kaydı (Ana Admin)</span>
+        </button>
+        )}
       </div>
+
+      {activeTab === 'auditLog' && isSuperAdmin && <AuditLogPanel />}
+
+      {activeTab === 'photoFlags' && (
+        <PhotoFlagsPanel
+          flags={photoFlags}
+          loading={reportsLoading}
+          bannedIds={bannedIds}
+          onStatus={handlePhotoFlagStatus}
+          onBan={handleBanForPhotoFlag}
+        />
+      )}
 
       {/* Banlı kullanıcılar: banı buradan kaldırılır (şikayeti silinmiş kullanıcılar dahil) */}
       {activeTab === 'banned' && (

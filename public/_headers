@@ -1,0 +1,16 @@
+# Güvenlik başlıkları (Netlify ve Cloudflare Pages bu dosyayı okur; başka bir barındırıcıda aynı başlıklar
+# o barındırıcının ayarına taşınmalıdır). Vite build sırasında dist/_headers olarak kopyalanır.
+#
+# CSP notları:
+#  - script-src 'self': uygulama satır içi script içermez (index.html'deki eski AI Studio script'i kaldırıldı).
+#  - img-src / media-src https: : ilan sahibi harici fotoğraf ve video adresi girebilir.
+#  - connect-src: Supabase (REST, Realtime, Storage, Edge Functions), Nominatim (adres arama), Cloudinary (isteğe bağlı).
+#  - style-src 'unsafe-inline': React/Leaflet satır içi style öznitelikleri kullanır.
+#  Supabase projesi değişirse connect-src içindeki adres güncellenmelidir.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://wyhmomvfdcpjnhhlywhu.supabase.co wss://wyhmomvfdcpjnhhlywhu.supabase.co https://nominatim.openstreetmap.org https://api.cloudinary.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()

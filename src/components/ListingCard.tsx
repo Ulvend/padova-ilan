@@ -7,6 +7,7 @@ import { getLocalizedListing } from '../utils/listingTranslator';
 import { useApp } from '../context/AppContext';
 import { formatGenderDistribution } from '../utils/genderDistribution';
 import { formatBathrooms, listingAreaM2 } from '../utils/format';
+import { EnergyClassBadge } from './EnergyClassBadge';
 
 interface ListingCardProps {
   listing: HousingListing;
@@ -184,6 +185,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <span className={chipCls}>
             {formatBathrooms(listing.bathrooms, currentLang)}
           </span>
+          {rawListing.energyClass && rawListing.energyClass !== 'pending' && (
+            <EnergyClassBadge value={rawListing.energyClass} pendingLabel={t.energyClassPending} compact />
+          )}
         </div>
 
         <div className="border-t border-stone-100 pt-3 mt-auto space-y-1.5 text-[13px] text-stone-600">
