@@ -315,6 +315,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                            notif.linkView === 'myListings' ? t.notifGoMyListings :
                            notif.linkView === 'profile' ? t.notifOpenProfile :
                            notif.linkView === 'admin' ? t.notifOpenAdmin :
+                           notif.linkView === 'listingDetail' ? t.notifOpenListing :
                            t.notifViewDetails}
                         </span>
                         <ExternalLink className="w-3.5 h-3.5" />

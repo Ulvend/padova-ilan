@@ -1,8 +1,9 @@
 import { useModalBehavior } from '../utils/useModalBehavior';
 import React from 'react';
 import { MAX_PRICE_UNLIMITED } from '../context/AppContext';
-import { X, RotateCcw, Video, Check, ArrowUpDown, Filter, GraduationCap, Calendar, Hourglass, Users } from 'lucide-react';
+import { X, RotateCcw, Video, Check, ArrowUpDown, Filter, GraduationCap, Calendar, Hourglass, Users, Radar } from 'lucide-react';
 import { StartDatePanel } from './StartDateFilter';
+import { MIN_RENT, PriceRangeSlider, formatRentBound } from './ui/PriceRangeSlider';
 import { FilterState, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 
@@ -17,6 +18,7 @@ interface MobileFilterDrawerProps {
   filters: FilterState;
   onFilterChange: (updates: Partial<FilterState>) => void;
   onResetFilters: () => void;
+  onAddToRadar: () => void;
   filteredCount: number;
   currentLang: Language;
 }
@@ -27,6 +29,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
   filters,
   onFilterChange,
   onResetFilters,
+  onAddToRadar,
   filteredCount,
   currentLang,
 }) => {
@@ -41,6 +44,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
     { months: 1, label: t.stayUpTo1 },
     { months: 3, label: t.stayUpTo3 },
     { months: 6, label: t.stayUpTo6 },
+    { months: 12, label: t.stayUpTo12 },
   ];
 
   const genderOptions: { value: FilterState['genderFilter']; label: string }[] = [
@@ -213,22 +217,22 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                 {t.budgetLabel}
               </label>
               <span className="font-bold text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-md text-xs border border-orange-200">
-                {t.maxBudgetPrefix} €{filters.maxPrice}{filters.maxPrice >= MAX_PRICE_UNLIMITED ? '+' : ''}
+                {formatRentBound(filters.minPrice ?? MIN_RENT)} – {formatRentBound(filters.maxPrice)}
               </span>
             </div>
-            <input 
-              type="range" 
-              min="200" 
-              max={MAX_PRICE_UNLIMITED} 
-              step="25" 
-              value={filters.maxPrice}
-              onChange={(e) => onFilterChange({ maxPrice: Number(e.target.value) })}
-              className="w-full h-2.5 accent-orange-600 bg-stone-200 rounded-lg cursor-pointer my-2" 
-            />
+            <div className="py-2">
+              <PriceRangeSlider
+                low={filters.minPrice ?? MIN_RENT}
+                high={filters.maxPrice}
+                onChange={(min, max) => onFilterChange({ minPrice: min > MIN_RENT ? min : undefined, maxPrice: max })}
+                lowLabel={t.rentMinLabel}
+                highLabel={t.rentMaxLabel}
+                idPrefix="drawer-rent"
+              />
+            </div>
             <div className="flex justify-between text-stone-400 font-medium text-xs">
-              <span>€200</span>
-              <span>€500</span>
-              <span>€900+</span>
+              <span>{t.rentMinLabel} · €{MIN_RENT}</span>
+              <span>{t.rentMaxLabel} · €{MAX_PRICE_UNLIMITED}+</span>
             </div>
           </div>
 
@@ -324,7 +328,16 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
         </div>
 
         {/* Sticky Bottom Thumb Action Bar */}
-        <div className="p-4 border-t border-stone-200 bg-white shrink-0 flex items-center gap-3">
+        <div className="p-4 border-t border-stone-200 bg-white shrink-0 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onAddToRadar}
+            title={t.radarAddChipTitle}
+            className="w-full min-h-[46px] border border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold text-sm rounded-xl active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Radar className="w-4 h-4" />
+            <span>{t.radarAddChip}</span>
+          </button>
           <button
             type="button"
             onClick={onResetFilters}

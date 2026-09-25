@@ -5,9 +5,11 @@ import { useApp, DEFAULT_FILTERS, MAX_PRICE_UNLIMITED } from '../context/AppCont
 import { RecentlyAddedSection } from '../components/RecentlyAddedSection';
 import { ListingCard } from '../components/ListingCard';
 import { Pagination } from '../components/Pagination';
-import { MaxRentField } from '../components/MaxRentField';
+import { RentRangeField } from '../components/RentRangeField';
+import { MIN_RENT } from '../components/ui/PriceRangeSlider';
 import { StartDateField, hasStartDateFilter } from '../components/StartDateFilter';
 import { HOME_TEXT, fillText } from '../utils/homeText';
+import { filtersToCriteria } from '../utils/radar';
 import {
   Map as MapIcon,
   LayoutGrid,
@@ -21,6 +23,7 @@ import {
   Scale,
   ChevronDown,
   Hourglass,
+  Radar,
 } from 'lucide-react';
 
 // Tek sayfada gösterilen ilan sayısı.
@@ -87,12 +90,18 @@ export const HomePage: React.FC = () => {
 
   const update = (updates: Partial<typeof filters>) => setFilters((prev) => ({ ...prev, ...updates }));
 
+  // Mevcut filtreler İlan Radarı sayfasına taslak olarak taşınır.
+  const addToRadar = () => {
+    navigate('/radar', { state: { draft: filtersToCriteria(filters) } });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const activeFilterCount = [
     filters.categoryTab !== 'all',
     Boolean(filters.searchQuery),
     filters.contractType !== 'all',
     filters.district !== 'all',
-    filters.maxPrice < MAX_PRICE_UNLIMITED,
+    filters.maxPrice < MAX_PRICE_UNLIMITED || Boolean(filters.minPrice),
     filters.onlyVideoTour,
     filters.onlyStudentVerified,
     filters.roomType !== 'all',
@@ -200,11 +209,14 @@ export const HomePage: React.FC = () => {
         />
 
         <div className="w-px my-5 bg-stone-200" />
-        <MaxRentField
-          label={h.maxRentField}
-          value={filters.maxPrice}
-          onChange={(maxPrice) => update({ maxPrice })}
+        <RentRangeField
+          label={t.rentRangeLabel}
+          min={filters.minPrice ?? MIN_RENT}
+          max={filters.maxPrice}
+          onChange={(min, max) => update({ minPrice: min > MIN_RENT ? min : undefined, maxPrice: max })}
           labelClassName={fieldLabel}
+          minLabel={t.rentMinLabel}
+          maxLabel={t.rentMaxLabel}
         />
 
         <button
@@ -252,6 +264,15 @@ export const HomePage: React.FC = () => {
       {/* Filtre çipleri */}
       <div className="-mt-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1 flex-1">
+          <button
+            type="button"
+            onClick={addToRadar}
+            title={t.radarAddChipTitle}
+            className="min-h-[44px] px-4 rounded-full border border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-800 text-sm font-semibold shrink-0 flex items-center gap-2 transition cursor-pointer active:scale-95"
+          >
+            <Radar className="w-4 h-4" />
+            {t.radarAddChip}
+          </button>
           <button type="button" onClick={() => update({ onlyVideoTour: !filters.onlyVideoTour })} className={chip(filters.onlyVideoTour)} aria-pressed={filters.onlyVideoTour}>
             <Video className="w-4 h-4" />
             {t.tabVideo}
@@ -372,14 +393,25 @@ export const HomePage: React.FC = () => {
               <p className="text-base font-bold text-stone-800">{t.noListingsFoundTitle}</p>
               <p className="text-xs text-stone-500 max-w-sm mx-auto">{t.noListingsFoundSubtitle}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setFilters(DEFAULT_FILTERS)}
-              className="inline-flex items-center gap-2 px-4 min-h-[44px] bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold rounded-xl transition cursor-pointer"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>{t.resetAllFilters}</span>
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFilters(DEFAULT_FILTERS)}
+                className="inline-flex items-center gap-2 px-4 min-h-[44px] bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold rounded-xl transition cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>{t.resetAllFilters}</span>
+              </button>
+              <button
+                type="button"
+                onClick={addToRadar}
+                className="inline-flex items-center gap-2 px-4 min-h-[44px] bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl transition cursor-pointer"
+              >
+                <Radar className="w-4 h-4" />
+                <span>{t.radarEmptyCtaBtn}</span>
+              </button>
+            </div>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto">{t.radarEmptyCta}</p>
           </div>
         ) : (
           <div className="grid gap-x-5 gap-y-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

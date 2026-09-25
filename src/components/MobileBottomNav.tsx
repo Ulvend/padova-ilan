@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Map, Plus, LogIn, UserPlus, Bell } from 'lucide-react';
+import { Home, Map, Plus, LogIn, UserPlus, Bell, Radar } from 'lucide-react';
 import { ActiveView, Language, UserProfile } from '../types';
 import { CURRENT_USER } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
@@ -11,6 +11,7 @@ interface MobileBottomNavProps {
   onToggleMapSection?: () => void;
   isMapOpen?: boolean;
   unreadNotificationsCount?: number;
+  activeRadarCount?: number;
   currentLang?: Language;
   currentUser?: UserProfile;
   isLoggedIn?: boolean;
@@ -24,6 +25,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onToggleMapSection,
   isMapOpen,
   unreadNotificationsCount = 0,
+  activeRadarCount = 0,
   currentLang = 'it',
   currentUser = CURRENT_USER,
   isLoggedIn = false,
@@ -90,6 +92,26 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <span className="text-[8px] font-bold uppercase tracking-tight -mt-0.5">{t.navPost}</span>
           </button>
         </div>
+
+        {/* İlan Radarı: misafirlere de görünür, özelliğin varlığı bilinsin */}
+        <button
+          type="button"
+          onClick={() => onNavigateView('radar')}
+          className={`flex flex-col items-center justify-center min-w-[50px] min-h-[48px] py-1 px-1 rounded-xl transition active:scale-95 cursor-pointer ${
+            currentView === 'radar' ? 'text-orange-600 font-bold' : 'text-stone-500 hover:text-stone-900 font-medium'
+          }`}
+          title={t.radarNavTitle}
+        >
+          <div className="relative">
+            <Radar className={`w-5 h-5 ${currentView === 'radar' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+            {isLoggedIn && activeRadarCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-stone-900 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {activeRadarCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] tracking-tight mt-0.5">{t.radarNavShort}</span>
+        </button>
 
         {/* AUTHENTICATED: Bildirimler & Profil */}
         {isLoggedIn ? (

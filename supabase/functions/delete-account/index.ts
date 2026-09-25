@@ -4,7 +4,7 @@
 //   (JWT doğrulaması aşağıda fonksiyon içinde yapılır; service role anahtarı yalnızca burada, sunucuda kullanılır.)
 //
 // Silinenler:
-//   * profiles, profile_private, notifications, reports (kullanıcının yaptığı), admins  -> auth.users silinince ON DELETE CASCADE
+//   * profiles, profile_private, notifications, listing_radars, reports (kullanıcının yaptığı), admins  -> auth.users silinince ON DELETE CASCADE
 //   * messages (gönderilen ve alınan) SİLİNMEZ: sender_id/recipient_id boşaltılır (ON DELETE SET NULL, 0018) ve anonymized_at damgalanır (0023);
 //     karşı tarafın sohbetinde 90 gün saklanıp purge_orphaned_messages() (pg_cron, günlük) ile silinir. Hakkında yapılmış kullanıcı şikayetleri
 //     (reports.target_user_id, FK yok) şikayet tarihinden 90 gün sonra aynı işlevle silinir. Dolandırıcılığı önleme amaçlı meşru menfaat; bkz.
@@ -123,7 +123,7 @@ Deno.serve(async (req: Request) => {
     });
     if (!listingsRes.ok) throw new Error(`listings delete failed: ${listingsRes.status}`);
 
-    // 6. Hesabın kendisi: profiles, profile_private, notifications, reports (yaptığı), admins CASCADE ile silinir;
+    // 6. Hesabın kendisi: profiles, profile_private, notifications, listing_radars, reports (yaptığı), admins CASCADE ile silinir;
     //    messages'ta hesap referansları boşaltılır ve saklama süresi başlar (yukarıdaki not).
     const userRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${uid}`, {
       method: 'DELETE',

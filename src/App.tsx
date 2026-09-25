@@ -7,6 +7,7 @@ import { MobileFilterDrawer } from './components/MobileFilterDrawer';
 import { HomePage } from './pages/HomePage';
 import { Footer } from './components/Footer';
 import { ActiveView } from './types';
+import { filtersToCriteria } from './utils/radar';
 
 // Ana sayfa dışındaki sayfalar ve modallar ilk açılışta indirilmez; ilk kullanıldıklarında ayrı parça olarak yüklenir
 // (ör. yönetim paneli, ilan sihirbazı ve harita kitaplığı yalnızca ihtiyacı olana gider).
@@ -17,6 +18,7 @@ const MessagesPage = lazy(() => import('./pages/MessagesPage').then((m) => ({ de
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
+const RadarPage = lazy(() => import('./pages/RadarPage').then((m) => ({ default: m.RadarPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
 const VideoTourModal = lazy(() => import('./components/VideoTourModal').then((m) => ({ default: m.VideoTourModal })));
 const ListingDetailModal = lazy(() => import('./components/ListingDetailModal').then((m) => ({ default: m.ListingDetailModal })));
@@ -48,6 +50,7 @@ const VIEW_TO_PATH: Record<ActiveView, string> = {
   profile: '/profil',
   admin: '/admin',
   notifications: '/bildirimler',
+  radar: '/radar',
 };
 
 const getActiveViewFromPath = (pathname: string): ActiveView => {
@@ -57,6 +60,7 @@ const getActiveViewFromPath = (pathname: string): ActiveView => {
   if (pathname.startsWith('/profil')) return 'profile';
   if (pathname.startsWith('/admin')) return 'admin';
   if (pathname.startsWith('/bildirimler')) return 'notifications';
+  if (pathname.startsWith('/radar')) return 'radar';
   return 'home';
 };
 
@@ -75,6 +79,7 @@ const AppLayout: React.FC = () => {
     myListings,
     unreadMessagesCount,
     unreadNotificationsCount,
+    activeRadarCount,
     currentUser,
     setIsProfileSettingsOpen,
     handleOpenAuthModal,
@@ -178,6 +183,7 @@ const AppLayout: React.FC = () => {
         totalListingsCount={filteredListings.length}
         unreadMessagesCount={unreadMessagesCount}
         unreadNotificationsCount={unreadNotificationsCount}
+        activeRadarCount={activeRadarCount}
         myListingsCount={myListings.length}
         currentUser={currentUser}
         isAdmin={isAdmin}
@@ -197,6 +203,7 @@ const AppLayout: React.FC = () => {
           <Route path="/profil" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/bildirimler" element={<NotificationsPage />} />
+          <Route path="/radar" element={<RadarPage />} />
           <Route path="/gizlilik" element={<PrivacyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -213,6 +220,11 @@ const AppLayout: React.FC = () => {
         filters={filters}
         onFilterChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
         onResetFilters={() => setFilters(DEFAULT_FILTERS)}
+        onAddToRadar={() => {
+          setIsMobileFilterOpen(false);
+          navigate('/radar', { state: { draft: filtersToCriteria(filters) } });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         currentLang={currentLang}
         filteredCount={filteredListings.length}
       />
@@ -225,6 +237,7 @@ const AppLayout: React.FC = () => {
         onToggleMapSection={() => setIsMapSectionOpen((prev) => !prev)}
         isMapOpen={isMapSectionOpen}
         unreadNotificationsCount={unreadNotificationsCount}
+        activeRadarCount={activeRadarCount}
         currentLang={currentLang}
         currentUser={currentUser}
         isLoggedIn={isLoggedIn}

@@ -29,6 +29,8 @@ export const NotificationsPage: React.FC = () => {
       navigate('/profil');
     } else if (view === 'admin') {
       navigate('/admin');
+    } else if (view === 'listingDetail' && linkId) {
+      navigate(`/ilan/${linkId}`);
     } else {
       navigate('/');
     }

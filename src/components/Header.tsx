@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Bell,
   FileText,
+  Radar,
 } from 'lucide-react';
 import { ActiveView, FilterState, Language, UserProfile } from '../types';
 import { CURRENT_USER } from '../data/mockData';
@@ -27,6 +28,7 @@ interface HeaderProps {
   totalListingsCount?: number;
   unreadMessagesCount: number;
   unreadNotificationsCount?: number;
+  activeRadarCount?: number;
   myListingsCount?: number;
   currentUser?: UserProfile;
   isAdmin?: boolean;
@@ -43,6 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCreateModal,
   unreadMessagesCount,
   unreadNotificationsCount = 0,
+  activeRadarCount = 0,
   myListingsCount = 0,
   currentUser = CURRENT_USER,
   isAdmin = false,
@@ -100,6 +103,13 @@ export const Header: React.FC<HeaderProps> = ({
           <nav id="navUserBadge" className="hidden sm:flex items-center gap-0.5 xl:gap-1 min-w-0 overflow-hidden" aria-label={h.mainMenu}>
             <button id="btn-nav-home" type="button" onClick={() => onNavigateView('home')} className={navLink(currentView === 'home')}>
               {h.navExplore}
+            </button>
+            <button id="btn-nav-radar" type="button" onClick={() => onNavigateView('radar')} className={navLink(currentView === 'radar')} title={t.radarNavTitle} aria-label={t.radarNav}>
+              <Radar className="w-4 h-4" />
+              <span className="hidden lg:inline">{t.radarNav}</span>
+              {isLoggedIn && activeRadarCount > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center">{activeRadarCount}</span>
+              )}
             </button>
             {isLoggedIn && (
               <>

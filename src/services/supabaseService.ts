@@ -1,9 +1,10 @@
 import { supabase, handleDbError, OperationType } from '../lib/supabase';
-import { EnergyClass, HousingListing, UserProfile, FirestoreMessage, UserNotification, PosterInfo, Flatmate, VideoAngle } from '../types';
+import { EnergyClass, HousingListing, UserProfile, FirestoreMessage, UserNotification, PosterInfo, Flatmate, VideoAngle, ListingRadar, Language } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { defaultUsername } from '../utils/username';
 import { setListingConfirmationDays } from '../config';
 import { deleteListingPhotos } from './storageService';
+import type { RadarInput } from '../utils/radar';
 
 /**
  * 1. User Profile Management
@@ -1305,4 +1306,106 @@ export async function deleteMyAccount(): Promise<'ok' | 'superadmin'> {
   }
   if (code === 'superadmin_cannot_delete') return 'superadmin';
   throw error;
+}
+
+/**
+ * İlan Radarı: kayıtlı arama kriterleri (listing_radars). Uyan yeni ilan yayınlandığında bildirimi veritabanı
+ * tetikleyicisi yazar (0026_listing_radar.sql); istemci yalnızca radarları yönetir.
+ */
+interface RadarRow {
+  id: string;
+  name: string;
+  district: string | null;
+  room_type: string | null;
+  contract_type: string | null;
+  min_price: number | null;
+  max_price: number | null;
+  start_from: string | null;
+  start_to: string | null;
+  max_stay_months: number | null;
+  gender: 'female' | 'male' | null;
+  only_video_tour: boolean;
+  only_student_verified: boolean;
+  roommates_only: boolean;
+  active: boolean;
+  created_at: string;
+  last_notified_at: string | null;
+}
+
+const radarFromRow = (row: RadarRow): ListingRadar => ({
+  id: row.id,
+  name: row.name,
+  district: row.district ?? undefined,
+  roomType: row.room_type ?? undefined,
+  contractType: row.contract_type ?? undefined,
+  minPrice: row.min_price ?? undefined,
+  maxPrice: row.max_price ?? undefined,
+  startFrom: row.start_from ?? undefined,
+  startTo: row.start_to ?? undefined,
+  maxStayMonths: row.max_stay_months ?? undefined,
+  gender: row.gender ?? undefined,
+  onlyVideoTour: row.only_video_tour,
+  onlyStudentVerified: row.only_student_verified,
+  roommatesOnly: row.roommates_only,
+  active: row.active,
+  createdAt: row.created_at,
+  lastNotifiedAt: row.last_notified_at ?? undefined,
+});
+
+const radarToRow = (input: Partial<RadarInput> & { active?: boolean }, lang: Language) => ({
+  ...(input.name !== undefined ? { name: input.name.trim().slice(0, 60) } : {}),
+  ...('district' in input ? { district: input.district ?? null } : {}),
+  ...('roomType' in input ? { room_type: input.roomType ?? null } : {}),
+  ...('contractType' in input ? { contract_type: input.contractType ?? null } : {}),
+  ...('minPrice' in input ? { min_price: input.minPrice ?? null } : {}),
+  ...('maxPrice' in input ? { max_price: input.maxPrice ?? null } : {}),
+  ...('startFrom' in input ? { start_from: input.startFrom ?? null } : {}),
+  ...('startTo' in input ? { start_to: input.startTo ?? null } : {}),
+  ...('maxStayMonths' in input ? { max_stay_months: input.maxStayMonths ?? null } : {}),
+  ...('gender' in input ? { gender: input.gender ?? null } : {}),
+  ...(input.onlyVideoTour !== undefined ? { only_video_tour: input.onlyVideoTour } : {}),
+  ...(input.onlyStudentVerified !== undefined ? { only_student_verified: input.onlyStudentVerified } : {}),
+  ...(input.roommatesOnly !== undefined ? { roommates_only: input.roommatesOnly } : {}),
+  ...(input.active !== undefined ? { active: input.active } : {}),
+  lang,
+});
+
+export async function listRadars(userId: string): Promise<ListingRadar[]> {
+  const { data, error } = await supabase
+    .from('listing_radars')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data as RadarRow[]).map(radarFromRow);
+}
+
+export async function createRadar(userId: string, input: RadarInput, lang: Language): Promise<ListingRadar> {
+  const { data, error } = await supabase
+    .from('listing_radars')
+    .insert({ ...radarToRow(input, lang), user_id: userId })
+    .select('*')
+    .single<RadarRow>();
+  if (error) throw error;
+  return radarFromRow(data);
+}
+
+export async function updateRadar(
+  id: string,
+  updates: Partial<RadarInput> & { active?: boolean },
+  lang: Language
+): Promise<ListingRadar> {
+  const { data, error } = await supabase
+    .from('listing_radars')
+    .update(radarToRow(updates, lang))
+    .eq('id', id)
+    .select('*')
+    .single<RadarRow>();
+  if (error) throw error;
+  return radarFromRow(data);
+}
+
+export async function deleteRadar(id: string): Promise<void> {
+  const { error } = await supabase.from('listing_radars').delete().eq('id', id);
+  if (error) throw error;
 }

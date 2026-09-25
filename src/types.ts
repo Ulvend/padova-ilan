@@ -133,6 +133,8 @@ export interface FilterState {
   contractType: string;
   district: string;
   maxPrice: number;
+  // Taban fiyat; boşsa alt sınır yok.
+  minPrice?: number;
   onlyVideoTour: boolean;
   onlyStudentVerified: boolean;
   roomType: string;
@@ -146,7 +148,31 @@ export interface FilterState {
   genderFilter?: 'female' | 'male';
 }
 
-export type ActiveView = 'home' | 'myListings' | 'messages' | 'profile' | 'listingDetail' | 'admin' | 'notifications';
+export type ActiveView = 'home' | 'myListings' | 'messages' | 'profile' | 'listingDetail' | 'admin' | 'notifications' | 'radar';
+
+// İlan Radarı: kaydedilen arama kriterleri. Alanı boş olan kriter "farketmez" demektir.
+export interface RadarCriteria {
+  district?: string;
+  roomType?: string;
+  contractType?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  startFrom?: string;
+  startTo?: string;
+  maxStayMonths?: number;
+  gender?: 'female' | 'male';
+  onlyVideoTour: boolean;
+  onlyStudentVerified: boolean;
+  roommatesOnly: boolean;
+}
+
+export interface ListingRadar extends RadarCriteria {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+  lastNotifiedAt?: string;
+}
 
 export type NotificationType = 'message' | 'listing' | 'security' | 'tenant' | 'system' | 'admin';
 

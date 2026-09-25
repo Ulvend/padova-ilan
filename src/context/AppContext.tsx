@@ -7,7 +7,8 @@ import {
   DirectMessage,
   FirestoreMessage,
   UserProfile,
-  UserNotification
+  UserNotification,
+  ListingRadar,
 } from '../types';
 import {
   DEFAULT_GUEST_USER,
@@ -21,7 +22,8 @@ import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/us
 import { ARCHIVED_CONFIRMATION_LABEL, EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
 import { listingAreaM2 } from '../utils/format';
 import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
-import { availableFromISO, stayMonths } from '../utils/contractPeriod';
+import { MAX_PRICE_UNLIMITED, matchesListingFilters } from '../utils/listingFilters';
+import type { RadarInput } from '../utils/radar';
 import { toISO } from '../components/ui/DateRangePicker';
 import {
   supabase,
@@ -37,6 +39,10 @@ import {
   getPublicUserProfile,
   syncUserProfile,
   updateUserFavorites,
+  listRadars,
+  createRadar,
+  updateRadar,
+  deleteRadar,
   saveListingToFirestore,
   updateUsername,
   updateListingInFirestore,
@@ -67,7 +73,7 @@ const normalizeMetadataUsername = (value: unknown): string | undefined => {
   return isValidUsername(username) ? username : undefined;
 };
 
-export const MAX_PRICE_UNLIMITED = 900;
+export { MAX_PRICE_UNLIMITED };
 
 // Arama karşılaştırması: büyük/küçük harf, aksan ve noktasız ı farkı yok sayılır.
 const normalizeSearch = (value: string): string =>
@@ -211,6 +217,14 @@ interface AppContextType {
   handleMarkNotificationRead: (id: string) => void;
   handleClearAllNotifications: () => void;
 
+  // İlan Radarı: kayıtlı aramalar; uyan yeni ilan yayınlanınca sunucu bildirim yazar.
+  radars: ListingRadar[];
+  activeRadarCount: number;
+  // Başarılıysa true; hata durumunda kullanıcıya toast gösterilir.
+  handleSaveRadar: (input: RadarInput, id?: string) => Promise<boolean>;
+  handleToggleRadar: (id: string, active: boolean) => void;
+  handleDeleteRadar: (id: string) => void;
+
   // Kullanıcıya gösterilen kısa hata/başarı mesajları
   toast: ToastMessage | null;
   showToast: (text: string, type?: ToastMessage['type']) => void;
@@ -342,6 +356,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 8. User Notifications
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
+
+  // 8b. İlan Radarları
+  const [radars, setRadars] = useState<ListingRadar[]>([]);
 
   // 9. Toast
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -533,6 +550,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     return subscribeToNotifications(authUser.uid, setNotifications);
+  }, [authUser?.uid]);
+
+  useEffect(() => {
+    if (!authUser) {
+      setRadars([]);
+      return;
+    }
+    let cancelled = false;
+    listRadars(authUser.uid)
+      .then((items) => {
+        if (!cancelled) setRadars(items);
+      })
+      .catch((err) => console.warn('Radars load error:', err));
+    return () => {
+      cancelled = true;
+    };
   }, [authUser?.uid]);
 
   // Banlanan kullanıcının elindeki oturum anahtarı süresi dolana kadar geçerli kalır; açılışta kontrol edilip
@@ -1059,6 +1092,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // ---- İlan Radarı ----
+
+  const handleSaveRadar = async (input: RadarInput, id?: string): Promise<boolean> => {
+    if (!authUser) {
+      handleOpenAuthModal('login');
+      return false;
+    }
+    if (!authUser.emailVerified) {
+      showToast(t.radarNeedEmail);
+      return false;
+    }
+    try {
+      if (id) {
+        const saved = await updateRadar(id, input, currentLang);
+        setRadars((prev) => prev.map((r) => (r.id === id ? saved : r)));
+      } else {
+        const saved = await createRadar(authUser.uid, input, currentLang);
+        setRadars((prev) => [saved, ...prev]);
+      }
+      showToast(t.radarSavedToast, 'success');
+      return true;
+    } catch (err) {
+      console.warn('Radar save error:', err);
+      showToast(/radar_limit_reached/.test(String((err as Error)?.message)) ? t.radarLimitReached : t.radarSaveFail);
+      return false;
+    }
+  };
+
+  const handleToggleRadar = (id: string, active: boolean) => {
+    const previous = radars;
+    setRadars((prev) => prev.map((r) => (r.id === id ? { ...r, active } : r)));
+    updateRadar(id, { active }, currentLang).catch((err) => {
+      console.warn('Radar toggle error:', err);
+      setRadars(previous);
+      showToast(t.radarSaveFail);
+    });
+  };
+
+  const handleDeleteRadar = (id: string) => {
+    const previous = radars;
+    setRadars((prev) => prev.filter((r) => r.id !== id));
+    deleteRadar(id).catch((err) => {
+      console.warn('Radar delete error:', err);
+      setRadars(previous);
+      showToast(t.radarSaveFail);
+    });
+  };
+
+  const activeRadarCount = useMemo(() => radars.filter((r) => r.active).length, [radars]);
+
   // ---- Türetilmiş listeler ----
 
   // Teyit süresi dolan ilanlar sunucu arşivlemesini beklemeden burada da arşivde sayılır.
@@ -1111,24 +1194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           normalizeSearch(l.streetAddress || '').includes(query);
         if (!matches) return false;
       }
-      if (filters.categoryTab === 'roommates' && !((l.currentFlatmates?.length || 0) > 0 || (l.totalHousemates || 0) > 1)) return false;
-      if (filters.district !== 'all' && l.district !== filters.district) return false;
-      if (filters.contractType !== 'all' && l.contractType !== filters.contractType) return false;
-      if (filters.roomType !== 'all' && l.roomType !== filters.roomType) return false;
-      if (filters.maxPrice < MAX_PRICE_UNLIMITED && l.price > filters.maxPrice) return false;
-      if (filters.onlyVideoTour && !l.hasVideoTour) return false;
-      if (filters.onlyStudentVerified && !l.isStudentCardVerified) return false;
-
-      const availableFrom = availableFromISO(l, todayIso);
-      if (filters.contractStartFrom && availableFrom < filters.contractStartFrom) return false;
-      if (filters.contractStartTo && availableFrom > filters.contractStartTo) return false;
-      if (filters.genderFilter === 'female' && l.genderPreference === 'male_only') return false;
-      if (filters.genderFilter === 'male' && l.genderPreference === 'female_only') return false;
-      if (filters.maxStayMonths) {
-        const months = stayMonths(l, todayIso);
-        if (months === null || months > filters.maxStayMonths) return false;
-      }
-      return true;
+      return matchesListingFilters(l, filters, todayIso);
     });
 
     switch (filters.sortBy) {
@@ -1218,6 +1284,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleDeleteNotification,
     handleMarkNotificationRead,
     handleClearAllNotifications,
+    radars,
+    activeRadarCount,
+    handleSaveRadar,
+    handleToggleRadar,
+    handleDeleteRadar,
     toast,
     showToast,
     dismissToast,
