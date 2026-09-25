@@ -136,8 +136,8 @@ export const isUniPdVerifiedUser = (user: SupabaseUser | null | undefined): bool
 
 // Supabase Auth hatalarını kullanıcıya gösterilecek Türkçe mesajlara çevirir.
 // Firebase'in aksine Supabase hataları kod yerine mesaj metniyle ayırt edilir.
-export const describeAuthError = (error: unknown, lang: Language = 'tr'): string => {
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+export const describeAuthError = (error: unknown, lang: Language = 'it'): string => {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const withCode = error as { code?: string; message?: string; status?: number };
   if (withCode?.code === 'auth/wrong-password') return t.errWrongPassword;
   if (withCode?.code === 'app/not-signed-in') return t.errNotSignedIn;

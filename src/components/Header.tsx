@@ -50,8 +50,8 @@ export const Header: React.FC<HeaderProps> = ({
   isLoggedIn = false,
   onLogout,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
-  const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
+  const h = HOME_TEXT[currentLang] || HOME_TEXT.it;
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -140,9 +140,9 @@ export const Header: React.FC<HeaderProps> = ({
               className="bg-transparent text-sm font-semibold text-stone-800 outline-none cursor-pointer"
               aria-label={t.langSwitcherLabel}
             >
+              <option value="it">IT</option>
               <option value="tr">TR</option>
               <option value="en">EN</option>
-              <option value="it">IT</option>
               <option value="de">DE</option>
               <option value="ru">RU</option>
               <option value="hi">HI</option>

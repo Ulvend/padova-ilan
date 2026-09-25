@@ -35,9 +35,9 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
   onClearAll,
   onNavigateView,
   onBackToHome,
-  currentLang = 'tr',
+  currentLang = 'it',
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const [filterType, setFilterType] = useState<'all' | NotificationType>('all');
   // Tümünü silmek geri alınamaz: ilk tıklama onay ister, 4 sn içinde ikinci tıklama siler.
   const [confirmClear, setConfirmClear] = useState(false);

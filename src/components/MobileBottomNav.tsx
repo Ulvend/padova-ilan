@@ -24,12 +24,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onToggleMapSection,
   isMapOpen,
   unreadNotificationsCount = 0,
-  currentLang = 'tr',
+  currentLang = 'it',
   currentUser = CURRENT_USER,
   isLoggedIn = false,
   onOpenAuthModal,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
 
   return (
     <nav 

@@ -285,7 +285,7 @@ export const calculateDistanceMeters = (
 export const calculateNearestFaculty = (
   lat: number,
   lng: number,
-  lang: string = 'tr'
+  lang: string = 'it'
 ): {
   landmarkName: string;
   distanceMeters: number;

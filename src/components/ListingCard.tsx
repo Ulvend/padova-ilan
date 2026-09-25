@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import { formatGenderDistribution } from '../utils/genderDistribution';
 import { formatBathrooms, listingAreaM2 } from '../utils/format';
 import { EnergyClassBadge } from './EnergyClassBadge';
+import { energyStatusLabels, isRatedEnergyClass } from '../utils/energy';
 
 interface ListingCardProps {
   listing: HousingListing;
@@ -34,10 +35,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   onOpenPreviewModal,
   onOpenVideoModal,
   onOpenVideoTour,
-  currentLang = 'tr',
+  currentLang = 'it',
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
-  const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
+  const h = HOME_TEXT[currentLang] || HOME_TEXT.it;
   const { getPriceInsight } = useApp();
   const insight = getPriceInsight(rawListing);
   const listing = getLocalizedListing(rawListing, currentLang, insight);
@@ -148,7 +149,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({
               <span className="text-2xl font-extrabold tracking-tight text-stone-900">€{listing.price}</span>
               <span className="text-[13px] text-stone-500">{t.perMonth}</span>
             </div>
-            <span className="text-xs text-stone-500">{listing.expenses}</span>
+            <span className="text-xs text-stone-500">
+              {listing.expenses}
+              {listing.condoFees ? `${listing.expenses ? ' · ' : ''}${t.condoFeesShort} €${listing.condoFees}` : ''}
+            </span>
           </div>
 
           {insight.status !== 'unknown' && (
@@ -185,8 +189,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <span className={chipCls}>
             {formatBathrooms(listing.bathrooms, currentLang)}
           </span>
-          {rawListing.energyClass && rawListing.energyClass !== 'pending' && (
-            <EnergyClassBadge value={rawListing.energyClass} pendingLabel={t.energyClassPending} compact />
+          {isRatedEnergyClass(rawListing.energyClass) && (
+            <EnergyClassBadge value={rawListing.energyClass} statusLabels={energyStatusLabels(t)} compact />
           )}
         </div>
 

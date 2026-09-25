@@ -795,7 +795,7 @@ const StepReview: React.FC<{
     {
       step: 1,
       label: w.step2,
-      value: `€${listing.price}${listing.expenses ? ` · ${listing.expenses}` : ''} · ${
+      value: `€${listing.price}${listing.expenses ? ` · ${listing.expenses}` : ''}${listing.condoFees ? ` · ${TRANSLATIONS[lang].condoFeesLabel}: €${listing.condoFees}` : ''}${listing.deposit ? ` · ${TRANSLATIONS[lang].depositLabel}: €${listing.deposit}` : ''} · ${
         form.startDate ? formatDate(form.startDate, lang) : '—'
       } → ${form.endDate ? formatDate(form.endDate, lang) : '—'}`,
     },

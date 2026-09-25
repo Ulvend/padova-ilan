@@ -31,10 +31,10 @@ interface VideoTourModalProps {
 const VideoTourModalContent: React.FC<Omit<VideoTourModalProps, 'listing'> & { listing: HousingListing }> = ({
   listing: rawListing,
   onClose,
-  currentLang = 'tr',
+  currentLang = 'it',
 }) => {
 
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const listing = getLocalizedListing(rawListing, currentLang);
 
   useModalBehavior(true, onClose);

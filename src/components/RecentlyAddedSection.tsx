@@ -22,7 +22,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
   onOpenPreviewModal,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const h = HOME_TEXT[(currentLang as Language) || 'tr'] || HOME_TEXT.tr;
+  const h = HOME_TEXT[(currentLang as Language) || 'it'] || HOME_TEXT.it;
 
   // Son yüklenen ilanlara sadece son eklenen 8 ilan konulabilsin (strictly max 8 newest listings)
   const createdMs = (l: HousingListing) => {
@@ -158,7 +158,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
               </h3>
               <p className="text-xs text-stone-600 truncate">{listing.streetAddress || listing.district.split('/')[0].trim()}</p>
               <p className="text-xs text-stone-500 truncate">
-                {listing.roomType} · {listingAreaM2(listing)} m² · {formatBathrooms(listing.bathrooms, (currentLang as Language) || 'tr')}
+                {listing.roomType} · {listingAreaM2(listing)} m² · {formatBathrooms(listing.bathrooms, (currentLang as Language) || 'it')}
               </p>
             </div>
           </article>

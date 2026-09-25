@@ -18,7 +18,7 @@ import { LANG_LOCALE } from '../utils/locale';
 import { formatDeviceTime } from '../utils/deviceTime';
 import { buildPriceIndex, type PriceInsight, type PriceTarget } from '../utils/districtPricing';
 import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/username';
-import { EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
+import { ARCHIVED_CONFIRMATION_LABEL, EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
 import { listingAreaM2 } from '../utils/format';
 import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
 import { availableFromISO, stayMonths } from '../utils/contractPeriod';
@@ -259,10 +259,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 1. Language State
   const [currentLang, setCurrentLangState] = useState<Language>(() => {
     const saved = safeStorageGet('padova_housing_lang');
-    if (saved && ['tr', 'en', 'it', 'de', 'ru', 'hi'].includes(saved)) {
+    if (saved && ['it', 'tr', 'en', 'de', 'ru', 'hi'].includes(saved)) {
       return saved as Language;
     }
-    return 'tr';
+    return 'it';
   });
   // Dil değişimi, seçilen dilin sözlüğü indirildikten sonra uygulanır (yüklenene kadar mevcut dil görünür kalır).
   const setCurrentLang = useCallback((lang: Language) => {
@@ -271,7 +271,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .finally(() => setCurrentLangState(lang));
   }, []);
 
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
 
   // 2. Auth & User Profile State (tek doğruluk kaynağı Firebase Auth'tur)
   const [authUser, setAuthUser] = useState<AuthSnapshot | null>(null);
@@ -969,7 +969,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rentedPrice: details?.rentedPrice || target.price,
       archiveReason: details?.note || 'Kiracı bulundu',
       tenantType: details?.tenantType || 'UniPD Öğrencisi',
-      confirmationTimeLeft: TRANSLATIONS.tr.confirmedArchived,
+      confirmationTimeLeft: ARCHIVED_CONFIRMATION_LABEL,
     })
       .then(() =>
         saveNotificationToFirestore({

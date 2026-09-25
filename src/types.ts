@@ -17,7 +17,7 @@ export type DistrictArea =
   | 'Guizza';
 
 // APE enerji sınıfı; 'pending': sertifika yok / hazırlanıyor.
-export type EnergyClass = 'A4' | 'A3' | 'A2' | 'A1' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'pending';
+export type EnergyClass = 'A4' | 'A3' | 'A2' | 'A1' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'pending' | 'exempt' | 'unclassifiable';
 
 export type RoomType = 'Singola' | 'Doppia' | 'Monolocale' | 'Bilocale';
 
@@ -59,6 +59,10 @@ export interface HousingListing {
   distanceToFaculty: string;
   price: number;
   expenses: string;
+  // Depozito (deposito cauzionale), euro; belirtilmediyse tanımsız.
+  deposit?: number;
+  // Aylık kondominyum giderleri (spese condominiali), euro; belirtilmediyse tanımsız.
+  condoFees?: number;
   fairPriceStatus: 'lower' | 'average' | 'higher';
   fairPriceText: string;
   roomType: RoomType;
@@ -100,6 +104,8 @@ export interface HousingListing {
   bathrooms: number;
   // Ev bilgileri: enerji sınıfı (yasal zorunluluk), kat (0 = zemin, -1 = bodrum), asansör ve kat planı görseli.
   energyClass?: EnergyClass;
+  // Toplam enerji performans endeksi (EPgl / IPE), kWh/m² yıl, ondalıksız. Yalnızca A4–G sınıflı konutlarda.
+  energyPerformance?: number;
   floor?: number;
   hasElevator?: boolean;
   floorPlanUrl?: string;

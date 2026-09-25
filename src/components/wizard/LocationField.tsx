@@ -34,7 +34,7 @@ const PIN_HTML = `<div style="width:34px;height:34px;transform:translate(-50%,-1
 
 export const LocationField: React.FC<LocationFieldProps> = ({ value, onChange, lang, error }) => {
   const w = WIZARD_TEXT[lang];
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const districtLabels: Record<string, string> = {
     'Policlinico / Tıp Fakültesi (< 500m)': t.districtPoliclinico,
     'Portello / Mühendislik & Fen (< 500m)': t.districtPortello,

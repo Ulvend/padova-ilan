@@ -25,7 +25,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   onToggle,
   currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const [inputText, setInputText] = useState('');
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [autoTranslate, setAutoTranslate] = useState(false);

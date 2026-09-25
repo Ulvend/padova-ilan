@@ -160,12 +160,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   initialMode = 'login',
-  currentLang = 'tr',
+  currentLang = 'it',
   onLoginSuccess,
   authReason,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
-  const authI18n = AUTH_MODAL_I18N[currentLang] || AUTH_MODAL_I18N.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
+  const authI18n = AUTH_MODAL_I18N[currentLang] || AUTH_MODAL_I18N.it;
 
   const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'sent' | 'verify'>(initialMode);
   const [email, setEmail] = useState('');

@@ -13,6 +13,7 @@ import { calculateNearestFaculty } from '../../services/geocodingService';
 import { landmarkLabel } from '../../utils/landmarkText';
 import { WIZARD_TEXT, LANG_LOCALE } from '../../utils/wizardText';
 import { TRANSLATIONS } from '../../utils/translations';
+import { ENERGY_PERFORMANCE_MAX, isRatedEnergyClass } from '../../utils/energy';
 
 export type PhotoStatus = 'done' | 'uploading' | 'error';
 
@@ -43,6 +44,8 @@ export interface FormState {
   price: string;
   expensesIncluded: boolean;
   expensesAmount: string;
+  deposit: string;
+  condoFees: string;
   contractType: ContractType;
   startDate: string;
   endDate: string;
@@ -52,6 +55,7 @@ export interface FormState {
   bathrooms: number;
   // Ev bilgileri: enerji sınıfı zorunlu; kat boş bırakılabilir (0 = zemin, -1 = bodrum).
   energyClass: EnergyClass | '';
+  energyPerformance: string;
   floor: string;
   hasElevator: boolean;
   floorPlanUrl: string;
@@ -100,6 +104,8 @@ export const createInitialForm = (): FormState => {
     price: '',
     expensesIncluded: false,
     expensesAmount: '',
+    deposit: '',
+    condoFees: '',
     contractType: 'Contratto per Studenti (Canone Concordato)',
     startDate: todayISO(),
     endDate: '',
@@ -107,6 +113,7 @@ export const createInitialForm = (): FormState => {
     apartmentM2: '',
     bathrooms: 1,
     energyClass: '',
+    energyPerformance: '',
     floor: '',
     hasElevator: false,
     floorPlanUrl: '',
@@ -253,6 +260,8 @@ export const formFromListing = (l: HousingListing): FormState => {
     price: String(l.price ?? ''),
     expensesIncluded: exp.included,
     expensesAmount: exp.amount,
+    deposit: l.deposit ? String(l.deposit) : '',
+    condoFees: l.condoFees ? String(l.condoFees) : '',
     contractType: l.contractType,
     startDate: l.contractStartISO || todayISO(),
     endDate: l.contractEndISO || '',
@@ -260,6 +269,7 @@ export const formFromListing = (l: HousingListing): FormState => {
     apartmentM2: l.apartmentM2 ? String(l.apartmentM2) : '',
     bathrooms: l.bathrooms || 1,
     energyClass: l.energyClass || '',
+    energyPerformance: l.energyPerformance ? String(l.energyPerformance) : '',
     floor: l.floor !== undefined ? String(l.floor) : '',
     hasElevator: Boolean(l.hasElevator),
     floorPlanUrl: l.floorPlanUrl || '',
@@ -318,6 +328,8 @@ export const buildListing = (
     distanceToFaculty: travel.text,
     price,
     expenses: formatExpenses(f, lang),
+    deposit: Number(f.deposit) > 0 ? Number(f.deposit) : undefined,
+    condoFees: Number(f.condoFees) > 0 ? Number(f.condoFees) : undefined,
     // Fiyat karşılaştırması artık sitedeki güncel ilanlardan hesaplanır; bu alanlar yalnızca eski kayıtlar için durur.
     fairPriceStatus: existing?.fairPriceStatus ?? 'average',
     fairPriceText: existing?.fairPriceText ?? '',
@@ -352,6 +364,7 @@ export const buildListing = (
     apartmentM2: Number(f.apartmentM2) || 0,
     bathrooms: f.bathrooms,
     energyClass: f.energyClass || undefined,
+    energyPerformance: isRatedEnergyClass(f.energyClass) && Number(f.energyPerformance) > 0 ? Math.round(Number(f.energyPerformance)) : undefined,
     floor: parseFloor(f.floor),
     // Asansör bilgisi yalnızca kat girildiyse anlamlıdır.
     hasElevator: parseFloor(f.floor) !== undefined ? f.hasElevator : undefined,
@@ -377,6 +390,12 @@ export const buildListing = (
 
 // ---------- Doğrulama ----------
 
+/** Kiralık konutlarda depozito en fazla 3 aylık kira olabilir (Legge 392/1978, art. 11). */
+export const DEPOSIT_MAX_MONTHS = 3;
+
+/** Aylık kondominyum gideri üst sınırı (€); veritabanı kısıtıyla aynı olmalı. */
+export const CONDO_FEES_MAX = 2000;
+
 export type Errors = Partial<Record<string, string>>;
 
 export const validateStep = (step: number, f: FormState, lang: Language): Errors => {
@@ -388,6 +407,20 @@ export const validateStep = (step: number, f: FormState, lang: Language): Errors
   if (step === 1) {
     if (!(Number(f.price) > 0)) e.price = w.rentError;
     if (!f.expensesIncluded && f.expensesAmount !== '' && !(Number(f.expensesAmount) >= 0)) e.expensesAmount = w.rentError;
+    // Depozito isteğe bağlı; girilirse pozitif olmalı ve yasal sınırı (en fazla 3 aylık kira) aşmamalı.
+    if (f.deposit.trim() !== '') {
+      const d = Number(f.deposit);
+      const rent = Number(f.price);
+      if (!(d > 0)) e.deposit = TRANSLATIONS[lang].depositError;
+      else if (rent > 0 && d > rent * DEPOSIT_MAX_MONTHS) {
+        e.deposit = TRANSLATIONS[lang].depositTooHigh.replace('{max}', String(rent * DEPOSIT_MAX_MONTHS));
+      }
+    }
+    // Kondominyum gideri isteğe bağlı; girilirse pozitif ve makul bir aylık tutar olmalı.
+    if (f.condoFees.trim() !== '') {
+      const c = Number(f.condoFees);
+      if (!(c > 0) || c > CONDO_FEES_MAX) e.condoFees = TRANSLATIONS[lang].condoFeesError;
+    }
     // Süresiz ilan verilemez: başlangıç ve bitiş günü zorunlu.
     if (!f.startDate || !f.endDate) e.dates = w.datesRequired;
     else if (f.endDate <= f.startDate) e.dates = w.endBeforeStart;
@@ -397,6 +430,15 @@ export const validateStep = (step: number, f: FormState, lang: Language): Errors
     if (!(Number(f.apartmentM2) > 0)) e.apartmentM2 = w.areaError;
     // APE enerji sınıfı yasal olarak belirtilmelidir ('pending' seçeneği sertifikası olmayanlar içindir).
     if (!f.energyClass) e.energyClass = TRANSLATIONS[lang].energyClassError;
+    // Enerji endeksi (EPgl / IPE) A4–G sınıflı konutlarda zorunludur (D.Lgs. 192/2005 art. 6: ilanda sınıfla birlikte yazılır);
+    // sertifika bekleniyor / muaf / sınıflandırılamaz seçeneklerinde aranmaz. Ondalıksız ve makul aralıkta olmalı.
+    if (isRatedEnergyClass(f.energyClass)) {
+      if (f.energyPerformance.trim() === '') e.energyPerformance = TRANSLATIONS[lang].energyPerfRequired;
+      else {
+        const n = Number(f.energyPerformance);
+        if (!Number.isInteger(n) || n < 1 || n > ENERGY_PERFORMANCE_MAX) e.energyPerformance = TRANSLATIONS[lang].energyPerfError;
+      }
+    }
     if (f.floor.trim() !== '') {
       const n = Number(f.floor);
       if (!Number.isFinite(n) || n < FLOOR_MIN || n > FLOOR_MAX) e.floor = TRANSLATIONS[lang].floorError;

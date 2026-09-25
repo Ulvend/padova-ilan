@@ -10,7 +10,7 @@ interface ScamSafetyBannerProps {
 
 /** Her sohbetin üstünde sabit duran, kapatılamayan dolandırıcılık uyarısı. */
 export const ScamSafetyBanner: React.FC<ScamSafetyBannerProps> = ({ currentLang, compact = false }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   return (
     <div
       role="note"

@@ -21,7 +21,6 @@ import {
   ArrowUpDown,
   FileImage,
   Trash2,
-  Zap,
 } from 'lucide-react';
 import { ContractType, Language, RoomType } from '../../types';
 import { TRANSLATIONS } from '../../utils/translations';
@@ -33,9 +32,7 @@ import { PriceGauge } from './PriceGauge';
 import { PhotoUploader } from './PhotoUploader';
 import { Errors, FormState, formatDate, FLOOR_MAX, FLOOR_MIN } from './formModel';
 import type { EnergyClass } from '../../types';
-import { EnergyClassBadge } from '../EnergyClassBadge';
-
-const ENERGY_CLASSES: EnergyClass[] = ['A4', 'A3', 'A2', 'A1', 'B', 'C', 'D', 'E', 'F', 'G', 'pending'];
+import { ENERGY_CLASS_OPTIONS, ENERGY_PERFORMANCE_MAX, isRatedEnergyClass } from '../../utils/energy';
 
 export interface StepProps {
   form: FormState;
@@ -48,7 +45,7 @@ export interface StepProps {
 
 export const StepBasics: React.FC<StepProps> = ({ form, set, errors, lang }) => {
   const w = WIZARD_TEXT[lang];
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const rooms: { value: RoomType; label: string; icon: React.ReactNode }[] = [
     { value: 'Singola', label: t.roomSingola, icon: <Bed className="h-4 w-4" /> },
     { value: 'Doppia', label: t.roomDoppia, icon: <BedDouble className="h-4 w-4" /> },
@@ -110,7 +107,7 @@ export const StepBasics: React.FC<StepProps> = ({ form, set, errors, lang }) => 
 
 export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
   const w = WIZARD_TEXT[lang];
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const locale = LANG_LOCALE[lang];
   const months = monthsBetween(form.startDate, form.endDate);
   const contracts: { value: ContractType; label: string }[] = [
@@ -168,6 +165,41 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
                 />
               </div>
             )}
+          </Field>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label={t.depositLabel} htmlFor="wiz-deposit" optionalText={w.optional} hint={t.depositHint} error={errors.deposit}>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-500">€</span>
+              <input
+                id="wiz-deposit"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={form.deposit}
+                onChange={(e) => set({ deposit: e.target.value })}
+                placeholder="840"
+                className={`${inputClass(Boolean(errors.deposit))} pl-8`}
+              />
+            </div>
+          </Field>
+
+          <Field label={t.condoFeesLabel} htmlFor="wiz-condo-fees" optionalText={w.optional} hint={t.condoFeesHint} error={errors.condoFees}>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-500">€</span>
+              <input
+                id="wiz-condo-fees"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={form.condoFees}
+                onChange={(e) => set({ condoFees: e.target.value })}
+                placeholder="50"
+                className={`${inputClass(Boolean(errors.condoFees))} pl-8 pr-16`}
+              />
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-stone-500">{w.perMonth}</span>
+            </div>
           </Field>
         </div>
 
@@ -262,7 +294,7 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
 
 export const StepDetails: React.FC<StepProps> = ({ form, set, errors, lang }) => {
   const w = WIZARD_TEXT[lang];
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
 
   return (
     <div className="space-y-5">
@@ -312,34 +344,53 @@ export const StepDetails: React.FC<StepProps> = ({ form, set, errors, lang }) =>
       </Card>
 
       <Card>
+        <SectionTitle hint={t.energyClassHelp}>{t.energyTitle}</SectionTitle>
+        <div className="space-y-3">
+          <Field label={t.energyClassLabel} htmlFor="wiz-energy-class" required hint={form.energyClass ? undefined : t.energyClassRequired} error={errors.energyClass}>
+            <select
+              id="wiz-energy-class"
+              value={form.energyClass}
+              onChange={(e) => set({ energyClass: e.target.value as EnergyClass | '' })}
+              aria-required="true"
+              className={`${inputClass(Boolean(errors.energyClass))} ${form.energyClass ? '' : 'text-stone-400'}`}
+            >
+              {/* Yalnızca seçim yapılmadan önce görünür; liste açıldığında seçenek olarak listelenmez ve sonradan geri seçilemez. */}
+              <option value="" disabled hidden>{t.energyClassLabel}</option>
+              {ENERGY_CLASS_OPTIONS.map((c) => (
+                <option key={c} value={c}>
+                  {c === 'pending' ? t.energyClassPending : c === 'exempt' ? t.energyClassExempt : c === 'unclassifiable' ? t.energyClassUnclassifiable : c}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {/* Enerji endeksi A4–G sınıflı konutlarda zorunlu; diğer seçeneklerde alan kapalıdır. */}
+          <Field label={t.energyPerfLabel} htmlFor="wiz-energy-perf" required={isRatedEnergyClass(form.energyClass)} optionalText={w.optional} hint={t.energyPerfHint} error={errors.energyPerformance}>
+            <div className="relative">
+              <input
+                id="wiz-energy-perf"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={ENERGY_PERFORMANCE_MAX}
+                step={1}
+                disabled={!isRatedEnergyClass(form.energyClass)}
+                value={isRatedEnergyClass(form.energyClass) ? form.energyPerformance : ''}
+                onChange={(e) => set({ energyPerformance: e.target.value })}
+                placeholder={t.energyPerfLabel}
+                aria-label={t.energyPerfLabel}
+                aria-required={isRatedEnergyClass(form.energyClass)}
+                className={`${inputClass(Boolean(errors.energyPerformance))} pr-32 disabled:cursor-not-allowed disabled:bg-stone-50`}
+              />
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-700">{t.energyPerfUnit}</span>
+            </div>
+          </Field>
+        </div>
+      </Card>
+
+      <Card>
         <SectionTitle>{t.buildingInfoTitle}</SectionTitle>
         <div className="space-y-5">
-          <div>
-            <div className="mb-2 flex items-center gap-1">
-              <span className="text-sm font-semibold text-stone-800">{t.energyClassLabel}</span>
-              <span className="text-rose-600" aria-hidden="true">*</span>
-              <HelpTip>{t.energyClassHelp}</HelpTip>
-            </div>
-            <div className="flex flex-wrap gap-2" role="group" aria-label={t.energyClassLabel}>
-              {ENERGY_CLASSES.map((c) => (
-                <Chip
-                  key={c}
-                  selected={form.energyClass === c}
-                  onClick={() => set({ energyClass: c })}
-                  icon={c === 'pending' ? undefined : <Zap className="h-4 w-4" />}
-                >
-                  {c === 'pending' ? t.energyClassPending : c}
-                </Chip>
-              ))}
-            </div>
-            {form.energyClass && form.energyClass !== 'pending' && (
-              <div className="mt-2">
-                <EnergyClassBadge value={form.energyClass} pendingLabel={t.energyClassPending} />
-              </div>
-            )}
-            {errors.energyClass && <p role="alert" className="mt-1.5 text-[13px] font-medium text-rose-600">{errors.energyClass}</p>}
-          </div>
-
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t.floorLabel} htmlFor="wiz-floor" optionalText={w.optional} hint={t.floorHint} error={errors.floor}>
               <input
@@ -528,7 +579,7 @@ export const StepMedia: React.FC<MediaProps> = ({
   floorPlanError,
 }) => {
   const w = WIZARD_TEXT[lang];
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const planInput = React.useRef<HTMLInputElement>(null);
   const [showAngles, setShowAngles] = React.useState(Boolean(form.angles.desk || form.angles.kitchen || form.angles.balcony));
 

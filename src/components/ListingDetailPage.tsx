@@ -45,6 +45,8 @@ import { LOW_RATIO, HIGH_RATIO, MIN_COMPARABLE_LISTINGS, type PriceInsight } fro
 import { marketTrendLabel } from '../utils/marketTrendText';
 import { PadovaMap } from './PadovaMap';
 import { EnergyClassBadge } from './EnergyClassBadge';
+import { energyStatusLabels } from '../utils/energy';
+import { ExtraCosts } from './ExtraCosts';
 import { ReportModal } from './ReportModal';
 import { FlatmateIcon } from './FlatmateIcon';
 
@@ -82,7 +84,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   onRequireLogin,
   currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const listing = getLocalizedListing(rawListing, currentLang, priceInsight);
 
   // Image & Video Gallery State
@@ -726,7 +728,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     <td className="py-2.5 text-stone-400 font-medium uppercase">{t.energyClassLabel}</td>
                     <td className="py-2.5 font-semibold text-stone-800">
                       {listing.energyClass ? (
-                        <EnergyClassBadge value={listing.energyClass} pendingLabel={t.energyClassPending} />
+                        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <EnergyClassBadge value={listing.energyClass} statusLabels={energyStatusLabels(t)} />
+                          {listing.energyPerformance ? (
+                            <span className="font-medium text-stone-600">
+                              {t.energyConsumption}: {listing.energyPerformance} {t.energyPerfUnit}
+                            </span>
+                          ) : null}
+                        </span>
                       ) : (
                         <span className="text-stone-400 font-medium">{t.energyClassNotSet}</span>
                       )}
@@ -862,6 +871,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <span className="text-4xl font-extrabold tracking-tight text-stone-900">€{listing.price}</span>
               <span className="text-[15px] text-stone-500">{t.perMonth} · {listing.expenses}</span>
             </div>
+            <ExtraCosts listing={listing} t={t} />
             {hasInsight && (
               <span
                 className={`inline-block px-3 py-1.5 rounded-[10px] border text-[13px] font-bold ${

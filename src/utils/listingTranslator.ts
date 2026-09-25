@@ -4,16 +4,16 @@ import type { PriceInsight } from './districtPricing';
 import { calculateNearestFaculty } from '../services/geocodingService';
 import { TRANSLATIONS } from './translations';
 import { LANG_LOCALE } from './locale';
-import { EXPIRED_ARCHIVE_REASON, confirmationDeadlineMs, formatTimeLeft } from './listingExpiry';
+import { ARCHIVED_CONFIRMATION_LABEL, EXPIRED_ARCHIVE_REASON, confirmationDeadlineMs, formatTimeLeft } from './listingExpiry';
 
 // Kullanıcının yazdığı gider metni ("+€40 Giderler" / "Giderler dahil") kullanıcının diline çevrilir.
 // Yayındaki ilanın etiketi teyit süresinden hesaplanır ("Teyitli: 4g 6s kaldı"); arşivdekiler kayıtlı metinden çevrilir.
 const localizeConfirmation = (listing: HousingListing, lang: Language): string => {
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   if (listing.isArchived) {
     if (listing.archiveReason === EXPIRED_ARCHIVE_REASON) return t.expiredArchived;
     const known: Record<string, string> = {
-      [TRANSLATIONS.tr.confirmedArchived]: t.confirmedArchived,
+      [ARCHIVED_CONFIRMATION_LABEL]: t.confirmedArchived,
     };
     return known[listing.confirmationTimeLeft] ?? listing.confirmationTimeLeft;
   }
@@ -24,7 +24,7 @@ const localizeConfirmation = (listing: HousingListing, lang: Language): string =
 
 const localizeExpenses = (expenses: string, lang: Language): string => {
   if (!expenses) return expenses;
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const amount = /(\d+(?:[.,]\d+)?)/.exec(expenses);
   return amount ? `+€${amount[1]} ${t.expensesExtraText}` : t.expensesIncludedText;
 };

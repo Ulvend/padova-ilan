@@ -1,6 +1,6 @@
 // ÇEVİRİ KAYNAĞI: tüm diller burada yan yana durur (uiText.ts ile birlikte).
 // Uygulama bu dosyayı doğrudan içe aktarmaz; vite.config.ts'deki `i18nSlices` eklentisi derleme sırasında her dili
-// ayrı bir parçaya (virtual:i18n/<dil>) böler. Varsayılan dil (tr) pakete dahildir, diğerleri ilk seçildiğinde yüklenir.
+// ayrı bir parçaya (virtual:i18n/<dil>) böler. Varsayılan dil (it, sitenin ana dili) pakete dahildir, diğerleri ilk seçildiğinde yüklenir.
 
 import type { Language } from '../types';
 import type { ExtraText } from '../utils/uiText';

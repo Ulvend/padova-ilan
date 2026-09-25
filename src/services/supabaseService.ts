@@ -335,6 +335,8 @@ interface ListingRow {
   distance_to_faculty: string;
   price: number;
   expenses: string;
+  deposit: number | null;
+  condo_fees: number | null;
   fair_price_status: string;
   fair_price_text: string;
   room_type: string;
@@ -368,6 +370,7 @@ interface ListingRow {
   apartment_m2: number;
   bathrooms: number;
   energy_class: EnergyClass | null;
+  energy_performance: number | null;
   floor: number | null;
   has_elevator: boolean | null;
   floor_plan_url: string | null;
@@ -397,6 +400,8 @@ const listingFromRow = (row: ListingRow): HousingListing => ({
   distanceToFaculty: row.distance_to_faculty,
   price: row.price,
   expenses: row.expenses,
+  deposit: row.deposit ?? undefined,
+  condoFees: row.condo_fees ?? undefined,
   fairPriceStatus: row.fair_price_status as HousingListing['fairPriceStatus'],
   fairPriceText: row.fair_price_text,
   roomType: row.room_type as HousingListing['roomType'],
@@ -430,6 +435,7 @@ const listingFromRow = (row: ListingRow): HousingListing => ({
   apartmentM2: row.apartment_m2,
   bathrooms: row.bathrooms,
   energyClass: row.energy_class || undefined,
+  energyPerformance: row.energy_performance ?? undefined,
   floor: row.floor ?? undefined,
   hasElevator: row.has_elevator ?? undefined,
   floorPlanUrl: row.floor_plan_url || undefined,
@@ -461,6 +467,8 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
     distanceToFaculty: 'distance_to_faculty',
     price: 'price',
     expenses: 'expenses',
+    deposit: 'deposit',
+    condoFees: 'condo_fees',
     fairPriceStatus: 'fair_price_status',
     fairPriceText: 'fair_price_text',
     roomType: 'room_type',
@@ -494,6 +502,7 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
     apartmentM2: 'apartment_m2',
     bathrooms: 'bathrooms',
     energyClass: 'energy_class',
+    energyPerformance: 'energy_performance',
     floor: 'floor',
     hasElevator: 'has_elevator',
     floorPlanUrl: 'floor_plan_url',
@@ -514,7 +523,8 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
   Object.entries(listing).forEach(([key, value]) => {
     if (key === 'id' || key === 'createdAt' || key === 'updatedAt') return;
     const column = map[key];
-    if (column) row[column] = value;
+    // Depozito, kondominyum gideri ve enerji endeksi düzenlemede silinebilsin diye tanımsız değer null olarak yazılır.
+    if (column) row[column] = key === 'deposit' || key === 'condoFees' || key === 'energyPerformance' ? value ?? null : value;
   });
   return row;
 };

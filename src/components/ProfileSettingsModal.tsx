@@ -44,9 +44,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   currentUser,
   onUpdateProfile,
   onChangeUsername,
-  currentLang = 'tr',
+  currentLang = 'it',
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<'department' | 'username' | 'photo' | 'password' | 'account'>('department');

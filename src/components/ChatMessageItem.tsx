@@ -26,7 +26,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   compact = false,
   autoTranslate = false,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
 

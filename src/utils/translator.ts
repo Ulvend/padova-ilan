@@ -9,8 +9,8 @@ export interface LanguageOption {
 }
 
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
-  { code: 'tr', name: 'Türkçe', nativeName: 'Türkçe', flag: 'TR' },
   { code: 'it', name: 'Italiano', nativeName: 'Italiano', flag: 'IT' },
+  { code: 'tr', name: 'Türkçe', nativeName: 'Türkçe', flag: 'TR' },
   { code: 'en', name: 'English', nativeName: 'English', flag: 'EN' },
   { code: 'de', name: 'Deutsch', nativeName: 'Deutsch', flag: 'DE' },
   { code: 'ru', name: 'Русский', nativeName: 'Русский', flag: 'RU' },

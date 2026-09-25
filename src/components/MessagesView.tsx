@@ -31,7 +31,7 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
   onBackToHome,
   currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const [inputText, setInputText] = useState('');
   const [searchContact, setSearchContact] = useState('');
   // On mobile: toggle between contacts list and conversation screen

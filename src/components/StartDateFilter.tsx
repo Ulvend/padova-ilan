@@ -16,7 +16,7 @@ const CLEARED: Partial<FilterState> = { contractStartFrom: undefined, contractSt
 
 /** Seçili başlangıç filtresinin kısa metni: "Tüm tarihler", "1 Eki – 15 Eki" ya da "1 Eki ve sonrası". */
 const startDateSummary = (filters: FilterState, lang: Language): string => {
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const { contractStartFrom: from, contractStartTo: to } = filters;
   if (!from) return t.allDates;
   const thisYear = new Date().getFullYear();
@@ -35,7 +35,7 @@ export const hasStartDateFilter = (filters: FilterState) => Boolean(filters.cont
 
 /** Takvim: ilk tıklama en erken, ikinci tıklama (isteğe bağlı) en geç başlangıç günü. */
 export const StartDatePanel: React.FC<StartDateFilterProps> = ({ filters, onFilterChange, currentLang }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
 
   return (
     <div>
@@ -69,7 +69,7 @@ export const StartDateField: React.FC<StartDateFilterProps & { label: string; la
   labelClassName,
   ...props
 }) => {
-  const t = TRANSLATIONS[props.currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[props.currentLang] || TRANSLATIONS.it;
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 

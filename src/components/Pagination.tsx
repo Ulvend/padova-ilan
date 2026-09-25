@@ -21,8 +21,8 @@ export const getPageItems = (current: number, count: number): Array<number | 'ga
   return items;
 };
 
-export const Pagination: React.FC<PaginationProps> = ({ currentPage, pageCount, onChange, currentLang = 'tr' }) => {
-  const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
+export const Pagination: React.FC<PaginationProps> = ({ currentPage, pageCount, onChange, currentLang = 'it' }) => {
+  const h = HOME_TEXT[currentLang] || HOME_TEXT.it;
   if (pageCount <= 1) return null;
 
   const base = 'min-w-[44px] h-11 px-3.5 rounded-xl border text-[15px] flex items-center justify-center transition';

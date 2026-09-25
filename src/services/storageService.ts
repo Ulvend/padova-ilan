@@ -12,8 +12,8 @@ export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const isAllowedImageType = (type: string): boolean => ALLOWED_IMAGE_TYPES.includes(type);
 
 /** Yükleme hatasını kullanıcının diline çevirir; bilinmeyen hatalarda genel mesaj döner. */
-export function describeUploadError(err: unknown, lang: Language = 'tr'): string {
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+export function describeUploadError(err: unknown, lang: Language = 'it'): string {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   switch ((err as { code?: string })?.code) {
     case 'upload/process': return t.errImageProcess;
     case 'upload/denied': return t.errUploadDenied;

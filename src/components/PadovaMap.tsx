@@ -54,10 +54,10 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
   selectedListing,
   onOpenDetailPage,
   onOpenPreviewModal,
-  currentLang = 'tr',
+  currentLang = 'it',
   height = '480px',
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);

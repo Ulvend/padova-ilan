@@ -30,7 +30,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
   filteredCount,
   currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
 
   useModalBehavior(isOpen, onClose);
 

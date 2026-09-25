@@ -31,13 +31,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   favoriteListings,
   onSelectListing,
   onBackToHome,
-  currentLang = 'tr',
+  currentLang = 'it',
   currentUser = CURRENT_USER,
   isLoggedIn = false,
   onOpenProfileSettings,
   onOpenAuthModal,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const [copiedHash, setCopiedHash] = useState(false);
 
   const isStaff = currentUser.role === 'admin' || currentUser.role === 'superadmin';

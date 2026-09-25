@@ -57,7 +57,7 @@ export const HomePage: React.FC = () => {
     setVideoModalListing,
     handleOpenChat,
   } = useApp();
-  const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
+  const h = HOME_TEXT[currentLang] || HOME_TEXT.it;
   const resultsRef = useRef<HTMLElement>(null);
   const [page, setPage] = useState(1);
 

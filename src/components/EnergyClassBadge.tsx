@@ -1,8 +1,9 @@
 import React from 'react';
 import type { EnergyClass } from '../types';
+import type { RatedEnergyClass } from '../utils/energy';
 
 // Avrupa enerji etiketi renkleri (A4 en verimli, G en düşük).
-const TONES: Record<Exclude<EnergyClass, 'pending'>, string> = {
+const TONES: Record<RatedEnergyClass, string> = {
   A4: 'bg-green-700 text-white',
   A3: 'bg-green-600 text-white',
   A2: 'bg-green-500 text-white',
@@ -17,14 +18,15 @@ const TONES: Record<Exclude<EnergyClass, 'pending'>, string> = {
 
 interface EnergyClassBadgeProps {
   value: EnergyClass;
-  pendingLabel: string;
+  /** Sertifika durumu seçeneklerinin (bekleniyor / muaf / sınıflandırılamaz) kullanıcının dilindeki metinleri. */
+  statusLabels: Record<'pending' | 'exempt' | 'unclassifiable', string>;
   /** Kartlarda kısa gösterim ("APE B"). */
   compact?: boolean;
 }
 
-export const EnergyClassBadge: React.FC<EnergyClassBadgeProps> = ({ value, pendingLabel, compact = false }) => {
-  if (value === 'pending') {
-    return <span className="inline-flex items-center rounded-md bg-stone-200 px-2 py-0.5 text-xs font-bold text-stone-700">{pendingLabel}</span>;
+export const EnergyClassBadge: React.FC<EnergyClassBadgeProps> = ({ value, statusLabels, compact = false }) => {
+  if (value === 'pending' || value === 'exempt' || value === 'unclassifiable') {
+    return <span className="inline-flex items-center rounded-md bg-stone-200 px-2 py-0.5 text-xs font-bold text-stone-700">{statusLabels[value]}</span>;
   }
   return (
     <span

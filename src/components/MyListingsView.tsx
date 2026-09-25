@@ -73,12 +73,12 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
   onReactivateListing,
   onRenewListing,
   onBackToHome,
-  currentLang = 'tr',
+  currentLang = 'it',
   currentUser,
   viewCounts = {},
   favoriteCounts = {},
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const tenantLabel = (value: string) => {
     const o = TENANT_OPTIONS.find((opt) => opt.value === value);
     return o ? t[o.key] : value;

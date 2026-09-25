@@ -8,6 +8,7 @@ import { getLocalizedListing } from '../utils/listingTranslator';
 import { useApp } from '../context/AppContext';
 import { formatGenderDistribution } from '../utils/genderDistribution';
 import { listingAreaM2 } from '../utils/format';
+import { ExtraCosts } from './ExtraCosts';
 
 interface ListingPreviewModalProps {
   listing: HousingListing | null;
@@ -35,11 +36,11 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
   onOpenVideoTour,
   onOpenVideoModal,
   onOpenChat,
-  currentLang = 'tr',
+  currentLang = 'it',
 }) => {
 
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
-  const h = HOME_TEXT[currentLang] || HOME_TEXT.tr;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
+  const h = HOME_TEXT[currentLang] || HOME_TEXT.it;
   const { getPriceInsight } = useApp();
   const insight = getPriceInsight(rawListing);
   const listing = getLocalizedListing(rawListing, currentLang, insight);
@@ -207,6 +208,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
                 {t.perMonth} · {listing.expenses}
               </span>
             </div>
+            <ExtraCosts listing={listing} t={t} />
 
             {insight.status !== 'unknown' && (
               <span
