@@ -148,7 +148,6 @@ export interface TranslationDictionary {
   allRoomTypes: string;
   singleRoomOption: string;
   doubleRoomOption: string;
-  sharedBedOption: string;
   studioOption: string;
   maxBudgetPrefix: string;
   contractOptionStudent: string;
@@ -189,7 +188,6 @@ export interface TranslationDictionary {
   shrinkMap: string;
   roomSingola: string;
   roomDoppia: string;
-  roomPostoLetto: string;
   roomMonolocale: string;
   districtForcellini: string;
   districtArcella: string;
@@ -412,7 +410,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     allRoomTypes: 'Tüm Oda Tipleri',
     singleRoomOption: 'Singola (Tek Kişilik Özel Oda)',
     doubleRoomOption: 'Doppia (Çift Kişilik Oda)',
-    sharedBedOption: 'Posto Letto (Paylaşımlı Oda Yatağı)',
     studioOption: 'Monolocale (Stüdyo Daire)',
     maxBudgetPrefix: 'Maks:',
     contractOptionStudent: 'Öğrenci Sözleşmesi (Canone Concordato - Rayiç Kira)',
@@ -453,7 +450,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shrinkMap: 'Küçült',
     roomSingola: 'Tek Kişilik (Singola)',
     roomDoppia: 'Çift Kişilik (Doppia)',
-    roomPostoLetto: 'Paylaşımlı Yatak (Posto Letto)',
     roomMonolocale: 'Stüdyo Daire (Monolocale)',
     districtForcellini: 'Forcellini / Hastaneler Bölgesi',
     districtArcella: 'Arcella / İstasyon Çevresi',
@@ -674,7 +670,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     allRoomTypes: 'All Room Types',
     singleRoomOption: 'Singola (Private Single Room)',
     doubleRoomOption: 'Doppia (Double Room)',
-    sharedBedOption: 'Posto Letto (Shared Room Bed)',
     studioOption: 'Monolocale (Studio Apartment)',
     maxBudgetPrefix: 'Max:',
     contractOptionStudent: 'Student Contract (Agreed Regulated Rent - Canone Concordato)',
@@ -715,7 +710,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shrinkMap: 'Minimize',
     roomSingola: 'Single Room (Singola)',
     roomDoppia: 'Double Room (Doppia)',
-    roomPostoLetto: 'Shared Bed (Posto Letto)',
     roomMonolocale: 'Studio Flat (Monolocale)',
     districtForcellini: 'Forcellini / Hospital Area',
     districtArcella: 'Arcella / Station Area',
@@ -936,7 +930,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     allRoomTypes: 'Tutti i Tipi di Stanza',
     singleRoomOption: 'Singola (Stanza Singola Privata)',
     doubleRoomOption: 'Doppia (Stanza Doppia)',
-    sharedBedOption: 'Posto Letto (Posto in Stanza Condivisa)',
     studioOption: 'Monolocale (Monolocale Indipendente)',
     maxBudgetPrefix: 'Max:',
     contractOptionStudent: 'Contratto per Studenti (Canone Concordato)',
@@ -977,7 +970,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shrinkMap: 'Riduci',
     roomSingola: 'Stanza Singola',
     roomDoppia: 'Stanza Doppia',
-    roomPostoLetto: 'Posto Letto Condiviso',
     roomMonolocale: 'Monolocale Indipendente',
     districtForcellini: 'Forcellini / Zona Ospedali',
     districtArcella: 'Arcella / Stazione FS',
@@ -1198,7 +1190,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     allRoomTypes: 'Alle Zimmertypen',
     singleRoomOption: 'Singola (Einzelzimmer)',
     doubleRoomOption: 'Doppia (Doppelzimmer)',
-    sharedBedOption: 'Posto Letto (Bett im Mehrbettzimmer)',
     studioOption: 'Monolocale (Studio-Apartment)',
     maxBudgetPrefix: 'Max:',
     contractOptionStudent: 'Studentenmietvertrag (Mietpreisgebundene Miete - Canone Concordato)',
@@ -1239,7 +1230,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shrinkMap: 'Verkleinern',
     roomSingola: 'Einzelzimmer (Singola)',
     roomDoppia: 'Doppelzimmer (Doppia)',
-    roomPostoLetto: 'Geteiltes Bett (Posto Letto)',
     roomMonolocale: 'Studio-Apartment (Monolocale)',
     districtForcellini: 'Forcellini / Klinikbereich',
     districtArcella: 'Arcella / Bahnhofsviertel',
@@ -1460,7 +1450,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     allRoomTypes: 'Все типы комнат',
     singleRoomOption: 'Singola (Отдельная одноместная)',
     doubleRoomOption: 'Doppia (Двухместная комната)',
-    sharedBedOption: 'Posto Letto (Место в комнате)',
     studioOption: 'Monolocale (Квартира-студия)',
     maxBudgetPrefix: 'Макс:',
     contractOptionStudent: 'Студенческий договор (Согласованная аренда Canone Concordato)',
@@ -1501,7 +1490,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shrinkMap: 'Свернуть',
     roomSingola: 'Одноместная комната (Singola)',
     roomDoppia: 'Двухместная комната (Doppia)',
-    roomPostoLetto: 'Место в комнате (Posto Letto)',
     roomMonolocale: 'Квартира-студия (Monolocale)',
     districtForcellini: 'Форчеллини / Больничный район',
     districtArcella: 'Арчелла / Район вокзала',
@@ -1722,7 +1710,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     allRoomTypes: 'सभी कमरे के प्रकार',
     singleRoomOption: 'Singola (एकल निजी कमरा)',
     doubleRoomOption: 'Doppia (डबल कमरा)',
-    sharedBedOption: 'Posto Letto (साझा कमरे का बिस्तर)',
     studioOption: 'Monolocale (स्टूडियो अपार्टमेंट)',
     maxBudgetPrefix: 'अधिकतम:',
     contractOptionStudent: 'छात्र अनुबंध (विनियमित सहमति किराया - Canone Concordato)',
@@ -1763,7 +1750,6 @@ const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     shrinkMap: 'छोटा करें',
     roomSingola: 'एकल कमरा (Singola)',
     roomDoppia: 'डबल कमरा (Doppia)',
-    roomPostoLetto: 'साझा बिस्तर (Posto Letto)',
     roomMonolocale: 'स्टूडियो फ्लैट (Monolocale)',
     districtForcellini: 'फोर्सेलिनी / अस्पताल क्षेत्र',
     districtArcella: 'अर्चेला / स्टेशन क्षेत्र',

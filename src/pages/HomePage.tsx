@@ -180,8 +180,8 @@ export const HomePage: React.FC = () => {
               <option value="all">{t.allRoomTypes}</option>
               <option value="Singola">{t.singleRoomOption}</option>
               <option value="Doppia">{t.doubleRoomOption}</option>
-              <option value="Posto Letto">{t.sharedBedOption}</option>
               <option value="Monolocale">{t.studioOption}</option>
+              <option value="Bilocale">{t.bilocaleOption}</option>
             </select>
             <ChevronDown className="w-4 h-4 text-stone-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>

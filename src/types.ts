@@ -16,7 +16,7 @@ export type DistrictArea =
   | 'Arcella'
   | 'Guizza';
 
-export type RoomType = 'Singola' | 'Doppia' | 'Posto Letto' | 'Monolocale' | 'Bilocale';
+export type RoomType = 'Singola' | 'Doppia' | 'Monolocale' | 'Bilocale';
 
 export interface Flatmate {
   name: string;

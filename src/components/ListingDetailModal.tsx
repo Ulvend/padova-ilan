@@ -7,6 +7,7 @@ import { HOME_TEXT } from '../utils/homeText';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { useApp } from '../context/AppContext';
 import { formatGenderDistribution } from '../utils/genderDistribution';
+import { listingAreaM2 } from '../utils/format';
 
 interface ListingPreviewModalProps {
   listing: HousingListing | null;
@@ -237,7 +238,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
               <div className={tile}>
                 <span className={tileLabel}>{t.roomTypeLabel}</span>
                 <strong className="text-[15px] text-stone-900">
-                  {listing.roomType} · {listing.roomM2} m²
+                  {listing.roomType} · {listingAreaM2(rawListing)} m²
                 </strong>
               </div>
               <div className={tile}>

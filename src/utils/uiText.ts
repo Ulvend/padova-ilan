@@ -59,6 +59,8 @@ const ROWS = {
   genderFilterFemale: ['Kadın', 'Female', 'Donna', 'Weiblich', 'Женский', 'महिला'],
   genderFilterMale: ['Erkek', 'Male', 'Uomo', 'Männlich', 'Мужской', 'पुरुष'],
   genderFilterHint: ['Seçtiğin cinsiyete açık ilanlar gösterilir: o cinsiyete özel evler ve karma evler.', 'Shows listings open to the selected gender: single-gender and mixed homes.', 'Mostra gli annunci aperti al genere scelto: case riservate e case miste.', 'Zeigt Anzeigen, die für das gewählte Geschlecht offen sind: reine und gemischte WGs.', 'Показываются объявления, открытые для выбранного пола: только для него и смешанные.', 'चुने गए लिंग के लिए खुले विज्ञापन दिखते हैं: केवल उसी लिंग के और मिश्रित घर।'],
+  roomBilocale: ['1+1 Daire (Bilocale)', 'One-Bedroom Flat (Bilocale)', 'Bilocale Indipendente', 'Zwei-Zimmer-Wohnung (Bilocale)', 'Двухкомнатная квартира (Bilocale)', 'एक बेडरूम फ्लैट (Bilocale)'],
+  bilocaleOption: ['Bilocale (1+1 Daire)', 'Bilocale (One-Bedroom Flat)', 'Bilocale (Bilocale Indipendente)', 'Bilocale (Zwei-Zimmer-Wohnung)', 'Bilocale (Двухкомнатная квартира)', 'Bilocale (एक बेडरूम फ्लैट)'],
   shortTermChip: ['Kısa dönem', 'Short-term', 'Breve periodo', 'Kurzzeitmiete', 'Краткосрочно', 'अल्पकालिक'],
 
   // ---- Mesajlar / sohbet ----

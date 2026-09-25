@@ -142,8 +142,8 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
               <option value="all">{t.allRoomTypes}</option>
               <option value="Singola">{t.singleRoomOption}</option>
               <option value="Doppia">{t.doubleRoomOption}</option>
-              <option value="Posto Letto">{t.sharedBedOption}</option>
               <option value="Monolocale">{t.studioOption}</option>
+              <option value="Bilocale">{t.bilocaleOption}</option>
             </select>
           </div>
 

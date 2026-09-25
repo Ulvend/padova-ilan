@@ -6,7 +6,7 @@ import { HOME_TEXT } from '../utils/homeText';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { useApp } from '../context/AppContext';
 import { formatGenderDistribution } from '../utils/genderDistribution';
-import { formatBathrooms } from '../utils/format';
+import { formatBathrooms, listingAreaM2 } from '../utils/format';
 
 interface ListingCardProps {
   listing: HousingListing;
@@ -180,7 +180,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
 
         <div className="flex flex-wrap gap-1.5">
           <span className={chipCls}>{listing.roomType}</span>
-          <span className={chipCls}>{listing.roomM2} m²</span>
+          <span className={chipCls}>{listingAreaM2(rawListing)} m²</span>
           <span className={chipCls}>
             {formatBathrooms(listing.bathrooms, currentLang)}
           </span>

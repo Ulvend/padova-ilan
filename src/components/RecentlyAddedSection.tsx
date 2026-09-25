@@ -4,7 +4,7 @@ import { HousingListing, Language } from '../types';
 import { formatDeviceRelativeDate } from '../utils/deviceTime';
 import { FullDictionary } from '../utils/translations';
 import { HOME_TEXT } from '../utils/homeText';
-import { formatBathrooms } from '../utils/format';
+import { formatBathrooms, listingAreaM2 } from '../utils/format';
 
 interface RecentlyAddedSectionProps {
   listings: HousingListing[];
@@ -158,7 +158,7 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
               </h3>
               <p className="text-xs text-stone-600 truncate">{listing.streetAddress || listing.district.split('/')[0].trim()}</p>
               <p className="text-xs text-stone-500 truncate">
-                {listing.roomType} · {listing.roomM2} m² · {formatBathrooms(listing.bathrooms, (currentLang as Language) || 'tr')}
+                {listing.roomType} · {listingAreaM2(listing)} m² · {formatBathrooms(listing.bathrooms, (currentLang as Language) || 'tr')}
               </p>
             </div>
           </article>

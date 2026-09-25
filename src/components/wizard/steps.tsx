@@ -44,8 +44,8 @@ export const StepBasics: React.FC<StepProps> = ({ form, set, errors, lang }) => 
   const rooms: { value: RoomType; label: string; icon: React.ReactNode }[] = [
     { value: 'Singola', label: t.roomSingola, icon: <Bed className="h-4 w-4" /> },
     { value: 'Doppia', label: t.roomDoppia, icon: <BedDouble className="h-4 w-4" /> },
-    { value: 'Posto Letto', label: t.roomPostoLetto, icon: <Layers className="h-4 w-4" /> },
     { value: 'Monolocale', label: t.roomMonolocale, icon: <Home className="h-4 w-4" /> },
+    { value: 'Bilocale', label: t.roomBilocale, icon: <Building2 className="h-4 w-4" /> },
   ];
 
   return (
