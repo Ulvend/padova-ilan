@@ -45,6 +45,7 @@ import {
   sendMessageToFirestore,
   markMessagesRead,
   subscribeToNotifications,
+  isUserBanned,
   saveNotificationToFirestore,
   markNotificationsRead,
   deleteNotificationFromFirestore,
@@ -94,6 +95,7 @@ const LEGACY_STORAGE_KEYS = [
   'padova_housing_archived_listings',
   'padova_authorized_admin_hashes',
   'padova_user_notifications_v2',
+  'padova_grid_layout',
 ];
 
 const LISTINGS_CACHE_KEY = 'padova_housing_listings_cache_v3';
@@ -173,10 +175,9 @@ interface AppContextType {
   myListings: HousingListing[];
   handleAddListing: (newListing: HousingListing) => Promise<void>;
   handleUpdateListing: (listingId: string, updates: Partial<HousingListing>) => Promise<void>;
-  handleDeleteListing: (id: string) => void;
+  handleDeleteListing: (id: string) => Promise<boolean>;
   handleToggleVerifyListing: (id: string) => void;
   handleToggleVideoVerified: (id: string) => void;
-  handleUpdateListingPrice: (id: string, newPrice: number) => void;
   handleMarkListingAsRented: (listingId: string, details?: { rentedPrice: number; tenantType: string; note?: string }) => void;
   handleReactivateListing: (listingId: string) => void;
   // Teyit süresini baştan başlatır (İlanlarım > "Süreyi Yenile").
@@ -210,8 +211,6 @@ interface AppContextType {
   dismissToast: () => void;
 
   // UI & Layout
-  gridLayout: 'double' | 'single';
-  setGridLayout: (mode: 'double' | 'single') => void;
   isMapSectionOpen: boolean;
   setIsMapSectionOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isMobileFilterOpen: boolean;
@@ -230,7 +229,6 @@ interface AppContextType {
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
   authModalMode: 'login' | 'register' | 'forgot';
-  setAuthModalMode: (mode: 'login' | 'register' | 'forgot') => void;
   handleOpenAuthModal: (mode?: 'login' | 'register' | 'forgot', reason?: 'chat' | 'createListing' | 'default' | null) => void;
   authModalReason: 'chat' | 'createListing' | 'default' | null;
 }
@@ -347,15 +345,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [toast]);
 
   // 10. UI & Modal States
-  const [gridLayout, setGridLayoutState] = useState<'double' | 'single'>(() => {
-    return safeStorageGet('padova_grid_layout') === 'single' ? 'single' : 'double';
-  });
-
-  const setGridLayout = (mode: 'double' | 'single') => {
-    setGridLayoutState(mode);
-    safeStorageSet('padova_grid_layout', mode);
-  };
-
   const [isMapSectionOpen, setIsMapSectionOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -533,6 +522,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return subscribeToNotifications(authUser.uid, setNotifications);
   }, [authUser?.uid]);
+
+  // Banlanan kullanıcının elindeki oturum anahtarı süresi dolana kadar geçerli kalır; açılışta kontrol edilip
+  // oturum kapatılır (sunucu zaten tüm yazmaları reddeder, yeni giriş de Supabase Auth'ta engellidir).
+  useEffect(() => {
+    if (!authUser) return;
+    let cancelled = false;
+    isUserBanned(authUser.uid).then((banned) => {
+      if (cancelled || !banned) return;
+      showToast(t.errAccountBanned);
+      logOut().catch((err) => console.warn('Banned sign-out error:', err));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mesajlaşılan kişilerin herkese açık profillerini yükle
   useEffect(() => {
@@ -869,18 +873,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }).catch((err) => console.warn('Owner notification error:', err));
   };
 
-  const handleDeleteListing = (id: string) => {
+  // Silme başarılıysa true döner (şikayet paneli buna göre ilgili şikayetleri listeden düşürür).
+  const handleDeleteListing = (id: string): Promise<boolean> => {
     const target = allListings.find((l) => l.id === id);
-    if (!target) return;
-    deleteListingFromFirestore(target)
+    if (!target) return Promise.resolve(false);
+    return deleteListingFromFirestore(target)
       .then(() => {
         if (isAdmin) {
           notifyListingOwner(target, 'İlanınız kaldırıldı', `"${target.title}" ilanınız yönetici tarafından kaldırıldı.`);
         }
+        return true;
       })
       .catch((err) => {
         console.warn('Firestore listing deletion error:', err);
         showToast(t.toastDeleteFail);
+        return false;
       });
   };
 
@@ -921,13 +928,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleToggleVideoVerified = (id: string) =>
     adminUpdateListing(id, (l) => ({ hasVideoTour: !l.hasVideoTour }));
-
-  const handleUpdateListingPrice = (id: string, newPrice: number) =>
-    adminUpdateListing(
-      id,
-      () => ({ price: newPrice }),
-      (l) => ['İlan fiyatı güncellendi', `"${l.title}" ilanınızın fiyatı yönetici tarafından €${newPrice} olarak güncellendi.`]
-    );
 
   const handleMarkListingAsRented = (
     listingId: string,
@@ -1168,7 +1168,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleDeleteListing,
     handleToggleVerifyListing,
     handleToggleVideoVerified,
-    handleUpdateListingPrice,
     handleMarkListingAsRented,
     handleReactivateListing,
     handleRenewListing,
@@ -1193,8 +1192,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast,
     showToast,
     dismissToast,
-    gridLayout,
-    setGridLayout,
     isMapSectionOpen,
     setIsMapSectionOpen,
     isMobileFilterOpen,
@@ -1211,7 +1208,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isAuthModalOpen,
     setIsAuthModalOpen,
     authModalMode,
-    setAuthModalMode,
     handleOpenAuthModal,
     authModalReason,
   };

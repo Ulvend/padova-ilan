@@ -55,7 +55,7 @@ const TR: PolicyContent = {
       heading: '4. Çerezler ve tarayıcıda saklanan veriler',
       paragraphs: [
         'Bu site çerez (cookie) kullanmaz; reklam, izleme veya analiz aracı yoktur. Bu nedenle bir çerez onay bandı gerekmez.',
-        'Sitenin çalışması için tarayıcının yerel depolamasında (localStorage) şunlar tutulur: oturum bilgin, dil ve görünüm tercihin, favorilerin, ilan listesi ve harita adresleri için önbellek, çevirilerin önbelleği, yarım kalan ilan taslağın ve görüntülediğin ilanların kaydı. Bunların hiçbiri reklam amacıyla kullanılmaz.',
+        'Sitenin çalışması için tarayıcının yerel depolamasında (localStorage) şunlar tutulur: oturum bilgin, dil tercihin, favorilerin, ilan listesi ve harita adresleri için önbellek, çevirilerin önbelleği, yarım kalan ilan taslağın ve görüntülediğin ilanların kaydı. Bunların hiçbiri reklam amacıyla kullanılmaz.',
         'Aşağıdaki "Tarayıcıda saklanan veriler" bölümünden bunları görebilir ve istediğin an temizleyebilirsin.',
       ],
     },
@@ -121,7 +121,7 @@ const EN: PolicyContent = {
       heading: '4. Cookies and data stored in your browser',
       paragraphs: [
         'This site does not use cookies; there is no advertising, tracking or analytics tool. A cookie consent banner is therefore not required.',
-        'To work, the site keeps the following in your browser\'s local storage (localStorage): your sign-in session, language and layout preferences, favorites, caches for the listing list and map addresses, a cache of translations, your unfinished listing draft and a record of the listings you viewed. None of it is used for advertising.',
+        'To work, the site keeps the following in your browser\'s local storage (localStorage): your sign-in session, language preference, favorites, caches for the listing list and map addresses, a cache of translations, your unfinished listing draft and a record of the listings you viewed. None of it is used for advertising.',
         'You can see all of this and clear it at any time in the "Data stored in your browser" section below.',
       ],
     },
@@ -187,7 +187,7 @@ const IT: PolicyContent = {
       heading: '4. Cookie e dati salvati nel browser',
       paragraphs: [
         'Questo sito non usa cookie; non ci sono strumenti pubblicitari, di tracciamento o di analisi. Un banner di consenso ai cookie non è quindi necessario.',
-        'Per funzionare, il sito salva nella memoria locale del browser (localStorage): la sessione di accesso, le preferenze di lingua e layout, i preferiti, le cache dell\'elenco annunci e degli indirizzi sulla mappa, la cache delle traduzioni, la bozza dell\'annuncio non completato e l\'elenco degli annunci visualizzati. Nulla di questo è usato per la pubblicità.',
+        'Per funzionare, il sito salva nella memoria locale del browser (localStorage): la sessione di accesso, la preferenza di lingua, i preferiti, le cache dell\'elenco annunci e degli indirizzi sulla mappa, la cache delle traduzioni, la bozza dell\'annuncio non completato e l\'elenco degli annunci visualizzati. Nulla di questo è usato per la pubblicità.',
         'Puoi vedere e cancellare tutto questo in qualsiasi momento nella sezione "Dati salvati nel browser" qui sotto.',
       ],
     },

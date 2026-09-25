@@ -9,7 +9,7 @@ interface LocalDataGroup {
 }
 
 export const LOCAL_DATA_GROUPS: LocalDataGroup[] = [
-  { id: 'prefs', matches: (k) => k === 'padova_housing_lang' || k === 'padova_grid_layout' },
+  { id: 'prefs', matches: (k) => k === 'padova_housing_lang' },
   { id: 'favorites', matches: (k) => k === 'padova_housing_favorites_v2' },
   {
     id: 'cache',

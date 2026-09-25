@@ -10,28 +10,41 @@ import {
   DollarSign, 
   ArrowLeft, 
   Copy, 
-  Scale, 
   ShieldAlert,
   Lock,
   Archive,
   Key,
   UserCheck,
+  UserSearch,
+  Ban,
+  RotateCcw,
   Flag
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';
 import type { PublicUserProfile } from '../services/supabaseService';
 import { useApp } from '../context/AppContext';
 import { ReportsPanel } from './ReportsPanel';
-import { getReports, updateReportStatus, type Report, type ReportStatus } from '../services/supabaseService';
+import {
+  getReports,
+  updateReportStatus,
+  adminFindUsers,
+  adminBanUser,
+  adminUnbanUser,
+  getBannedUsers,
+  type Report,
+  type ReportStatus,
+  type AdminUserMatch,
+  type BanResult,
+  type BannedUser,
+} from '../services/supabaseService';
 
 
 interface AdminPanelProps {
   listings: HousingListing[];
   archivedListings?: HousingListing[];
-  onDeleteListing: (id: string) => void;
+  onDeleteListing: (id: string) => Promise<boolean> | void;
   onToggleVerifyListing: (id: string) => void;
   onToggleVideoVerified: (id: string) => void;
-  onUpdateListingPrice: (id: string, newPrice: number) => void;
   onBackToHome: () => void;
   currentLang: Language;
   currentUser: UserProfile;
@@ -49,7 +62,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteListing,
   onToggleVerifyListing,
   onToggleVideoVerified,
-  onUpdateListingPrice,
   onBackToHome,
   currentLang,
   currentUser,
@@ -60,20 +72,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onGrantAdminHash,
   onRevokeAdminHash,
 }) => {
-  // Navigation tabs without PostgreSQL database
   const { getPriceInsight } = useApp();
   const isPricedHigh = (l: HousingListing) => getPriceInsight(l).status === 'higher';
-  const [activeTab, setActiveTab] = useState<'listings' | 'ssoLogs' | 'fairPrice' | 'adminAuth' | 'pastListings' | 'reports'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'ssoLogs' | 'adminAuth' | 'pastListings' | 'reports' | 'userLookup' | 'banned'>('listings');
 
   // Şikayetler: yalnızca yöneticiler okuyabilir (RLS); sekme etiketindeki bekleyen sayısı için baştan yüklenir.
   const [reports, setReports] = useState<Report[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
+  // Banlı kullanıcılar: "Banlı Kullanıcılar" sekmesinde listelenir; şikayet kartındaki "Banla" / "Banı Kaldır" da buna göre.
+  const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
+  const bannedIds = bannedUsers.map((u) => u.userId);
   useEffect(() => {
     if (!isAdmin) return;
     let cancelled = false;
-    getReports().then((list) => {
+    Promise.all([getReports(), getBannedUsers()]).then(([list, banned]) => {
       if (cancelled) return;
       setReports(list);
+      setBannedUsers(banned);
       setReportsLoading(false);
     });
     return () => {
@@ -85,6 +100,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     await updateReportStatus(id, status);
     setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
   };
+
+  // İlan silinince şikayetleri de veritabanında silinir (on delete cascade); listeden de düşürülür.
+  const handleReportDeleteListing = async (listingId: string): Promise<boolean> => {
+    const ok = (await onDeleteListing(listingId)) !== false;
+    if (ok) {
+      setReports((prev) => prev.filter((r) => r.targetListingId !== listingId));
+      showNotification('İlan silindi.');
+    }
+    return ok;
+  };
+
+  const handleBanUser = async (userId: string, reason: string, reportId: string): Promise<BanResult> => {
+    const result = await adminBanUser(userId, reason, reportId);
+    if (result === 'ok') {
+      // Gerekçe ve profil adıyla birlikte güncel liste yeniden okunur.
+      getBannedUsers().then(setBannedUsers);
+      // Sunucu bu kullanıcıyla ve ilanlarıyla ilgili bekleyen şikayetleri incelendi olarak işaretledi.
+      setReports((prev) =>
+        prev.map((r) =>
+          r.status === 'pending' && (r.targetUserId === userId || r.targetListingOwnerId === userId)
+            ? { ...r, status: 'reviewed' }
+            : r
+        )
+      );
+      showNotification('Kullanıcı banlandı; ilanları yayından kaldırıldı.');
+    }
+    return result;
+  };
+
+  const handleUnbanUser = async (userId: string) => {
+    await adminUnbanUser(userId);
+    setBannedUsers((prev) => prev.filter((u) => u.userId !== userId));
+    showNotification('Ban kaldırıldı. Kullanıcının arşivlenen ilanları arşivde kalır; kendisi yeniden yayınlayabilir.');
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'unverified' | 'highPrice'>('all');
   const [adminNotification, setAdminNotification] = useState<string | null>(null);
@@ -94,16 +143,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newAdminNote, setNewAdminNote] = useState('');
   const [hashInputError, setHashInputError] = useState<string | null>(null);
 
+  // Kullanıcı bul: UID normal kullanıcılara gösterilmediği için adminler kimliği e-posta/kullanıcı adıyla bulur.
+  const [lookupQuery, setLookupQuery] = useState('');
+  const [lookupResults, setLookupResults] = useState<AdminUserMatch[] | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  const handleLookupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = lookupQuery.trim();
+    if (q.replace(/^@/, '').length < 2) {
+      setLookupError('En az 2 karakter girin.');
+      return;
+    }
+    setLookupError(null);
+    setLookupLoading(true);
+    try {
+      setLookupResults(await adminFindUsers(q));
+    } catch (err) {
+      console.error('User lookup error:', err);
+      setLookupResults(null);
+      setLookupError('Arama yapılamadı. Yönetici olarak giriş yaptığınızdan emin olun.');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   const showNotification = (msg: string) => {
     setAdminNotification(msg);
     setTimeout(() => setAdminNotification(null), 3500);
   };
 
-  // Yetki AppContext'ten gelir; asıl koruma firestore.rules'dadır.
-  const isAuthorizedAdmin = isAdmin;
-
-  // If unauthorized user somehow enters, display access denied shield screen
-  if (!isAuthorizedAdmin) {
+  // Yetki AppContext'ten gelir; asıl koruma veritabanı kurallarındadır (RLS).
+  if (!isAdmin) {
     return (
       <div className="w-full max-w-2xl mx-auto py-12 px-4 animate-in fade-in duration-200">
         <div className="bg-white rounded-2xl border border-rose-200 shadow-lg p-6 sm:p-8 text-center space-y-5">
@@ -119,34 +191,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               Yönetici Paneli Koruması
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
-              Her kayıt olan kullanıcı admin olamaz. Bu panele yalnızca <strong>Ana Admin (Super Admin)</strong> tarafından kullanıcı kimliği (UID) ile yetki verilmiş yöneticiler erişebilir.
+              Her kayıt olan kullanıcı admin olamaz. Bu panele yalnızca <strong>Ana Admin (Super Admin)</strong> tarafından yetki verilmiş yöneticiler erişebilir.
             </p>
           </div>
 
-          <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-2 max-w-md mx-auto text-left">
-            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
-              Sizin Kullanıcı Kimliğiniz (UID):
-            </span>
-            <div className="flex items-center justify-between gap-2">
-              <code className="text-xs font-mono font-bold text-stone-900 bg-white px-3 py-1.5 rounded-lg border border-stone-200 select-all">
-                {currentUser.userHash}
-              </code>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(currentUser.userHash);
-                  showNotification('Kullanıcı kimliğiniz kopyalandı.');
-                }}
-                className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>Kopyala</span>
-              </button>
-            </div>
-            <p className="text-[11px] text-stone-500">
-              Admin yetkisi almak için yukarıdaki kimliği Ana Admin'e iletin.
-            </p>
-          </div>
+          <p className="p-4 bg-stone-50 border border-stone-200 rounded-xl max-w-md mx-auto text-[11px] text-stone-600">
+            Admin yetkisi almak için Ana Admin'e kayıtlı e-posta adresinizi veya kullanıcı adınızı iletin.
+          </p>
 
           <div className="pt-2">
             <button
@@ -167,9 +218,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     e.preventDefault();
     setHashInputError(null);
 
-    const cleanUid = newAdminHash.trim();
-    if (!/^[A-Za-z0-9]{20,128}$/.test(cleanUid)) {
-      setHashInputError('Lütfen geçerli bir kullanıcı kimliği (UID) girin. Kullanıcı bunu Profil sayfasından kopyalayabilir.');
+    const cleanUid = newAdminHash.trim().toLowerCase();
+    // Supabase kullanıcı kimlikleri UUID biçimindedir.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanUid)) {
+      setHashInputError('Lütfen geçerli bir kullanıcı kimliği (UID) girin. Kimliği "Kullanıcı Bul" sekmesinden e-posta veya kullanıcı adıyla bulabilirsiniz.');
       return;
     }
     if (authorizedAdminHashes.includes(cleanUid)) {
@@ -198,7 +250,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (!matchesSearch) return false;
     if (statusFilter === 'verified') return item.isStudentCardVerified;
     if (statusFilter === 'unverified') return !item.isStudentCardVerified;
-    if (statusFilter === 'highPrice') return isPricedHigh(item) || item.price > 450;
+    if (statusFilter === 'highPrice') return isPricedHigh(item);
     return true;
   });
 
@@ -207,7 +259,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const verifiedListingsCount = listings.filter(l => l.isStudentCardVerified).length;
   const videoVerifiedCount = listings.filter(l => l.hasVideoTour).length;
   const averageRent = Math.round(listings.reduce((acc, l) => acc + l.price, 0) / (listings.length || 1));
-  const highPriceCount = listings.filter(l => l.price > 450 || isPricedHigh(l)).length;
+  const highPriceCount = listings.filter(isPricedHigh).length;
   const archivedCount = archivedListings.length;
 
   return (
@@ -250,7 +302,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 )}
               </div>
               <p className="text-xs text-stone-500 mt-0.5">
-                UniPD doğrulamaları, Canone Concordato kira denetimi ve yönetici atama masası.
+                İlan denetimi, UniPD doğrulamaları, şikayet ve ban yönetimi, yönetici atama masası.
               </p>
             </div>
           </div>
@@ -289,7 +341,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <Archive className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-700">{archivedCount}</div>
-          <span className="text-[10px] text-emerald-800 font-semibold">Kiracı bulundu (Arşiv)</span>
+          <span className="text-[10px] text-emerald-800 font-semibold">Arşivdeki ilanlar</span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
@@ -325,11 +377,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <Key className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl font-black text-amber-600">{authorizedAdminHashes.length}</div>
-          <span className="text-[10px] text-stone-500">Hash ile onaylı</span>
+          <span className="text-[10px] text-stone-500">UID ile yetkili</span>
         </div>
       </div>
 
-      {/* NAVIGATION TABS (PostgreSQL REMOVED, SSO & Admin Auth & Past Listings ADDED) */}
+      {/* Sekmeler */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-2 flex flex-wrap gap-2">
         <button
           type="button"
@@ -344,7 +396,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <span>İlan Denetimi & Moderasyon ({listings.length})</span>
         </button>
 
-        {/* REQ 1: SSO Verification Logs (No documents requested) */}
         <button
           type="button"
           onClick={() => setActiveTab('ssoLogs')}
@@ -358,20 +409,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <span>UniPD Doğrulanmış Kullanıcılar</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('fairPrice')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeTab === 'fairPrice'
-              ? 'bg-stone-900 text-white shadow-sm'
-              : 'text-stone-600 hover:bg-stone-100'
-          }`}
-        >
-          <Scale className="w-4 h-4" />
-          <span>Canone Concordato & Tavan Fiyat</span>
-        </button>
-
-        {/* REQ 4: Past Listings & Market Trend Data */}
         <button
           type="button"
           onClick={() => setActiveTab('pastListings')}
@@ -398,7 +435,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <span>Şikayetler{pendingReportCount > 0 ? ` (${pendingReportCount})` : ''}</span>
         </button>
 
-        {/* REQ 3: Admin Authorization (yalnızca ana admin) */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('banned')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'banned'
+              ? 'bg-stone-900 text-white shadow-sm'
+              : 'text-stone-600 hover:bg-stone-100'
+          }`}
+        >
+          <Ban className="w-4 h-4" />
+          <span>Banlı Kullanıcılar ({bannedUsers.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('userLookup')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'userLookup'
+              ? 'bg-stone-900 text-white shadow-sm'
+              : 'text-stone-600 hover:bg-stone-100'
+          }`}
+        >
+          <UserSearch className="w-4 h-4" />
+          <span>Kullanıcı Bul</span>
+        </button>
+
+        {/* Admin yetkilendirme (yalnızca ana admin) */}
         {isSuperAdmin && (
         <button
           type="button"
@@ -415,11 +478,201 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         )}
       </div>
 
-      {activeTab === 'reports' && (
-        <ReportsPanel reports={reports} loading={reportsLoading} onChangeStatus={handleReportStatus} />
+      {/* Banlı kullanıcılar: banı buradan kaldırılır (şikayeti silinmiş kullanıcılar dahil) */}
+      {activeTab === 'banned' && (
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-4">
+          <div className="border-b border-stone-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Ban className="w-5 h-5 text-rose-600" />
+              <h2 className="text-base font-bold text-stone-900">Banlı Kullanıcılar</h2>
+            </div>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Banı kaldırılan kullanıcı yeniden giriş yapabilir. Ban sırasında arşivlenen ilanları arşivde kalır; kullanıcı isterse kendisi yeniden yayınlar.
+            </p>
+          </div>
+
+          {reportsLoading ? (
+            <p className="text-xs text-stone-500 py-6 text-center">Yükleniyor…</p>
+          ) : bannedUsers.length === 0 ? (
+            <p className="text-sm text-stone-500 py-8 text-center">Banlı kullanıcı yok.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-stone-50 text-stone-500 font-semibold border-b border-stone-200 uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="p-3">Kullanıcı</th>
+                    <th className="p-3">Gerekçe</th>
+                    <th className="p-3">Ban Tarihi</th>
+                    <th className="p-3 text-right">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {bannedUsers.map((u) => (
+                    <tr key={u.userId} className="hover:bg-stone-50/80 transition align-top">
+                      <td className="p-3">
+                        <span className="block font-bold text-stone-900">{u.name || '—'}</span>
+                        <span className="block text-orange-600 font-semibold">{u.username ? `@${u.username}` : '—'}</span>
+                        <code className="block mt-1 font-mono text-[10px] text-stone-400 break-all">{u.userId}</code>
+                      </td>
+                      <td className="p-3 text-stone-700 max-w-xs whitespace-pre-wrap">{u.reason || '—'}</td>
+                      <td className="p-3 text-stone-500 whitespace-nowrap">{new Date(u.createdAt).toLocaleDateString('tr-TR')}</td>
+                      <td className="p-3 text-right">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await handleUnbanUser(u.userId);
+                            } catch (err) {
+                              console.error('Unban error:', err);
+                              showNotification('Ban kaldırılamadı. Lütfen tekrar deneyin.');
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-xs font-bold rounded-lg cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Banı Kaldır
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* TAB 1: LISTINGS MODERATION */}
+      {/* KULLANICI BUL: e-posta / kullanıcı adı ile UID */}
+      {activeTab === 'userLookup' && (
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-5">
+          <div className="border-b border-stone-100 pb-4">
+            <div className="flex items-center gap-2">
+              <UserSearch className="w-5 h-5 text-stone-700" />
+              <h2 className="text-base font-bold text-stone-900">Kullanıcı Bul</h2>
+            </div>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Kullanıcı kimliği (UID) normal kullanıcılara gösterilmez. Bir kullanıcının kimliğini kayıtlı e-posta adresi veya kullanıcı adıyla buradan bulabilirsiniz.
+            </p>
+          </div>
+
+          <form onSubmit={handleLookupSubmit} className="flex flex-col sm:flex-row gap-2.5">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="search"
+                value={lookupQuery}
+                onChange={(e) => setLookupQuery(e.target.value)}
+                placeholder="E-posta veya kullanıcı adı (örn. ad.soyad@studenti.unipd.it, @kullanici)"
+                aria-label="E-posta veya kullanıcı adı"
+                className="w-full min-h-[44px] pl-10 pr-3.5 text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-stone-500"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={lookupLoading}
+              className="min-h-[44px] px-5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <Search className="w-4 h-4" />
+              <span>{lookupLoading ? 'Aranıyor…' : 'Ara'}</span>
+            </button>
+          </form>
+
+          {lookupError && <p className="text-xs text-rose-600 font-semibold">{lookupError}</p>}
+
+          {lookupResults && (
+            lookupResults.length === 0 ? (
+              <p className="text-xs text-stone-500 py-2">Eşleşen kullanıcı bulunamadı.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-stone-50 text-stone-500 font-semibold border-b border-stone-200 uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="p-3">Kullanıcı</th>
+                      <th className="p-3">E-posta</th>
+                      <th className="p-3">Kullanıcı Kimliği (UID)</th>
+                      <th className="p-3 text-right">İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {lookupResults.map((u) => {
+                      const alreadyAdmin = authorizedAdminHashes.includes(u.id) || u.id === currentUser.userHash;
+                      return (
+                        <tr key={u.id} className="hover:bg-stone-50/80 transition">
+                          <td className="p-3">
+                            <span className="block font-bold text-stone-900">{u.name || '—'}</span>
+                            <span className="block text-orange-600 font-semibold">{u.username ? `@${u.username}` : '—'}</span>
+                          </td>
+                          <td className="p-3 text-stone-700 break-all">{u.email || '—'}</td>
+                          <td className="p-3">
+                            <code className="font-mono text-[11px] font-bold text-stone-900 bg-stone-100 px-2 py-1 rounded border border-stone-200 select-all break-all">
+                              {u.id}
+                            </code>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(u.id);
+                                  showNotification('Kullanıcı kimliği kopyalandı.');
+                                }}
+                                className="px-2.5 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Kopyala</span>
+                              </button>
+                              {isSuperAdmin && !alreadyAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setNewAdminHash(u.id);
+                                    setNewAdminNote(u.name || u.username || '');
+                                    setHashInputError(null);
+                                    setActiveTab('adminAuth');
+                                  }}
+                                  className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                                >
+                                  <Key className="w-3.5 h-3.5" />
+                                  <span>Admin Yap</span>
+                                </button>
+                              )}
+                              {alreadyAdmin && (
+                                <span className="bg-blue-100 text-blue-900 border border-blue-300 px-2 py-1 rounded-full text-[10px] font-bold">
+                                  Yönetici
+                                </span>
+                              )}
+                              {bannedIds.includes(u.id) && (
+                                <span className="bg-rose-100 text-rose-900 border border-rose-300 px-2 py-1 rounded-full text-[10px] font-bold">
+                                  Banlı
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      {activeTab === 'reports' && (
+        <ReportsPanel
+          reports={reports}
+          loading={reportsLoading}
+          onChangeStatus={handleReportStatus}
+          bannedIds={bannedIds}
+          adminIds={[currentUser.userHash, ...authorizedAdminHashes]}
+          onDeleteListing={handleReportDeleteListing}
+          onBanUser={handleBanUser}
+          onUnbanUser={handleUnbanUser}
+        />
+      )}
+
+      {/* İlan denetimi */}
       {activeTab === 'listings' && (
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-4">
           <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -523,9 +776,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <td className="p-3 text-right">
                       <button
                         type="button"
-                        onClick={() => {
-                          onDeleteListing(listing.id);
-                          showNotification('İlan başarıyla silindi.');
+                        onClick={async () => {
+                          if ((await onDeleteListing(listing.id)) !== false) showNotification('İlan başarıyla silindi.');
                         }}
                         className="text-stone-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition cursor-pointer"
                         title="İlanı Sil"
@@ -541,7 +793,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB 2: UNIPD SSO VERIFICATION DESK (REQ 1 - NO DOCUMENTS) */}
+      {/* UniPD doğrulanmış kullanıcılar */}
       {activeTab === 'ssoLogs' && (
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-4">
           <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-start gap-3">
@@ -553,7 +805,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 UniPD Doğrulanmış Kullanıcılar ({verifiedUsers.length})
               </strong>
               <p className="text-emerald-800 leading-relaxed">
-                Öğrencilerden <strong>hiçbir evrak talep edilmez</strong>. Rozet, kullanıcının @studenti.unipd.it / @unipd.it adresine gönderilen doğrulama linkine tıklamasıyla Firebase tarafından verilir ve Firestore kurallarıyla korunur.
+                Öğrencilerden <strong>hiçbir evrak talep edilmez</strong>. Rozet, kullanıcının @studenti.unipd.it / @unipd.it adresine gönderilen doğrulama linkine tıklamasıyla verilir ve veritabanı kurallarıyla korunur.
               </p>
             </div>
           </div>
@@ -607,58 +859,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB 3: CANONE CONCORDATO FAIR PRICE */}
-      {activeTab === 'fairPrice' && (
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-            <div>
-              <h2 className="text-sm md:text-base font-bold text-stone-900">
-                Canone Concordato & Tavan Fiyat Denetimi
-              </h2>
-              <p className="text-xs text-stone-500">
-                Padova Belediyesi öğrenci oda tavan fiyatı: <strong>€410 - €450/ay</strong>
-              </p>
-            </div>
-            <span className="bg-rose-50 text-rose-800 border border-rose-200 px-3 py-1 rounded-full text-xs font-bold">
-              {highPriceCount} İlan Risk Altında
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {listings.filter(l => l.price > 430).map(listing => (
-              <div key={listing.id} className="p-4 bg-stone-50 rounded-xl border border-stone-200 flex items-center justify-between gap-3">
-                <div>
-                  <h4 className="font-bold text-stone-900 text-xs">{listing.title}</h4>
-                  <div className="text-[11px] text-stone-500">{listing.district}</div>
-                  <div className="text-xs font-bold text-rose-600 mt-1">€{listing.price} / ay</div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onUpdateListingPrice(listing.id, 410);
-                      showNotification(`"${listing.title}" fiyatı €410 olarak güncellendi.`);
-                    }}
-                    className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition cursor-pointer"
-                  >
-                    Tavana Sabitle (€410)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteListing(listing.id)}
-                    className="text-stone-400 hover:text-rose-600 p-1.5 rounded-lg transition cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: PAST LISTINGS WAREHOUSE (REQ 4 - HISTORICAL DATA) */}
+      {/* Geçmiş ilanlar */}
       {activeTab === 'pastListings' && (
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-4">
           <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-start gap-3">
@@ -729,7 +930,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB 5: ADMIN AUTHORIZATION & HASH PERMISSION (REQ 3 - SUPER ADMIN ONLY) */}
+      {/* Admin yetkilendirme (yalnızca ana admin) */}
       {activeTab === 'adminAuth' && isSuperAdmin && (
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-stone-100 pb-4">
@@ -741,7 +942,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </h2>
               </div>
               <p className="text-xs text-stone-500 mt-0.5">
-                Her kayıt olan admin olamaz. Yalnızca Ana Admin, kullanıcının Profil sayfasındaki kimliğini (UID) buraya girerek yönetici yetkisi verebilir.
+                Her kayıt olan admin olamaz. Yalnızca Ana Admin, "Kullanıcı Bul" sekmesinden bulduğu kullanıcı kimliğini (UID) buraya girerek yönetici yetkisi verebilir.
               </p>
             </div>
 
@@ -768,7 +969,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     type="text"
                     value={newAdminHash}
                     onChange={(e) => setNewAdminHash(e.target.value)}
-                    placeholder="Örn: 3fK9xQ2mB7..."
+                    placeholder="Örn: 83e22ad1-d1e4-48e9-…"
                     className="w-full min-h-[42px] px-3.5 text-xs font-mono border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-amber-500"
                   />
                 </div>

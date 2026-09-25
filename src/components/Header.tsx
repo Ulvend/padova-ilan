@@ -5,7 +5,6 @@ import {
   Plus,
   Globe,
   MessageSquare,
-  Settings,
   KeyRound,
   LogOut,
   ChevronDown,
@@ -31,7 +30,6 @@ interface HeaderProps {
   myListingsCount?: number;
   currentUser?: UserProfile;
   isAdmin?: boolean;
-  onOpenProfileSettings?: () => void;
   onOpenAuthModal?: (mode?: 'login' | 'register' | 'forgot') => void;
   isLoggedIn?: boolean;
   onLogout?: () => void;
@@ -48,7 +46,6 @@ export const Header: React.FC<HeaderProps> = ({
   myListingsCount = 0,
   currentUser = CURRENT_USER,
   isAdmin = false,
-  onOpenProfileSettings,
   onOpenAuthModal,
   isLoggedIn = false,
   onLogout,
@@ -194,20 +191,6 @@ export const Header: React.FC<HeaderProps> = ({
                         {/* Menu items */}
                         <div className="py-1 text-xs font-medium">
                           
-                          {/* Profil Ayarları Modal Trigger */}
-                          <button
-                            type="button"
-                            id="menu-item-profile-settings"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              if (onOpenProfileSettings) onOpenProfileSettings();
-                            }}
-                            className="w-full text-left px-4 py-2.5 text-stone-700 hover:bg-orange-50 hover:text-orange-950 flex items-center gap-2.5 cursor-pointer transition"
-                          >
-                            <Settings className="w-4 h-4 text-orange-600" />
-                            <span className="font-semibold">{t.profileSettingsNav}</span>
-                          </button>
-
                           {/* Profil Sayfası */}
                           <button
                             type="button"

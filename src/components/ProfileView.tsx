@@ -40,6 +40,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const [copiedHash, setCopiedHash] = useState(false);
 
+  const isStaff = currentUser.role === 'admin' || currentUser.role === 'superadmin';
+
   const handleCopyHash = () => {
     navigator.clipboard.writeText(currentUser.userHash);
     setCopiedHash(true);
@@ -110,21 +112,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-100 pb-5">
           <div className="flex items-center gap-4">
-            <div className="relative group">
+            <div>
               <img 
                 src={currentUser.avatar} 
                 alt={currentUser.name} 
                 className="w-16 h-16 rounded-full border border-stone-200 object-cover shadow-xs" 
               />
-              {onOpenProfileSettings && (
-                <button
-                  onClick={onOpenProfileSettings}
-                  title={t.profileTabPhoto}
-                  className="absolute inset-0 rounded-full bg-stone-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition cursor-pointer"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
-              )}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -154,14 +147,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <p className="text-xs text-orange-600 font-semibold">
                   @{currentUser.username} • {currentUser.faculty}
                 </p>
-                {onOpenProfileSettings && (
-                  <button
-                    onClick={onOpenProfileSettings}
-                    className="text-[11px] text-stone-500 hover:text-orange-600 font-medium underline cursor-pointer"
-                  >
-                    {t.changeDepartment}
-                  </button>
-                )}
               </div>
               <p className="text-[11px] text-stone-400 mt-0.5">
                 {currentUser.email}
@@ -174,69 +159,43 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
 
-        {/* User Hash Code Card for Admin Authorization */}
-        <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-amber-600" />
-              <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
-                {t.userIdLabel}
-              </span>
-            </div>
-            <p className="text-[11px] text-stone-500">
-              {t.adminIdHint}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <code className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 font-mono text-xs font-bold text-stone-900 select-all tracking-wider shadow-2xs">
-              {currentUser.userHash}
-            </code>
-            <button
-              type="button"
-              onClick={handleCopyHash}
-              className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-            >
-              {copiedHash ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{t.copied}</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{t.copyBtn}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Profile Settings Quick Management Banner */}
-        {onOpenProfileSettings && (
-          <div className="p-4 bg-orange-50/60 border border-orange-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-2xs">
-                <Settings className="w-5 h-5" />
+        {/* Kullanıcı kimliği (UID) yalnızca adminlere ve ana admine gösterilir. */}
+        {isStaff && (
+          <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                  {t.userIdLabel}
+                </span>
               </div>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-stone-900">
-                  {t.profileSettingsTitle}
-                </h4>
-                <p className="text-[11px] text-stone-600">
-                  {t.profileSettingsHint}
-                </p>
-              </div>
+              <p className="text-[11px] text-stone-500">
+                {t.adminIdHint}
+              </p>
             </div>
 
-            <button
-              type="button"
-              onClick={onOpenProfileSettings}
-              className="px-4 py-2 bg-white hover:bg-orange-50 text-orange-950 border border-orange-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
-            >
-              <Settings className="w-3.5 h-3.5 text-orange-600" />
-              <span>{t.openSettingsBtn}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <code className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 font-mono text-xs font-bold text-stone-900 select-all tracking-wider shadow-2xs">
+                {currentUser.userHash}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopyHash}
+                className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                {copiedHash ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{t.copied}</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{t.copyBtn}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>

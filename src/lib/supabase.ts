@@ -144,6 +144,7 @@ export const describeAuthError = (error: unknown, lang: Language = 'tr'): string
   if (withCode?.code === 'app/not-unipd-email') return t.errUnipdDomain;
 
   const message = withCode?.message || '';
+  if (/banned/i.test(message)) return t.errAccountBanned;
   if (/invalid login credentials/i.test(message)) return t.errBadCredentials;
   if (/already registered/i.test(message)) return t.errAlreadyRegistered;
   if (/user not found/i.test(message)) return t.errBadCredentials;

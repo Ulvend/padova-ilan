@@ -66,6 +66,23 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
   return Boolean(data);
 }
 
+export interface AdminUserMatch {
+  id: string;
+  username: string | null;
+  name: string | null;
+  email: string | null;
+  createdAt: string;
+}
+
+/** Yalnızca adminler: e-posta veya kullanıcı adıyla kullanıcı (ve UID) arar. Sunucu admin değilse reddeder. */
+export async function adminFindUsers(search: string): Promise<AdminUserMatch[]> {
+  const { data, error } = await supabase.rpc('admin_find_users', { search });
+  if (error) throw error;
+  return ((data ?? []) as { id: string; username: string | null; name: string | null; email: string | null; created_at: string }[]).map(
+    (r) => ({ id: r.id, username: r.username, name: r.name, email: r.email, createdAt: r.created_at })
+  );
+}
+
 /** Kullanıcı adını değiştirir; başkası almışsa 'taken' döner. */
 export async function updateUsername(userId: string, username: string): Promise<'ok' | 'taken'> {
   const { error } = await supabase
@@ -800,6 +817,8 @@ export interface Report {
   reporterId: string;
   targetListingId?: string;
   targetListingTitle?: string;
+  // Şikayet edilen ilanın sahibi (ilan silinmişse bilinmez).
+  targetListingOwnerId?: string;
   targetUserId?: string;
   category: ReportCategory;
   reason: string;
@@ -818,7 +837,7 @@ interface ReportRow {
   status: ReportStatus;
   created_at: string;
   reviewed_at: string | null;
-  listings?: { title: string } | null;
+  listings?: { title: string; user_id: string | null } | null;
 }
 
 /** Bir ilanı bildirir. Aynı ilan için bekleyen şikayet varsa 'duplicate' döner. */
@@ -843,7 +862,7 @@ export async function submitListingReport(input: {
 export async function getReports(): Promise<Report[]> {
   const { data, error } = await supabase
     .from('reports')
-    .select('*, listings(title)')
+    .select('*, listings(title, user_id)')
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) {
@@ -855,6 +874,7 @@ export async function getReports(): Promise<Report[]> {
     reporterId: r.reporter_id,
     targetListingId: r.target_listing_id ?? undefined,
     targetListingTitle: r.listings?.title,
+    targetListingOwnerId: r.listings?.user_id ?? undefined,
     targetUserId: r.target_user_id ?? undefined,
     category: r.category,
     reason: r.reason,
@@ -867,6 +887,71 @@ export async function getReports(): Promise<Report[]> {
 export async function updateReportStatus(id: string, status: ReportStatus): Promise<void> {
   const { error } = await supabase.from('reports').update({ status }).eq('id', id);
   if (error) throw error;
+}
+
+// ---------- Kullanıcı banlama (yalnızca yöneticiler; kurallar 0015_user_bans.sql'de) ----------
+
+export type BanResult = 'ok' | 'cannot_ban_admin' | 'cannot_ban_self';
+
+/**
+ * Kullanıcıyı banlar: girişi engellenir, yayındaki ilanları arşivlenir, ilgili bekleyen şikayetler
+ * incelendi sayılır. Yöneticiler ve kişinin kendisi banlanamaz.
+ */
+export async function adminBanUser(userId: string, reason: string, reportId?: string): Promise<BanResult> {
+  const { error } = await supabase.rpc('admin_ban_user', { p_user_id: userId, p_reason: reason, p_report_id: reportId ?? null });
+  if (!error) return 'ok';
+  if (/cannot_ban_admin/.test(error.message)) return 'cannot_ban_admin';
+  if (/cannot_ban_self/.test(error.message)) return 'cannot_ban_self';
+  throw error;
+}
+
+export async function adminUnbanUser(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_unban_user', { p_user_id: userId });
+  if (error) throw error;
+}
+
+export interface BannedUser {
+  userId: string;
+  name?: string;
+  username?: string;
+  reason: string;
+  createdAt: string;
+}
+
+/** Yöneticiler için banlı kullanıcılar (en yeni ban önce), profil adlarıyla. */
+export async function getBannedUsers(): Promise<BannedUser[]> {
+  const { data, error } = await supabase
+    .from('banned_users')
+    .select('user_id, reason, created_at')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.warn('Could not load banned users:', error);
+    return [];
+  }
+  const rows = data as { user_id: string; reason: string; created_at: string }[];
+  // banned_users auth.users'a bağlı olduğu için profiller ayrı sorguyla eşlenir.
+  const profiles = new Map<string, { name: string; username: string }>();
+  if (rows.length > 0) {
+    const { data: profileRows } = await supabase
+      .from('profiles')
+      .select('id, name, username')
+      .in('id', rows.map((r) => r.user_id));
+    for (const p of (profileRows ?? []) as { id: string; name: string; username: string }[]) profiles.set(p.id, p);
+  }
+  return rows.map((r) => ({
+    userId: r.user_id,
+    name: profiles.get(r.user_id)?.name,
+    username: profiles.get(r.user_id)?.username,
+    reason: r.reason,
+    createdAt: r.created_at,
+  }));
+}
+
+/** Oturum açmış kullanıcı banlı mı? (RLS kullanıcıya yalnızca kendi kaydını gösterir.) */
+export async function isUserBanned(userId: string): Promise<boolean> {
+  const { data, error } = await supabase.from('banned_users').select('user_id').eq('user_id', userId).maybeSingle();
+  if (error) return false;
+  return Boolean(data);
 }
 
 /**

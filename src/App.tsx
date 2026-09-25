@@ -151,7 +151,6 @@ const AppLayout: React.FC = () => {
         myListingsCount={myListings.length}
         currentUser={currentUser}
         isAdmin={isAdmin}
-        onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
         onOpenAuthModal={handleOpenAuthModal}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}

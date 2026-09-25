@@ -12,7 +12,6 @@ export const AdminPage: React.FC = () => {
     handleDeleteListing,
     handleToggleVerifyListing,
     handleToggleVideoVerified,
-    handleUpdateListingPrice,
     currentLang,
     currentUser,
     isAdmin,
@@ -36,7 +35,6 @@ export const AdminPage: React.FC = () => {
       onDeleteListing={handleDeleteListing}
       onToggleVerifyListing={handleToggleVerifyListing}
       onToggleVideoVerified={handleToggleVideoVerified}
-      onUpdateListingPrice={handleUpdateListingPrice}
       onBackToHome={() => navigate('/')}
       currentLang={currentLang}
       currentUser={currentUser}
