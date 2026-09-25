@@ -84,8 +84,9 @@ const normalizeSearch = (value: string): string =>
     .replace(/ı/g, 'i');
 
 export const DEFAULT_FILTERS: FilterState = {
-  categoryTab: 'all',
   searchQuery: '',
+  rentalTerm: 'all',
+  onlySubentro: false,
   contractType: 'all',
   district: 'all',
   maxPrice: MAX_PRICE_UNLIMITED,
@@ -190,7 +191,7 @@ interface AppContextType {
   handleDeleteListing: (id: string) => Promise<boolean>;
   handleToggleVerifyListing: (id: string) => void;
   handleToggleVideoVerified: (id: string) => void;
-  handleMarkListingAsRented: (listingId: string, details?: { rentedPrice: number; tenantType: string; note?: string }) => void;
+  handleMarkListingAsRented: (listingId: string, details?: { rentedPrice: number; note?: string }) => void;
   handleReactivateListing: (listingId: string) => void;
   // Teyit süresini baştan başlatır (İlanlarım > "Süreyi Yenile").
   handleRenewListing: (listingId: string) => void;
@@ -985,7 +986,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleMarkListingAsRented = (
     listingId: string,
-    details?: { rentedPrice: number; tenantType: string; note?: string }
+    details?: { rentedPrice: number; note?: string }
   ) => {
     const target = allListings.find((l) => l.id === listingId);
     if (!target || !authUser) return;
@@ -1001,7 +1002,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rentedAt: rentedDateStr,
       rentedPrice: details?.rentedPrice || target.price,
       archiveReason: details?.note || 'Kiracı bulundu',
-      tenantType: details?.tenantType || 'UniPD Öğrencisi',
       confirmationTimeLeft: ARCHIVED_CONFIRMATION_LABEL,
     })
       .then(() =>
@@ -1151,9 +1151,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => clearInterval(timer);
   }, []);
 
+  // Yalnızca geliştirme: adrese `?demo=20` eklenirse sahte ilanlar listeye katılır (data/demoListings.ts).
+  // Veritabanına yazılmaz, önbelleğe girmez ve üretim paketine dahil edilmez.
+  const [demoListings, setDemoListings] = useState<HousingListing[]>([]);
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const param = new URLSearchParams(window.location.search).get('demo');
+    if (param === null) return;
+    const count = Math.min(60, Math.max(1, Number(param) || 20));
+    import('../data/demoListings').then((m) => setDemoListings(m.generateDemoListings(count)));
+  }, []);
+
   const listings = useMemo(
-    () => allListings.filter((l) => !l.isArchived && !isConfirmationExpired(l, nowMs)),
-    [allListings, nowMs]
+    () => [...allListings, ...demoListings].filter((l) => !l.isArchived && !isConfirmationExpired(l, nowMs)),
+    [allListings, demoListings, nowMs]
   );
 
   // Sözleşme aralığı bitmiş ilanlar herkese açık akışlarda gösterilmez (sahibi kendi listesinde görmeye devam eder).

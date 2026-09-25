@@ -231,7 +231,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
               <div className="flex items-center gap-1.5 text-[15px] text-stone-600">
                 <MapPin className="w-4 h-4 shrink-0" />
                 <span>
-                  {listing.streetAddress} · {listing.district.split('/')[0].trim()}
+                  {listing.streetAddress}
                 </span>
               </div>
             </div>

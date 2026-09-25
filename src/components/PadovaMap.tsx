@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
 import { HousingListing, Language } from '../types';
 import { UNIPD_LANDMARKS, resolveListingCoords } from '../data/mockData';
 import { landmarkLabel } from '../utils/landmarkText';
@@ -60,7 +62,7 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const markersLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const landmarksLayerRef = useRef<L.LayerGroup | null>(null);
 
   const [showLandmarks, setShowLandmarks] = useState(true);
@@ -89,10 +91,30 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
         maxZoom: 19,
       }).addTo(map);
 
+      // Yalnızca "Leaflet" öneki kaldırılır; OpenStreetMap kaynak gösterimi lisans gereği kalır.
+      map.attributionControl.setPrefix(false);
+
       // Add Zoom Control to Top-Right
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      const markersGroup = L.layerGroup().addTo(map);
+      // Yakın ilanlar kümelenir (sayı balonu). Kümeye tıklayınca yakınlaşır; 18 ve üstü zoom'da yalnızca birebir aynı
+      // koordinattaki ilanlar kümelenir, diğerleri gerçek konumlarında tek tek görünür. Aynı noktadaki ilanlar
+      // en yakın zoom'da tıklanınca yelpaze gibi açılır (spiderfy), çizgileri gerçek konuma bağlıdır.
+      const markersGroup = L.markerClusterGroup({
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        spiderfyOnMaxZoom: true,
+        maxClusterRadius: (zoom: number) => (zoom >= 18 ? 1 : 55),
+        iconCreateFunction: (cluster) => {
+          const count = cluster.getChildCount();
+          const size = count < 10 ? 38 : count < 50 ? 44 : 52;
+          return L.divIcon({
+            className: 'custom-cluster-pin',
+            html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:#1c1917;color:#fff;border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${count < 100 ? 13 : 12}px;cursor:pointer;user-select:none">${count}</div>`,
+            iconSize: [size, size],
+          });
+        },
+      }).addTo(map);
       const landmarksGroup = L.layerGroup().addTo(map);
 
       markersLayerRef.current = markersGroup;
@@ -189,7 +211,7 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
     if (showLandmarks && !selectedListing) {
       UNIPD_LANDMARKS.forEach((lm) => {
         const landmarkHtml = `
-          <div class="cursor-pointer transform -translate-x-1/2 -translate-y-full hover:scale-110 transition">
+          <div class="w-max cursor-pointer transform -translate-x-1/2 -translate-y-full hover:scale-110 transition">
             <div class="flex items-center gap-1.5 bg-stone-900 text-amber-300 border border-amber-400/80 px-2.5 py-1 rounded-full shadow-md text-[10px] font-semibold whitespace-nowrap">
               ${landmarkIconSvg(lm.icon)}
               <span class="max-w-[120px] truncate">${landmarkLabel(lm.name, lm.type, currentLang).name}</span>
@@ -201,8 +223,9 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
         const icon = L.divIcon({
           className: 'custom-landmark-pin',
           html: landmarkHtml,
-          iconSize: [80, 26],
-          iconAnchor: [40, 26],
+          // Boyutsuz taşıyıcı: etiket kendi genişliğiyle (translate -50% / -100%) ortalanır, ucu tam koordinata oturur.
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
         });
 
         const landmarkMarker = L.marker([lm.lat, lm.lng], { icon });
@@ -241,15 +264,16 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
     >
       {/* Map Control Header Bar */}
       <div className="bg-stone-900 text-white px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-stone-800 shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="bg-orange-600 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider rounded-md">
-            {t.livePadovaMap}
-          </span>
-          <span className="text-[11px] bg-stone-800 text-stone-200 border border-stone-700 px-2.5 py-0.5 rounded-md font-medium flex items-center gap-1.5">
-            <MapPin className="w-3 h-3 text-orange-400" /> 
-            {selectedListing ? selectedListing.streetAddress : `${listings.length} ${t.listingsOnMap}`}
-          </span>
-        </div>
+        {selectedListing ? (
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] bg-stone-800 text-stone-200 border border-stone-700 px-2.5 py-0.5 rounded-md font-medium flex items-center gap-1.5">
+              <MapPin className="w-3 h-3 text-orange-400" />
+              {selectedListing.streetAddress}
+            </span>
+          </div>
+        ) : (
+          <div />
+        )}
 
         <div className="flex items-center gap-1.5 text-xs">
           {!selectedListing && (
@@ -372,17 +396,6 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
           </div>
         </div>
 
-      </div>
-
-      {/* Bottom Info Status */}
-      <div className="bg-stone-50 px-3 py-2 border-t border-stone-200 text-[11px] text-stone-500 flex flex-wrap items-center justify-between gap-1.5">
-        <span className="flex items-center gap-1.5">
-          <MapPin className="w-3.5 h-3.5 text-orange-600" />
-          <span>{t.realCoordinates}</span>
-        </span>
-        <span className="text-[10px] text-stone-400 font-medium">
-          {t.openStreetMapLayer}
-        </span>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ export const MAX_RADARS = 5;
 export const EMPTY_CRITERIA: RadarCriteria = {
   onlyVideoTour: false,
   onlyStudentVerified: false,
-  roommatesOnly: false,
+  onlySubentro: false,
 };
 
 /** Ana sayfa filtrelerinden radar kriteri çıkarır (serbest metin ve sıralama radara aktarılmaz). */
@@ -15,6 +15,7 @@ export const filtersToCriteria = (f: FilterState): RadarCriteria => ({
   roomType: f.roomType !== 'all' ? f.roomType : undefined,
   contractType: f.contractType !== 'all' ? f.contractType : undefined,
   minPrice: f.minPrice || undefined,
+  rentalTerm: f.rentalTerm === 'all' ? undefined : f.rentalTerm,
   maxPrice: f.maxPrice < MAX_PRICE_UNLIMITED ? f.maxPrice : undefined,
   startFrom: f.contractStartFrom,
   startTo: f.contractStartFrom ? f.contractStartTo : undefined,
@@ -22,19 +23,20 @@ export const filtersToCriteria = (f: FilterState): RadarCriteria => ({
   gender: f.genderFilter,
   onlyVideoTour: f.onlyVideoTour,
   onlyStudentVerified: f.onlyStudentVerified,
-  roommatesOnly: f.categoryTab === 'roommates',
+  onlySubentro: f.onlySubentro,
 });
 
 /** Radar kriterini ana sayfa filtresine çevirir: kaç ilanın uyduğunu ortak filtre mantığıyla hesaplamak için. */
 export const criteriaToFilters = (c: RadarCriteria): FilterState => ({
-  categoryTab: c.roommatesOnly ? 'roommates' : 'all',
   searchQuery: '',
+  rentalTerm: c.rentalTerm ?? 'all',
   contractType: c.contractType ?? 'all',
   district: c.district ?? 'all',
   minPrice: c.minPrice,
   maxPrice: c.maxPrice ?? MAX_PRICE_UNLIMITED,
   onlyVideoTour: c.onlyVideoTour,
   onlyStudentVerified: c.onlyStudentVerified,
+  onlySubentro: c.onlySubentro,
   roomType: c.roomType ?? 'all',
   sortBy: 'relevance',
   contractStartFrom: c.startFrom,
@@ -47,6 +49,7 @@ export const criteriaToFilters = (c: RadarCriteria): FilterState => ({
 export const hasAnyCriterion = (c: RadarCriteria): boolean =>
   Boolean(
     c.district ||
+      c.rentalTerm ||
       c.roomType ||
       c.contractType ||
       c.minPrice ||
@@ -56,7 +59,7 @@ export const hasAnyCriterion = (c: RadarCriteria): boolean =>
       c.gender ||
       c.onlyVideoTour ||
       c.onlyStudentVerified ||
-      c.roommatesOnly
+      c.onlySubentro
   );
 
 export type RadarInput = RadarCriteria & { name: string };

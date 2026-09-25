@@ -342,6 +342,7 @@ interface ListingRow {
   fair_price_text: string;
   room_type: string;
   contract_type: string;
+  is_subentro: boolean;
   contract_start_date: string | null;
   contract_start_iso: string | null;
   contract_end_date: string | null;
@@ -407,6 +408,7 @@ const listingFromRow = (row: ListingRow): HousingListing => ({
   fairPriceText: row.fair_price_text,
   roomType: row.room_type as HousingListing['roomType'],
   contractType: row.contract_type as HousingListing['contractType'],
+  isSubentro: row.is_subentro,
   contractStartDate: row.contract_start_date || undefined,
   contractStartISO: row.contract_start_iso || undefined,
   contractEndDate: row.contract_end_date || undefined,
@@ -474,6 +476,7 @@ const listingToRow = (listing: Partial<HousingListing>): Record<string, unknown>
     fairPriceText: 'fair_price_text',
     roomType: 'room_type',
     contractType: 'contract_type',
+    isSubentro: 'is_subentro',
     contractStartDate: 'contract_start_date',
     contractStartISO: 'contract_start_iso',
     contractEndDate: 'contract_end_date',
@@ -988,7 +991,7 @@ export async function getListingViewCounts(listingIds: string[]): Promise<Record
 /**
  * Şikayetler (reports): kullanıcılar ilan/kullanıcı bildirir, yalnızca yöneticiler okur ve yönetir (RLS).
  */
-export type ReportCategory = 'scam' | 'fake_photo' | 'inappropriate' | 'spam' | 'other';
+export type ReportCategory = 'scam' | 'fake_photo' | 'inappropriate' | 'spam' | 'landlord' | 'other';
 export type ReportStatus = 'pending' | 'reviewed' | 'dismissed';
 
 export interface Report {
@@ -1318,6 +1321,8 @@ interface RadarRow {
   district: string | null;
   room_type: string | null;
   contract_type: string | null;
+  only_subentro: boolean;
+  rental_term: 'long' | 'short' | null;
   min_price: number | null;
   max_price: number | null;
   start_from: string | null;
@@ -1326,7 +1331,6 @@ interface RadarRow {
   gender: 'female' | 'male' | null;
   only_video_tour: boolean;
   only_student_verified: boolean;
-  roommates_only: boolean;
   active: boolean;
   created_at: string;
   last_notified_at: string | null;
@@ -1338,6 +1342,8 @@ const radarFromRow = (row: RadarRow): ListingRadar => ({
   district: row.district ?? undefined,
   roomType: row.room_type ?? undefined,
   contractType: row.contract_type ?? undefined,
+  rentalTerm: row.rental_term ?? undefined,
+  onlySubentro: row.only_subentro,
   minPrice: row.min_price ?? undefined,
   maxPrice: row.max_price ?? undefined,
   startFrom: row.start_from ?? undefined,
@@ -1346,7 +1352,6 @@ const radarFromRow = (row: RadarRow): ListingRadar => ({
   gender: row.gender ?? undefined,
   onlyVideoTour: row.only_video_tour,
   onlyStudentVerified: row.only_student_verified,
-  roommatesOnly: row.roommates_only,
   active: row.active,
   createdAt: row.created_at,
   lastNotifiedAt: row.last_notified_at ?? undefined,
@@ -1357,6 +1362,7 @@ const radarToRow = (input: Partial<RadarInput> & { active?: boolean }, lang: Lan
   ...('district' in input ? { district: input.district ?? null } : {}),
   ...('roomType' in input ? { room_type: input.roomType ?? null } : {}),
   ...('contractType' in input ? { contract_type: input.contractType ?? null } : {}),
+  ...('rentalTerm' in input ? { rental_term: input.rentalTerm ?? null } : {}),
   ...('minPrice' in input ? { min_price: input.minPrice ?? null } : {}),
   ...('maxPrice' in input ? { max_price: input.maxPrice ?? null } : {}),
   ...('startFrom' in input ? { start_from: input.startFrom ?? null } : {}),
@@ -1365,7 +1371,7 @@ const radarToRow = (input: Partial<RadarInput> & { active?: boolean }, lang: Lan
   ...('gender' in input ? { gender: input.gender ?? null } : {}),
   ...(input.onlyVideoTour !== undefined ? { only_video_tour: input.onlyVideoTour } : {}),
   ...(input.onlyStudentVerified !== undefined ? { only_student_verified: input.onlyStudentVerified } : {}),
-  ...(input.roommatesOnly !== undefined ? { roommates_only: input.roommatesOnly } : {}),
+  ...(input.onlySubentro !== undefined ? { only_subentro: input.onlySubentro } : {}),
   ...(input.active !== undefined ? { active: input.active } : {}),
   lang,
 });

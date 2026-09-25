@@ -219,7 +219,7 @@ const AppLayout: React.FC = () => {
         onClose={() => setIsMobileFilterOpen(false)}
         filters={filters}
         onFilterChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
-        onResetFilters={() => setFilters(DEFAULT_FILTERS)}
+        onResetFilters={() => setFilters({ ...DEFAULT_FILTERS, rentalTerm: filters.rentalTerm })}
         onAddToRadar={() => {
           setIsMobileFilterOpen(false);
           navigate('/radar', { state: { draft: filtersToCriteria(filters) } });

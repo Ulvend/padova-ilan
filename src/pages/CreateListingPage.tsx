@@ -435,7 +435,7 @@ const CreateListingPage: React.FC = () => {
           <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-stone-900 sm:text-3xl">
             {isEdit ? w.successEdit : w.successTitle}
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-[15px] text-stone-600">{w.successText}</p>
+          <p className="mx-auto mt-2 max-w-md text-[15px] text-stone-600 text-balance">{w.successText}</p>
         </div>
 
         <Card className="mt-8">
@@ -622,7 +622,7 @@ const CreateListingPage: React.FC = () => {
         </nav>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 pb-36 pt-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)_380px] lg:gap-10 lg:pb-28 lg:pt-10">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 pb-36 pt-6 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)_320px] lg:gap-8 lg:pb-28 lg:pt-10 2xl:max-w-[96rem]">
         {/* Dikey adım listesi (masaüstü) */}
         <nav aria-label={w.stepOf} className="hidden lg:block">
           <ol className="sticky top-28 space-y-1.5">

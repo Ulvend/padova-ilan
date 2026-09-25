@@ -2,7 +2,7 @@ export type Language = 'tr' | 'en' | 'it' | 'de' | 'ru' | 'hi';
 
 export type ContractType = 
   | 'Contratto per Studenti (Canone Concordato)'
-  | 'Subentro (Resmi Sözleşme Devri)'
+  | 'Subentro (Resmi Sözleşme Devri)' // ESKİ kayıtlar: artık ayrı bayrak (isSubentro); yeni ilanlarda seçilemez
   | 'Contratto Transitorio (1-18 Ay)'
   | 'Standart 4+4 / 3+2 Yıllık';
 
@@ -11,7 +11,8 @@ export type DistrictArea =
   | 'Policlinico / Tıp Fakültesi (< 500m)'
   | 'Portello / Mühendislik & Fen (< 500m)'
   | 'Beato Pellegrino / Beşeri Bilimler'
-  | 'Centro Storico / Prato della Valle'
+  | 'Centro Storico'
+  | 'Prato della Valle'
   | 'Forcellini'
   | 'Arcella'
   | 'Guizza';
@@ -67,6 +68,8 @@ export interface HousingListing {
   fairPriceText: string;
   roomType: RoomType;
   contractType: ContractType;
+  // Sözleşme devri (subentro) ilanı; asıl sözleşme tipi contractType'ta kalır. Eski kayıtlarda tip 'Subentro' idi.
+  isSubentro?: boolean;
   contractStartDate?: string;
   // YYYY-MM-DD; boşsa "hemen taşınılabilir". Başlangıç tarihi filtresi bunu kullanır.
   contractStartISO?: string;
@@ -128,10 +131,13 @@ export interface HousingListing {
 }
 
 export interface FilterState {
-  categoryTab: 'all' | 'roommates';
   searchQuery: string;
   contractType: string;
   district: string;
+  // Yalnızca sözleşme devri (subentro) ilanları.
+  onlySubentro: boolean;
+  // Sekme: tümü, uzun dönem (6 aydan uzun) ya da kısa dönem (1–6 ay); bkz. utils/rentalTerm.ts.
+  rentalTerm: 'all' | 'long' | 'short';
   maxPrice: number;
   // Taban fiyat; boşsa alt sınır yok.
   minPrice?: number;
@@ -155,6 +161,8 @@ export interface RadarCriteria {
   district?: string;
   roomType?: string;
   contractType?: string;
+  // Boşsa fark etmez.
+  rentalTerm?: 'long' | 'short';
   minPrice?: number;
   maxPrice?: number;
   startFrom?: string;
@@ -163,7 +171,7 @@ export interface RadarCriteria {
   gender?: 'female' | 'male';
   onlyVideoTour: boolean;
   onlyStudentVerified: boolean;
-  roommatesOnly: boolean;
+  onlySubentro: boolean;
 }
 
 export interface ListingRadar extends RadarCriteria {

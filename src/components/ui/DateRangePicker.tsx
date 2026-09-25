@@ -27,9 +27,13 @@ interface DateRangePickerProps {
   hintEnd: string;
   prevLabel: string;
   nextLabel: string;
+  // Bitiş, başlangıçtan en az bu kadar gün sonra olmalı; aradaki günler seçilemez (ör. 30 gün ve altı kalışlar).
+  minSpanDays?: number;
+  // Başlangıç seçildikten sonra gösterilen ipucu; {date} en erken bitiş günüyle değişir.
+  minSpanHint?: string;
 }
 
-export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, onChange, locale, min, hintStart, hintEnd, prevLabel, nextLabel }) => {
+export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, onChange, locale, min, hintStart, hintEnd, prevLabel, nextLabel, minSpanDays, minSpanHint }) => {
   const initial = fromISO(start) || new Date();
   const [cursor, setCursor] = useState(() => new Date(initial.getFullYear(), initial.getMonth(), 1));
   const [hover, setHover] = useState<string | null>(null);
@@ -62,17 +66,23 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, on
     else onChange(start, iso);
   };
 
-  const rangeEnd = end || (start && hover && hover > start ? hover : '');
+  // Bitiş seçilirken (başlangıç var, bitiş yok) en erken bitiş günü; ondan önceki günler seçilemez.
+  const earliestEnd = (() => {
+    if (!minSpanDays || !start || end) return '';
+    const s = fromISO(start);
+    return s ? toISO(new Date(s.getFullYear(), s.getMonth(), s.getDate() + minSpanDays)) : '';
+  })();
+  const rangeEnd = end || (start && hover && hover > start && (!earliestEnd || hover >= earliestEnd) ? hover : '');
   const todayISO = toISO(new Date());
 
   return (
-    <div className="w-full max-w-sm select-none">
+    <div className="w-full max-w-[16rem] select-none">
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
           aria-label={prevLabel}
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -81,7 +91,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, on
           type="button"
           aria-label={nextLabel}
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 cursor-pointer"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -95,9 +105,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, on
 
       <div className="grid grid-cols-7" onMouseLeave={() => setHover(null)}>
         {cells.map((d, i) => {
-          if (!d) return <span key={i} className="h-10" />;
+          if (!d) return <span key={i} className="h-9" />;
           const iso = toISO(d);
-          const disabled = Boolean(min && iso < min);
+          const tooShort = Boolean(earliestEnd && iso > start && iso < earliestEnd);
+          const disabled = Boolean((min && iso < min) || tooShort);
           const isStart = iso === start;
           const isEnd = iso === end;
           const inRange = Boolean(start && rangeEnd && iso > start && iso < rangeEnd);
@@ -111,7 +122,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, on
               onMouseEnter={() => setHover(iso)}
               aria-pressed={edge}
               aria-label={iso}
-              className={`relative h-10 text-sm font-medium tabular-nums transition ${
+              className={`relative h-9 text-sm font-medium tabular-nums transition ${
                 edge
                   ? 'z-10 rounded-lg bg-orange-600 font-bold text-white'
                   : inRange
@@ -128,6 +139,11 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ start, end, on
       </div>
 
       <p className="mt-2 text-[13px] text-stone-500">{!start ? hintStart : !end ? hintEnd : ' '}</p>
+      {earliestEnd && minSpanHint && (
+        <p className="text-[13px] font-medium text-stone-700">
+          {minSpanHint.replace('{date}', new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(fromISO(earliestEnd)!))}
+        </p>
+      )}
     </div>
   );
 };

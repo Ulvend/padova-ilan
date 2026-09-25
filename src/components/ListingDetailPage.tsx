@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { isSubentroListing, LEGACY_SUBENTRO_CONTRACT } from '../utils/subentro';
 import { 
   ArrowLeft, 
   Heart, 
@@ -553,8 +554,8 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
 
             <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 pt-1">
               <span className="flex items-center gap-1 font-semibold text-stone-900">
-                <MapPin className="w-3.5 h-3.5 text-orange-600" />
-                {listing.streetAddress}
+                <MapPin className="w-3.5 h-3.5 shrink-0 text-orange-600" />
+                <span className="min-w-0 text-balance">{listing.streetAddress}</span>
               </span>
               <span>•</span>
               <span className="text-orange-700 font-semibold">{listing.distanceToFaculty}</span>
@@ -732,7 +733,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                           <EnergyClassBadge value={listing.energyClass} statusLabels={energyStatusLabels(t)} />
                           {listing.energyPerformance ? (
                             <span className="font-medium text-stone-600">
-                              {t.energyConsumption}: {listing.energyPerformance} {t.energyPerfUnit}
+                              {t.energyConsumption}: <span className="whitespace-nowrap">{listing.energyPerformance} {t.energyPerfUnit}</span>
                             </span>
                           ) : null}
                         </span>
@@ -803,7 +804,15 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   </tr>
                   <tr className="border-b border-stone-100">
                     <td className="py-2.5 text-stone-400 font-medium uppercase">{t.contractModel}</td>
-                    <td className="py-2.5 font-semibold text-emerald-800">{listing.contractType.replace(/\s*\([^)]*\)\s*$/, '')}</td>
+                    <td className="py-2.5 font-semibold text-emerald-800">
+                      {/* Sözleşme tipi; devir ilanıysa yanında "Subentro" rozeti (eski kayıtlarda tip bilinmediği için yalnızca rozet). */}
+                      {rawListing.contractType !== LEGACY_SUBENTRO_CONTRACT && listing.contractType.replace(/\s*\([^)]*\)\s*$/, '')}
+                      {isSubentroListing(rawListing) && (
+                        <span className={`inline-block rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 ${rawListing.contractType !== LEGACY_SUBENTRO_CONTRACT ? 'ml-2' : ''}`}>
+                          {t.subentroBadge}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                   <tr className="border-b border-stone-100 bg-orange-50/40">
                     <td className="py-2.5 text-orange-900 font-semibold uppercase">{t.contractStartDateLabel}</td>
@@ -834,7 +843,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   <MapPin className="w-4 h-4 text-orange-600" />
                   <span>{t.mapTitle}</span>
                 </h2>
-                <span className="text-[11px] font-semibold text-stone-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
+                <span className="text-[11px] font-semibold text-stone-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5 text-balance">
                   {listing.streetAddress}
                 </span>
               </div>
@@ -844,7 +853,6 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   <MapPin className="w-3.5 h-3.5 text-orange-600" />
                   <strong className="text-stone-900">{listing.distanceToFaculty}</strong> • {listing.district}
                 </span>
-                <span className="text-[10px] text-stone-400 font-medium">{t.realCoordinates}</span>
               </div>
             </div>
 
@@ -1113,7 +1121,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.rentOfThisRoom}</span>
                   <span className="text-base font-bold text-stone-900">€{listing.price}</span>
                   {hasInsight && <span className="text-[10px] text-stone-500 block font-semibold">{perM2(listingPerM2)} · {priceInsight.areaM2} m²</span>}
-                  <span className="text-[9px] text-emerald-700 block font-semibold">{listing.contractType.split(' ')[0]}</span>
+                  <span className="text-[9px] text-emerald-700 block font-semibold">{rawListing.contractType !== LEGACY_SUBENTRO_CONTRACT && listing.contractType.split(' ')[0]}{isSubentroListing(rawListing) && `${rawListing.contractType !== LEGACY_SUBENTRO_CONTRACT ? ' · ' : ''}${t.subentroBadge}`}</span>
                 </div>
 
                 {hasInsight && (

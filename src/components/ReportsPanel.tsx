@@ -21,6 +21,7 @@ const CATEGORY_LABEL: Record<ReportCategory, string> = {
   fake_photo: 'Sahte / yanıltıcı fotoğraf',
   inappropriate: 'Uygunsuz içerik',
   spam: 'Spam / tekrar eden ilan',
+  landlord: 'Ev sahibi: haberim yok',
   other: 'Diğer',
 };
 

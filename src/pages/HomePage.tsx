@@ -1,6 +1,5 @@
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatPerM2 } from '../utils/format';
 import { useApp, DEFAULT_FILTERS, MAX_PRICE_UNLIMITED } from '../context/AppContext';
 import { RecentlyAddedSection } from '../components/RecentlyAddedSection';
 import { ListingCard } from '../components/ListingCard';
@@ -10,6 +9,7 @@ import { MIN_RENT } from '../components/ui/PriceRangeSlider';
 import { StartDateField, hasStartDateFilter } from '../components/StartDateFilter';
 import { HOME_TEXT, fillText } from '../utils/homeText';
 import { filtersToCriteria } from '../utils/radar';
+import { rentalTermOf } from '../utils/rentalTerm';
 import {
   Map as MapIcon,
   LayoutGrid,
@@ -20,7 +20,6 @@ import {
   GraduationCap,
   Building2,
   RefreshCw,
-  Scale,
   ChevronDown,
   Hourglass,
   Radar,
@@ -33,9 +32,6 @@ const PadovaMap = lazy(() => import('../components/PadovaMap').then((m) => ({ de
 export const PAGE_SIZE = 12;
 
 const CONTRACT_STUDENT = 'Contratto per Studenti (Canone Concordato)';
-const CONTRACT_SUBENTRO = 'Subentro (Resmi Sözleşme Devri)';
-// "Kısa dönem" çipi: sözleşmesi en fazla bu kadar ay süren ilanlar.
-const SHORT_TERM_MONTHS = 6;
 
 const fieldLabel = 'truncate text-[11px] font-bold uppercase tracking-[0.08em] text-stone-500';
 const fieldSelect =
@@ -47,7 +43,6 @@ export const HomePage: React.FC = () => {
     t,
     currentLang,
     publicListings,
-    getCityAverage,
     filteredListings,
     filters,
     setFilters,
@@ -88,6 +83,12 @@ export const HomePage: React.FC = () => {
     resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Sekmeye göre listelenen ilanlar ("Son eklenenler" de buna uyar).
+  const termListings = useMemo(
+    () => (filters.rentalTerm === 'all' ? publicListings : publicListings.filter((l) => rentalTermOf(l) === filters.rentalTerm)),
+    [publicListings, filters.rentalTerm]
+  );
+
   const update = (updates: Partial<typeof filters>) => setFilters((prev) => ({ ...prev, ...updates }));
 
   // Mevcut filtreler İlan Radarı sayfasına taslak olarak taşınır.
@@ -97,9 +98,9 @@ export const HomePage: React.FC = () => {
   };
 
   const activeFilterCount = [
-    filters.categoryTab !== 'all',
     Boolean(filters.searchQuery),
     filters.contractType !== 'all',
+    filters.onlySubentro,
     filters.district !== 'all',
     filters.maxPrice < MAX_PRICE_UNLIMITED || Boolean(filters.minPrice),
     filters.onlyVideoTour,
@@ -110,10 +111,6 @@ export const HomePage: React.FC = () => {
     Boolean(filters.genderFilter),
   ].filter(Boolean).length;
 
-  // Fiyat radarı: sitedeki tüm Singola ilanlarının m² başına (oda metrekaresi) ortalama kirası. Yeterli ilan yoksa kart gösterilmez.
-  const radarRoom = 'Singola';
-  const cityAverage = getCityAverage(radarRoom);
-
   const chip = (active: boolean) =>
     `min-h-[44px] px-4 rounded-full border text-sm font-semibold shrink-0 flex items-center gap-2 transition cursor-pointer active:scale-95 ${
       active ? 'bg-stone-900 border-stone-900 text-white' : 'bg-white text-stone-900 border-stone-300 hover:border-stone-500'
@@ -122,34 +119,47 @@ export const HomePage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <section className="pt-2 sm:pt-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-        <div className="max-w-2xl">
+      <section className="pt-2 sm:pt-6">
+        <div className="min-w-0">
           <h1 className="font-display font-black text-[28px] sm:text-[42px] lg:text-[50px] leading-[1.08] tracking-tight text-stone-900">
-            {h.heroTitleA}
-            <br className="hidden sm:block" /> {h.heroTitleB}
+            <span className="block">{h.heroTitleA}</span>
+            <span className="block">{h.heroTitleB}</span>
           </h1>
-          <p className="mt-4 sm:mt-5 text-base sm:text-lg leading-relaxed text-stone-600 max-w-xl">{h.heroSub}</p>
+          <p className="mt-4 sm:mt-5 text-base sm:text-lg leading-relaxed text-stone-600">{h.heroSub}</p>
         </div>
 
-        {cityAverage && (
-        <div className="hidden lg:flex w-80 shrink-0 flex-col gap-1.5 bg-white border border-stone-200 rounded-[20px] px-[22px] py-5">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700">
-            <Scale className="w-4 h-4" />
-            {h.radarLabel}
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-stone-900">€{formatPerM2(cityAverage.average, currentLang)}</span>
-            <span className="text-sm text-stone-500">/m²</span>
-          </div>
-          <p className="text-sm leading-snug text-stone-600">
-            {radarRoom} {h.radarNote}
-          </p>
-        </div>
-        )}
       </section>
 
+      {/* Süre sekmeleri: tümü / uzun dönem (6 aydan uzun) / kısa dönem (1–6 ay, ör. Erasmus) */}
+      <div className="-mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex p-1 bg-stone-200/70 rounded-xl" role="tablist" aria-label={t.termTabsAria}>
+          {([
+            ['all', t.termAll],
+            ['long', t.termLong],
+            ['short', t.termShort],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={filters.rentalTerm === value}
+              onClick={() => update({ rentalTerm: value })}
+              className={`min-h-[40px] px-4 rounded-lg text-sm cursor-pointer transition ${
+                filters.rentalTerm === value ? 'bg-white font-bold text-stone-900 shadow-xs' : 'font-semibold text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {filters.rentalTerm !== 'all' && (
+          <span className="text-[13px] text-stone-500">{filters.rentalTerm === 'short' ? t.termShortHint : t.termLongHint}</span>
+        )}
+      </div>
+
       {/* Masaüstü arama çubuğu */}
-      <div className="hidden lg:flex items-stretch bg-white border border-stone-200 rounded-3xl shadow-[0_8px_24px_rgba(28,25,23,0.06)] p-2 pr-3.5 h-[88px]">
+      {/* zoom: çubuğun tüm ölçüleri (yazı, boşluk, yükseklik) %5 küçültülür */}
+      <div className="hidden lg:flex items-stretch bg-white border border-stone-200 rounded-3xl shadow-[0_8px_24px_rgba(28,25,23,0.06)] p-2 pr-3.5 h-[88px] [zoom:0.95]">
         <label className="flex-[1.4] px-6 flex flex-col justify-center gap-1 min-w-0 cursor-text">
           <span className={fieldLabel}>{h.searchField}</span>
           <div className="flex items-center gap-2">
@@ -178,7 +188,8 @@ export const HomePage: React.FC = () => {
               <option value="Policlinico / Tıp Fakültesi (< 500m)">{t.districtPoliclinico}</option>
               <option value="Portello / Mühendislik & Fen (< 500m)">{t.districtPortello}</option>
               <option value="Beato Pellegrino / Beşeri Bilimler">{t.districtBeato}</option>
-              <option value="Centro Storico / Prato della Valle">{t.districtCentro}</option>
+              <option value="Centro Storico">{t.districtCentro}</option>
+              <option value="Prato della Valle">{t.districtPrato}</option>
             </select>
             <ChevronDown className="w-4 h-4 text-stone-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -201,7 +212,7 @@ export const HomePage: React.FC = () => {
 
         <div className="w-px my-5 bg-stone-200" />
         <StartDateField
-          label={t.contractStartDateLabel.split(' ').slice(0, 2).join(' ')}
+          label={t.stayDatesLabel}
           labelClassName={fieldLabel}
           filters={filters}
           onFilterChange={update}
@@ -284,15 +295,8 @@ export const HomePage: React.FC = () => {
           <button type="button" onClick={() => update({ contractType: filters.contractType === CONTRACT_STUDENT ? 'all' : CONTRACT_STUDENT })} className={chip(filters.contractType === CONTRACT_STUDENT)} aria-pressed={filters.contractType === CONTRACT_STUDENT}>
             {t.contractOptionStudent.split(' (')[0]}
           </button>
-          <button type="button" onClick={() => update({ contractType: filters.contractType === CONTRACT_SUBENTRO ? 'all' : CONTRACT_SUBENTRO })} className={chip(filters.contractType === CONTRACT_SUBENTRO)} aria-pressed={filters.contractType === CONTRACT_SUBENTRO}>
+          <button type="button" onClick={() => update({ onlySubentro: !filters.onlySubentro })} className={chip(filters.onlySubentro)} aria-pressed={filters.onlySubentro}>
             {t.tabSubentro}
-          </button>
-          <button type="button" onClick={() => update({ categoryTab: filters.categoryTab === 'roommates' ? 'all' : 'roommates' })} className={chip(filters.categoryTab === 'roommates')} aria-pressed={filters.categoryTab === 'roommates'}>
-            {t.tabRoommates}
-          </button>
-          <button type="button" onClick={() => update({ maxStayMonths: filters.maxStayMonths ? undefined : SHORT_TERM_MONTHS })} className={chip(Boolean(filters.maxStayMonths))} aria-pressed={Boolean(filters.maxStayMonths)}>
-            <Hourglass className="w-4 h-4" />
-            {t.shortTermChip}
           </button>
         </div>
 
@@ -309,7 +313,7 @@ export const HomePage: React.FC = () => {
 
       {/* Son eklenenler (yatay kaydırmalı) */}
       <RecentlyAddedSection
-        listings={publicListings}
+        listings={termListings}
         t={t}
         currentLang={currentLang}
         onOpenDetailPage={handleOpenDetailPage}
@@ -391,12 +395,12 @@ export const HomePage: React.FC = () => {
             </div>
             <div className="space-y-1">
               <p className="text-base font-bold text-stone-800">{t.noListingsFoundTitle}</p>
-              <p className="text-xs text-stone-500 max-w-sm mx-auto">{t.noListingsFoundSubtitle}</p>
+              <p className="text-xs text-stone-500 max-w-sm mx-auto text-balance">{t.noListingsFoundSubtitle}</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={() => setFilters(DEFAULT_FILTERS)}
+                onClick={() => setFilters({ ...DEFAULT_FILTERS, rentalTerm: filters.rentalTerm })}
                 className="inline-flex items-center gap-2 px-4 min-h-[44px] bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold rounded-xl transition cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -411,7 +415,7 @@ export const HomePage: React.FC = () => {
                 <span>{t.radarEmptyCtaBtn}</span>
               </button>
             </div>
-            <p className="text-xs text-stone-500 max-w-sm mx-auto">{t.radarEmptyCta}</p>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto text-balance">{t.radarEmptyCta}</p>
           </div>
         ) : (
           <div className="grid gap-x-5 gap-y-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

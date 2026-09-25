@@ -31,7 +31,7 @@ export const MessagesPage: React.FC = () => {
           <h2 className="text-lg font-bold text-stone-900">
             {t.loginToMessageTitle}
           </h2>
-          <p className="text-xs text-stone-600 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-stone-600 max-w-md mx-auto leading-relaxed text-balance">
             {t.loginToMessageBody}
           </p>
         </div>

@@ -133,7 +133,7 @@ export const PrivacyPage: React.FC = () => {
               return (
                 <li key={group.id} className="flex items-center justify-between gap-3 px-4 py-3 bg-white">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-stone-800">{groupLabel[group.id]}</p>
+                    <p className="text-sm font-semibold text-stone-800 text-balance">{groupLabel[group.id]}</p>
                     <p className="text-[11px] text-stone-400">
                       {empty ? t.localDataEmpty : `${t.localDataItems.replace('{n}', String(info.count))} · ${formatBytes(info.bytes)}`}
                     </p>

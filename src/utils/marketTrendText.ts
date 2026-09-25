@@ -26,13 +26,21 @@ const TRENDS: Record<string, readonly [string, string, string, string, string, s
     'Тихий жилой район рядом с гуманитарным комплексом',
     'मानविकी और दर्शन परिसर के पास शांत आवासीय क्षेत्र',
   ],
-  'Centro Storico / Prato della Valle': [
-    'Tarihi merkez, sosyal hayat ve tramvay hattı üzerinde',
-    'Historic centre with lively social life, on the tram line',
-    'Centro storico, vita sociale vivace e sulla linea del tram',
-    'Historisches Zentrum mit regem Sozialleben, an der Straßenbahnlinie',
-    'Исторический центр с активной жизнью, на трамвайной линии',
-    'ऐतिहासिक केंद्र, सामाजिक जीवन और ट्राम लाइन पर',
+  'Centro Storico': [
+    'Centro Storico, sosyal hayatın ve Bo Sarayı çevresinin kalbi, her şey yürüme mesafesinde',
+    'Centro Storico, the heart of social life around Palazzo Bo, everything within walking distance',
+    'Centro Storico, cuore della vita sociale attorno a Palazzo Bo, tutto raggiungibile a piedi',
+    'Centro Storico, Herz des sozialen Lebens rund um den Palazzo Bo, alles zu Fuß erreichbar',
+    'Centro Storico, сердце общественной жизни вокруг Палаццо Бо, всё в пешей доступности',
+    'Centro Storico, पालाज़ो बो के आसपास सामाजिक जीवन का केंद्र, सब कुछ पैदल दूरी पर',
+  ],
+  'Prato della Valle': [
+    'Geniş meydan çevresi, tramvay hattı üzerinde ve canlı öğrenci hayatı',
+    'Around the large square, on the tram line, with lively student life',
+    'Attorno alla grande piazza, sulla linea del tram e con vivace vita studentesca',
+    'Rund um den großen Platz, an der Straßenbahnlinie und mit lebendigem Studentenleben',
+    'Вокруг большой площади, на трамвайной линии, с активной студенческой жизнью',
+    'बड़े चौक के आसपास, ट्राम लाइन पर और जीवंत छात्र जीवन के साथ',
   ],
   Forcellini: [
     'Hastanelere yakın, yeşil alanlı ve bisiklet dostu bölge',

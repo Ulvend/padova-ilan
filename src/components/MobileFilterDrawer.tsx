@@ -41,7 +41,6 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
 
   const stayOptions = [
     { months: 0, label: t.stayAny },
-    { months: 1, label: t.stayUpTo1 },
     { months: 3, label: t.stayUpTo3 },
     { months: 6, label: t.stayUpTo6 },
     { months: 12, label: t.stayUpTo12 },
@@ -129,7 +128,8 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
               <option value="Policlinico / Tıp Fakültesi (< 500m)">{t.districtPoliclinico}</option>
               <option value="Portello / Mühendislik & Fen (< 500m)">{t.districtPortello}</option>
               <option value="Beato Pellegrino / Beşeri Bilimler">{t.districtBeato}</option>
-              <option value="Centro Storico / Prato della Valle">{t.districtCentro}</option>
+              <option value="Centro Storico">{t.districtCentro}</option>
+              <option value="Prato della Valle">{t.districtPrato}</option>
             </select>
           </div>
 
@@ -180,7 +180,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
           <div className="space-y-1.5 border-t border-stone-100 pt-4">
             <label className="font-semibold text-xs uppercase tracking-wide text-stone-600 block flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-orange-600" />
-              <span>{t.contractStartDateLabel}</span>
+              <span>{t.stayDatesLabel}</span>
             </label>
             <StartDatePanel filters={filters} onFilterChange={onFilterChange} currentLang={currentLang} />
           </div>
@@ -293,9 +293,6 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
               <option value="Contratto per Studenti (Canone Concordato)">
                 {t.contractOptionStudent}
               </option>
-              <option value="Subentro (Resmi Sözleşme Devri)">
-                {t.contractOptionSubentro}
-              </option>
               <option value="Contratto Transitorio (1-18 Ay)">
                 {t.contractOptionTransitorio}
               </option>
@@ -303,6 +300,16 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                 {t.contractOptionStandard}
               </option>
             </select>
+            <div className="pt-1.5">
+              <button
+                type="button"
+                onClick={() => onFilterChange({ onlySubentro: !filters.onlySubentro })}
+                aria-pressed={filters.onlySubentro}
+                className={optionChip(filters.onlySubentro)}
+              >
+                {t.tabSubentro}
+              </button>
+            </div>
           </div>
 
           {/* Sorting */}

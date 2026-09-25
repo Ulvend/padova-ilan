@@ -21,7 +21,7 @@ export const LoginRequired: React.FC<LoginRequiredProps> = ({ title, body, icon 
       </div>
       <div className="space-y-1">
         <h2 className="text-lg font-bold text-stone-900">{title ?? t.loginRequiredTitle}</h2>
-        <p className="text-xs text-stone-600 max-w-md mx-auto leading-relaxed">{body ?? t.loginRequiredBody}</p>
+        <p className="text-xs text-stone-600 max-w-md mx-auto leading-relaxed text-balance">{body ?? t.loginRequiredBody}</p>
       </div>
       <div className="flex items-center justify-center gap-3 pt-3 flex-wrap">
         <button

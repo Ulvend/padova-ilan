@@ -31,6 +31,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
     { value: 'fake_photo', label: t.reportCatFakePhoto },
     { value: 'inappropriate', label: t.reportCatInappropriate },
     { value: 'spam', label: t.reportCatSpam },
+    { value: 'landlord', label: t.reportCatLandlord },
     { value: 'other', label: t.reportCatOther },
   ];
 
@@ -48,8 +49,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
-    if (category === 'other' && !reason.trim()) {
-      setError(t.reportReasonRequired);
+    if ((category === 'other' || category === 'landlord') && !reason.trim()) {
+      setError(category === 'landlord' ? t.reportLandlordReasonRequired : t.reportReasonRequired);
       return;
     }
     setSubmitting(true);
@@ -140,6 +141,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
               <label htmlFor="report-reason" className="text-xs font-bold text-stone-800 block">
                 {t.reportReasonLabel}
               </label>
+              {category === 'landlord' && (
+                <p className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] leading-relaxed text-amber-900">{t.reportLandlordHint}</p>
+              )}
               <textarea
                 id="report-reason"
                 value={reason}

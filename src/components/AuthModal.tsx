@@ -1041,7 +1041,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <h3 className="font-display font-black text-[28px] leading-tight text-stone-900 tracking-tight">
                   {t.resetLinkSentTitle}
                 </h3>
-                <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto">
+                <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto text-balance">
                   {t.resetLinkSentSubtitle}
                 </p>
               </div>
@@ -1112,7 +1112,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1.5">
                 <h3 className="font-display font-black text-[28px] leading-tight text-stone-900 tracking-tight">{t.verifyEmailHeading}</h3>
-                <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto">
+                <p className="text-xs text-stone-500 leading-relaxed max-w-sm mx-auto text-balance">
                   {t.verifyEmailBody}
                   {isUniPdEmail(email) && ` ${t.verifyUniPdNote}`}
                 </p>

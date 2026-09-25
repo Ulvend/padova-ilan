@@ -249,7 +249,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
           <h3 className="font-bold text-base text-stone-900">
             {t.noNotifTitle}
           </h3>
-          <p className="text-xs text-stone-500 max-w-sm mx-auto">
+          <p className="text-xs text-stone-500 max-w-sm mx-auto text-balance">
             {t.noNotifBody}
           </p>
           <button

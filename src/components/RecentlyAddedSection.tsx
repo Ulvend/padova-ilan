@@ -74,8 +74,8 @@ export const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({
   return (
     <section id="recently-added-listings-section" aria-labelledby="recent-title" className="space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h2 id="recent-title" className="font-display font-bold text-2xl sm:text-3xl text-stone-900">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 id="recent-title" className="font-display font-bold text-2xl sm:text-3xl text-stone-900 whitespace-nowrap">
             {h.recentTitle}
           </h2>
           <span className="px-2.5 py-1 bg-orange-50 border border-orange-300 rounded-lg text-xs font-bold text-orange-800">

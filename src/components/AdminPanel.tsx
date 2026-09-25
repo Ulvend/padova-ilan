@@ -213,12 +213,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <h2 className="text-xl sm:text-2xl font-black text-stone-900">
               Yönetici Paneli Koruması
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto leading-relaxed text-balance">
               Her kayıt olan kullanıcı admin olamaz. Bu panele yalnızca <strong>Ana Admin (Super Admin)</strong> tarafından yetki verilmiş yöneticiler erişebilir.
             </p>
           </div>
 
-          <p className="p-4 bg-stone-50 border border-stone-200 rounded-xl max-w-md mx-auto text-[11px] text-stone-600">
+          <p className="p-4 bg-stone-50 border border-stone-200 rounded-xl max-w-md mx-auto text-[11px] text-stone-600 text-balance">
             Admin yetkisi almak için Ana Admin'e kayıtlı e-posta adresinizi veya kullanıcı adınızı iletin.
           </p>
 
@@ -935,7 +935,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 Geçmiş İlanlar & Piyasa Veri Ambarı
               </strong>
               <p className="text-emerald-800 leading-relaxed">
-                İlan sahipleri 'Kiracı Buldum' onayı verdiğinde ilanlar genel arama ve haritadan kaldırılır. Padova kira trendi, ortalama tutulma süresi ve nihai kiralama fiyatlarını analiz etmek üzere bu arşivde saklanır.
+                İlan sahipleri 'Anlaşıldı' onayı verdiğinde ilanlar genel arama ve haritadan kaldırılır. Padova kira trendi, ortalama tutulma süresi ve nihai kiralama fiyatlarını analiz etmek üzere bu arşivde saklanır.
               </p>
             </div>
           </div>
@@ -953,7 +953,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <th className="p-3">İlan Başlığı & Adres</th>
                     <th className="p-3">İlan Sahibi</th>
                     <th className="p-3">Nihai Kira Fiyatı</th>
-                    <th className="p-3">Kiracı Tipi</th>
                     <th className="p-3">Kiralama Tarihi</th>
                     <th className="p-3 text-right">Durum</th>
                   </tr>
@@ -972,11 +971,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <td className="p-3">
                         <span className="font-bold text-emerald-800 text-sm">€{listing.rentedPrice || listing.price}</span>
                         <div className="text-[10px] text-stone-400">{listing.roomType}</div>
-                      </td>
-                      <td className="p-3">
-                        <span className="bg-stone-100 text-stone-700 px-2 py-0.5 rounded text-[10px] font-medium">
-                          {listing.tenantType || 'UniPD Öğrencisi'}
-                        </span>
                       </td>
                       <td className="p-3 text-stone-500">{listing.rentedAt || 'Kayıtlı'}</td>
                       <td className="p-3 text-right">

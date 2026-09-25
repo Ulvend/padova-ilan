@@ -14,7 +14,6 @@ export interface TranslationDictionary {
   postAdBtn: string;
   tabVideo: string;
   tabSubentro: string;
-  tabRoommates: string;
   filterDeskTitle: string;
   resetFilters: string;
   searchPlaceholder: string;
@@ -71,7 +70,6 @@ export interface TranslationDictionary {
   detectedLanguage: string;
   translateToLang: string;
   activeStudentListings: string;
-  listingsOnMap: string;
   unipdCampuses: string;
   mapCenter: string;
   expandMap: string;
@@ -183,11 +181,8 @@ export interface TranslationDictionary {
   economicLabel: string;
   expensiveLabel: string;
   thisListingLabel: string;
-  livePadovaMap: string;
   stationTram: string;
   studentRoomLegend: string;
-  realCoordinates: string;
-  openStreetMapLayer: string;
   viewListing: string;
   shrinkMap: string;
   roomSingola: string;
@@ -277,7 +272,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     postAdBtn: '+ YENİ İLAN YAYINLA',
     tabVideo: 'Sadece Video Turlular',
     tabSubentro: 'Subentro Devirleri',
-    tabRoommates: 'Ev Arkadaşı Arayan',
     filterDeskTitle: 'FİLTRELEME MASASI',
     resetFilters: 'Sıfırla',
     searchPlaceholder: 'Örn: Tıp, Portello, Policlinico...',
@@ -333,7 +327,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detectedLanguage: 'Algılanan Dil',
     translateToLang: 'diline çevir',
     activeStudentListings: 'Aktif Öğrenci İlanı',
-    listingsOnMap: 'İlan Haritada',
     unipdCampuses: 'UniPD Kampüsleri',
     mapCenter: 'Merkez',
     expandMap: 'Haritayı Genişlet',
@@ -423,7 +416,7 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     districtPoliclinico: 'Policlinico / Tıp Fakültesi (< 500m)',
     districtPortello: 'Portello / Mühendislik & Fen (< 500m)',
     districtBeato: 'Beato Pellegrino / Beşeri Bilimler & Edebiyat',
-    districtCentro: 'Tarihi Merkez / Prato della Valle',
+    districtCentro: 'Centro Storico',
     listingDescriptionTitle: 'İLAN AÇIKLAMASI & YAŞAM KOŞULLARI',
     amenitiesTitle: 'DAİRE VE ODA DONANIMLARI',
     specsTitle: 'İLAN BİLGİLERİ & TEKNİK DETAYLAR',
@@ -445,11 +438,8 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Ekonomik',
     expensiveLabel: 'Pahalı',
     thisListingLabel: 'Bu İlan',
-    livePadovaMap: 'CANLI PADOVA HARİTASI',
     stationTram: 'İstasyon / Tram',
     studentRoomLegend: 'Öğrenci Odası',
-    realCoordinates: 'Padova merkez, Portello, Policlinico ve Arcella gerçek koordinatları',
-    openStreetMapLayer: '© OpenStreetMap Katmanı',
     viewListing: 'İlan Sayfası',
     shrinkMap: 'Küçült',
     roomSingola: 'Tek Kişilik (Singola)',
@@ -537,7 +527,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     postAdBtn: '+ POST NEW ROOM',
     tabVideo: 'Video Tours Only',
     tabSubentro: 'Sublease / Subentro',
-    tabRoommates: 'Seeking Flatmates',
     filterDeskTitle: 'FILTER DESK',
     resetFilters: 'Reset',
     searchPlaceholder: 'Ex: Medicine, Portello, Policlinico...',
@@ -593,7 +582,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detectedLanguage: 'Detected Language',
     translateToLang: 'Translate to',
     activeStudentListings: 'Active Student Listings',
-    listingsOnMap: 'Listings on Map',
     unipdCampuses: 'UniPD Campuses',
     mapCenter: 'Center',
     expandMap: 'Expand Map',
@@ -683,7 +671,7 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     districtPoliclinico: 'Policlinico / Medical Faculty (< 500m)',
     districtPortello: 'Portello / Engineering & Sciences (< 500m)',
     districtBeato: 'Beato Pellegrino / Humanities Complex',
-    districtCentro: 'Historical Center / Prato della Valle',
+    districtCentro: 'Centro Storico',
     listingDescriptionTitle: 'LISTING DESCRIPTION & LIVING CONDITIONS',
     amenitiesTitle: 'APARTMENT & ROOM AMENITIES',
     specsTitle: 'LISTING DETAILS & TECHNICAL SPECS',
@@ -705,11 +693,8 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Affordable',
     expensiveLabel: 'Pricey',
     thisListingLabel: 'This Listing',
-    livePadovaMap: 'LIVE PADOVA MAP',
     stationTram: 'Station / Tram',
     studentRoomLegend: 'Student Room',
-    realCoordinates: 'Real coordinates for Padova center, Portello, Policlinico & Arcella',
-    openStreetMapLayer: '© OpenStreetMap Layer',
     viewListing: 'View Listing',
     shrinkMap: 'Minimize',
     roomSingola: 'Single Room (Singola)',
@@ -797,7 +782,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     postAdBtn: '+ PUBBLICA NUOVA STANZA',
     tabVideo: 'Solo Video Tour',
     tabSubentro: 'Subentro Ufficiale',
-    tabRoommates: 'Cerca Coinquilini',
     filterDeskTitle: 'FILTRI DI RICERCA',
     resetFilters: 'Reimposta',
     searchPlaceholder: 'Es: Medicina, Portello, Policlinico...',
@@ -853,7 +837,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detectedLanguage: 'Lingua rilevata',
     translateToLang: 'Traduci in',
     activeStudentListings: 'Annunci Studenti Attivi',
-    listingsOnMap: 'Annunci sulla Mappa',
     unipdCampuses: 'Campus UniPD',
     mapCenter: 'Centro',
     expandMap: 'Espandi Mappa',
@@ -943,7 +926,7 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     districtPoliclinico: 'Policlinico / Facoltà di Medicina (< 500m)',
     districtPortello: 'Portello / Ingegneria e Scienze (< 500m)',
     districtBeato: 'Beato Pellegrino / Polo Umanistico',
-    districtCentro: 'Centro Storico / Prato della Valle',
+    districtCentro: 'Centro Storico',
     listingDescriptionTitle: 'DESCRIZIONE E CONDIZIONI DELL\'ALLOGGIO',
     amenitiesTitle: 'DOTAZIONI E COMFORT DELL\'ALLOGGIO',
     specsTitle: 'DATI TECNICI DELL\'ANNUNCIO',
@@ -965,11 +948,8 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Economico',
     expensiveLabel: 'Costoso',
     thisListingLabel: 'Questo Annuncio',
-    livePadovaMap: 'MAPPA LIVE DI PADOVA',
     stationTram: 'Stazione / Tram',
     studentRoomLegend: 'Stanza Studente',
-    realCoordinates: 'Coordinate reali di Padova centro, Portello, Policlinico e Arcella',
-    openStreetMapLayer: '© Livello OpenStreetMap',
     viewListing: 'Vedi Annuncio',
     shrinkMap: 'Riduci',
     roomSingola: 'Stanza Singola',
@@ -1057,7 +1037,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     postAdBtn: '+ NEUES ZIMMER INSERIEREN',
     tabVideo: 'Nur Videotouren',
     tabSubentro: 'Nachmieter (Subentro)',
-    tabRoommates: 'Mitbewohner gesucht',
     filterDeskTitle: 'SUCHFILTER',
     resetFilters: 'Zurücksetzen',
     searchPlaceholder: 'z. B. Medizin, Portello, Policlinico...',
@@ -1113,7 +1092,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detectedLanguage: 'Erkannte Sprache',
     translateToLang: 'Übersetzen nach',
     activeStudentListings: 'Aktive Studenten-Angebote',
-    listingsOnMap: 'Angebote auf der Karte',
     unipdCampuses: 'UniPD-Standorte',
     mapCenter: 'Zentrum',
     expandMap: 'Karte vergrößern',
@@ -1203,7 +1181,7 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     districtPoliclinico: 'Poliklinik / Medizinische Fakultät (< 500m)',
     districtPortello: 'Portello / Ingenieur- & Naturwissenschaften (< 500m)',
     districtBeato: 'Beato Pellegrino / Geisteswissenschaften',
-    districtCentro: 'Historisches Zentrum / Prato della Valle',
+    districtCentro: 'Centro Storico',
     listingDescriptionTitle: 'BESCHREIBUNG & WOHNVERHÄLTNISSE',
     amenitiesTitle: 'AUSSTATTUNG DER WOHNUNG & DES ZIMMERS',
     specsTitle: 'TECHNISCHE DETAILS & ANGABEN',
@@ -1225,11 +1203,8 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Günstig',
     expensiveLabel: 'Teuer',
     thisListingLabel: 'Dieses Angebot',
-    livePadovaMap: 'LIVE-KARTE PADUA',
     stationTram: 'Bahnhof / Straßenbahn',
     studentRoomLegend: 'Studentenzimmer',
-    realCoordinates: 'Echte Koordinaten für Padua Zentrum, Portello, Policlinico & Arcella',
-    openStreetMapLayer: '© OpenStreetMap-Ebene',
     viewListing: 'Inserat ansehen',
     shrinkMap: 'Verkleinern',
     roomSingola: 'Einzelzimmer (Singola)',
@@ -1317,7 +1292,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     postAdBtn: '+ РАЗМЕСТИТЬ ОБЪЯВЛЕНИЕ',
     tabVideo: 'С видеотуром',
     tabSubentro: 'Переуступка (Subentro)',
-    tabRoommates: 'Поиск соседей',
     filterDeskTitle: 'ФИЛЬТРЫ',
     resetFilters: 'Сбросить',
     searchPlaceholder: 'Факультет, улица, больница...',
@@ -1373,7 +1347,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detectedLanguage: 'Определенный язык',
     translateToLang: 'Перевести на',
     activeStudentListings: 'Активных студенческих объявлений',
-    listingsOnMap: 'Объявлений на карте',
     unipdCampuses: 'Кампусы UniPD',
     mapCenter: 'Центр',
     expandMap: 'Развернуть карту',
@@ -1463,7 +1436,7 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     districtPoliclinico: 'Поликлиника / Медицинский факультет (< 500 м)',
     districtPortello: 'Портелло / Инженерия и наука (< 500 м)',
     districtBeato: 'Беато Пеллегрино / Гуманитарный кампус',
-    districtCentro: 'Исторический центр / Прато делла Валле',
+    districtCentro: 'Centro Storico',
     listingDescriptionTitle: 'ОПИСАНИЕ И УСЛОВИЯ ПРОЖИВАНИЯ',
     amenitiesTitle: 'ОСНАЩЕНИЕ КВАРТИРЫ И КОМНАТЫ',
     specsTitle: 'ДЕТАЛИ И ХАРАКТЕРИСТИКИ ОБЪЯВЛЕНИЯ',
@@ -1485,11 +1458,8 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'Выгодно',
     expensiveLabel: 'Выше среднего',
     thisListingLabel: 'Это жилье',
-    livePadovaMap: 'ЖИВАЯ КАРТА ПАДУИ',
     stationTram: 'Вокзал / Трамвай',
     studentRoomLegend: 'Комната студента',
-    realCoordinates: 'Реальные координаты: центр Падуи, Портелло, Поликлинико и Арчелла',
-    openStreetMapLayer: '© Слой OpenStreetMap',
     viewListing: 'Страница жилья',
     shrinkMap: 'Свернуть',
     roomSingola: 'Одноместная комната (Singola)',
@@ -1577,7 +1547,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     postAdBtn: '+ नया कमरा जोड़ें',
     tabVideo: 'केवल वीडियो टूर',
     tabSubentro: 'अनुबंध स्थानांतरण (Subentro)',
-    tabRoommates: 'रूममेट खोज रहे हैं',
     filterDeskTitle: 'फ़िल्टर डेस्क',
     resetFilters: 'रीसेट करें',
     searchPlaceholder: 'उदा: मेडिसिन, पोर्टेलो, अस्पताल...',
@@ -1633,7 +1602,6 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     detectedLanguage: 'पहचानी गई भाषा',
     translateToLang: 'में अनुवाद करें',
     activeStudentListings: 'सक्रिय छात्र विज्ञापन',
-    listingsOnMap: 'मानचित्र पर विज्ञापन',
     unipdCampuses: 'UniPD परिसर',
     mapCenter: 'केंद्र',
     expandMap: 'मानचित्र बड़ा करें',
@@ -1723,7 +1691,7 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     districtPoliclinico: 'पॉलीक्लिनिक / मेडिकल फैकल्टी (< 500 मी)',
     districtPortello: 'पोर्टेलो / इंजीनियरिंग और विज्ञान (< 500 मी)',
     districtBeato: 'बीतो पेलेग्रिनो / मानविकी संकाय',
-    districtCentro: 'ऐतिहासिक केंद्र / प्रातो डेला वैले',
+    districtCentro: 'Centro Storico',
     listingDescriptionTitle: 'विवरण और रहने की शर्तें',
     amenitiesTitle: 'अपार्टमेंट और कमरे की सुविधाएं',
     specsTitle: 'विज्ञापन विवरण और तकनीकी जानकारी',
@@ -1745,11 +1713,8 @@ export const BASE_TRANSLATIONS: Record<Language, TranslationDictionary> = {
     economicLabel: 'किफायती',
     expensiveLabel: 'महंगा',
     thisListingLabel: 'यह विज्ञापन',
-    livePadovaMap: 'लाइव पादोवा मानचित्र',
     stationTram: 'स्टेशन / ट्राम',
     studentRoomLegend: 'छात्र कमरा',
-    realCoordinates: 'पादोवा केंद्र, पोर्टेलो, पोलिक्लिनिको और अर्चेला के वास्तविक निर्देशांक',
-    openStreetMapLayer: '© OpenStreetMap परत',
     viewListing: 'विज्ञापन देखें',
     shrinkMap: 'छोटा करें',
     roomSingola: 'एकल कमरा (Singola)',

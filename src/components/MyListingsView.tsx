@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { isSubentroListing, LEGACY_SUBENTRO_CONTRACT } from '../utils/subentro';
 import { 
   Plus, 
   CheckCircle2, 
   Trash2, 
   Video, 
   Archive, 
-  Sparkles, 
   Eye,
   Heart,
   RefreshCw,
@@ -33,7 +33,7 @@ interface MyListingsViewProps {
   onSelectListing: (listing: HousingListing) => void;
   onOpenVideoTour: (listing: HousingListing) => void;
   onDeleteListing: (id: string) => void;
-  onMarkAsRented?: (listingId: string, details?: { rentedPrice: number; tenantType: string; note?: string }) => void;
+  onMarkAsRented?: (listingId: string, details?: { rentedPrice: number; note?: string }) => void;
   onReactivateListing?: (listingId: string) => void;
   onRenewListing?: (listingId: string) => void;
   onBackToHome: () => void;
@@ -46,14 +46,6 @@ interface MyListingsViewProps {
 }
 
 // Kiracı profili seçenekleri: kayda geçen değer sabit kalır, görünen etiket dile göre değişir.
-const TENANT_OPTIONS = [
-  { value: 'UniPD Tıp / Mühendislik Öğrencisi', key: 'tenantMedEng' },
-  { value: 'UniPD Lisans / Master Öğrencisi', key: 'tenantBaMa' },
-  { value: 'Erasmus+ Değişim Öğrencisi', key: 'tenantErasmus' },
-  { value: 'Doktora / Doktora Sonrası Araştırmacı', key: 'tenantPhd' },
-  { value: 'Genç Çalışan / Mezun', key: 'tenantWorker' },
-] as const;
-
 // "{title}" gibi yer tutucuları verilen düğümlerle değiştirir (dile göre kelime sırası değişebilir).
 const richText = (template: string, parts: Record<string, React.ReactNode>): React.ReactNode =>
   template.split(/(\{\w+\})/).map((chunk, i) => {
@@ -79,22 +71,16 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
   favoriteCounts = {},
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.it;
-  const tenantLabel = (value: string) => {
-    const o = TENANT_OPTIONS.find((opt) => opt.value === value);
-    return o ? t[o.key] : value;
-  };
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
 
   // Confirmation Modal state for "Kiracı Buldum"
   const [selectedListingForRent, setSelectedListingForRent] = useState<HousingListing | null>(null);
   const [rentedPrice, setRentedPrice] = useState<number>(420);
-  const [tenantType, setTenantType] = useState<string>(TENANT_OPTIONS[1].value);
   const [rentalNote, setRentalNote] = useState<string>('');
 
   const openRentConfirmation = (listing: HousingListing) => {
     setSelectedListingForRent(listing);
     setRentedPrice(listing.price);
-    setTenantType(TENANT_OPTIONS[1].value);
     setRentalNote('');
   };
 
@@ -102,7 +88,6 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
     if (!selectedListingForRent || !onMarkAsRented) return;
     onMarkAsRented(selectedListingForRent.id, {
       rentedPrice,
-      tenantType,
       note: rentalNote
     });
     setSelectedListingForRent(null);
@@ -185,7 +170,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                 <Building2 className="w-6 h-6" />
               </div>
               <p className="text-sm font-semibold text-stone-700">{t.noListingsYet}</p>
-              <p className="text-xs text-stone-400 max-w-sm mx-auto">
+              <p className="text-xs text-stone-400 max-w-sm mx-auto text-balance">
                 {t.noActiveListings}
               </p>
               <button 
@@ -237,7 +222,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                           <span>•</span>
                           <span>{listing.roomType}</span>
                           <span>•</span>
-                          <span className="text-emerald-700 font-medium">{listing.contractType}</span>
+                          <span className="text-emerald-700 font-medium">{listing.contractType !== LEGACY_SUBENTRO_CONTRACT && listing.contractType}{isSubentroListing(listing) && `${listing.contractType !== LEGACY_SUBENTRO_CONTRACT ? ' · ' : ''}${t.subentroBadge}`}</span>
                           {listing.contractStartDate && (
                             <>
                               <span>•</span>
@@ -366,7 +351,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
               <p className="text-sm font-semibold text-stone-700">
                 {t.noPastListings}
               </p>
-              <p className="text-xs text-stone-400 max-w-sm mx-auto">
+              <p className="text-xs text-stone-400 max-w-sm mx-auto text-balance">
                 {t.noPastListingsHint}
               </p>
             </div>
@@ -414,7 +399,7 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                           <span>•</span>
                           <span>{listing.roomType}</span>
                           <span>•</span>
-                          <span className="text-emerald-800 font-medium">{listing.contractType}</span>
+                          <span className="text-emerald-800 font-medium">{listing.contractType !== LEGACY_SUBENTRO_CONTRACT && listing.contractType}{isSubentroListing(listing) && `${listing.contractType !== LEGACY_SUBENTRO_CONTRACT ? ' · ' : ''}${t.subentroBadge}`}</span>
                         </div>
                       </div>
 
@@ -447,10 +432,6 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5 text-stone-400" />
                             <span>{t.rentedOnLabel}: <strong className="text-stone-800">{rawListing.rentedAt || t.recordedValue}</strong></span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{t.tenantTypeLabel}: <strong className="text-stone-800">{rawListing.tenantType ? tenantLabel(rawListing.tenantType) : t.tenantBaMa}</strong></span>
                           </div>
                         </>
                       )}
@@ -527,21 +508,6 @@ export const MyListingsView: React.FC<MyListingsViewProps> = ({
                     />
                     <Coins className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-stone-700">
-                    {t.tenantProfile}
-                  </label>
-                  <select
-                    value={tenantType}
-                    onChange={(e) => setTenantType(e.target.value)}
-                    className="w-full min-h-[42px] px-3 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white text-stone-900 outline-none focus:border-emerald-500"
-                  >
-                    {TENANT_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>{t[o.key]}</option>
-                    ))}
-                  </select>
                 </div>
 
                 <div className="space-y-1">

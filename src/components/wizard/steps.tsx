@@ -26,13 +26,15 @@ import { ContractType, Language, RoomType } from '../../types';
 import { TRANSLATIONS } from '../../utils/translations';
 import { LANG_LOCALE, WIZARD_TEXT, fill } from '../../utils/wizardText';
 import { Card, Chip, Field, HelpTip, Segmented, SectionTitle, Stepper, inputClass } from '../ui/kit';
-import { DateRangePicker, monthsBetween } from '../ui/DateRangePicker';
+import { DateRangePicker, monthsBetween, toISO } from '../ui/DateRangePicker';
 import { LocationField } from './LocationField';
 import { PriceGauge } from './PriceGauge';
 import { PhotoUploader } from './PhotoUploader';
 import { Errors, FormState, formatDate, FLOOR_MAX, FLOOR_MIN } from './formModel';
 import type { EnergyClass } from '../../types';
 import { ENERGY_CLASS_OPTIONS, ENERGY_PERFORMANCE_MAX, isRatedEnergyClass } from '../../utils/energy';
+import { MIN_STAY_DAYS, stayDays, termFromDates } from '../../utils/rentalTerm';
+import { LEGACY_SUBENTRO_CONTRACT } from '../../utils/subentro';
 
 export interface StepProps {
   form: FormState;
@@ -110,9 +112,11 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const locale = LANG_LOCALE[lang];
   const months = monthsBetween(form.startDate, form.endDate);
+  // Tarihler geçerliyse ilanın hangi sekmede yayınlanacağı gösterilir (en fazla 6 ay: kısa dönem).
+  const validDates = Boolean(form.startDate && form.endDate && (stayDays(form.startDate, form.endDate) ?? 0) >= MIN_STAY_DAYS);
+  const term = termFromDates(form.startDate, form.endDate);
   const contracts: { value: ContractType; label: string }[] = [
     { value: 'Contratto per Studenti (Canone Concordato)', label: t.contractCanone },
-    { value: 'Subentro (Resmi Sözleşme Devri)', label: t.contractSubentro },
     { value: 'Contratto Transitorio (1-18 Ay)', label: t.contractTransitorio },
     { value: 'Standart 4+4 / 3+2 Yıllık', label: t.contractStandard },
   ];
@@ -222,70 +226,153 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
           id="wiz-contract"
           value={form.contractType}
           onChange={(e) => set({ contractType: e.target.value as ContractType })}
-          className={inputClass()}
+          className={inputClass(Boolean(errors.contractType))}
         >
+          {/* Eski "Subentro" kayıtlarında geçici seçenek: tip seçilene kadar ilerlenemez. */}
+          {form.contractType === LEGACY_SUBENTRO_CONTRACT && <option value={LEGACY_SUBENTRO_CONTRACT}>{t.contractPick}</option>}
           {contracts.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
             </option>
           ))}
         </select>
+        {errors.contractType && (
+          <p role="alert" className="mt-2 text-[13px] font-medium text-rose-600">
+            {errors.contractType}
+          </p>
+        )}
       </Card>
 
       <Card>
-        <SectionTitle hint={w.datesHelp}>{w.datesLabel}</SectionTitle>
-
-        <div className="flex flex-col gap-5 md:flex-row md:items-start">
-          <div>
-            <DateRangePicker
-              start={form.startDate}
-              end={form.endDate}
-              locale={locale}
-              hintStart={w.pickStartFirst}
-              hintEnd={w.pickEnd}
-              prevLabel={t.prevMonth}
-              nextLabel={t.nextMonth}
-              onChange={(s, e) => set({ startDate: s, endDate: e })}
-            />
-          </div>
-
-          <div className="grid flex-1 grid-cols-2 gap-3 self-start">
-            <div className="rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
-              <p className="text-[13px] font-medium text-stone-500">{w.startLabel}</p>
-              <p className="mt-0.5 text-sm font-bold text-stone-900">
-                {form.startDate ? formatDate(form.startDate, lang) : '—'}
-              </p>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={form.isSubentro}
+            onChange={(e) => set({ isSubentro: e.target.checked, landlordConsent: e.target.checked ? form.landlordConsent : false })}
+            className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-orange-600"
+          />
+          <span>
+            <span className="block text-sm font-bold text-stone-900">{t.subentroToggle}</span>
+            <span className="block text-[13px] text-stone-500">{t.subentroToggleHint}</span>
+          </span>
+        </label>
+        {form.isSubentro && (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-bold text-amber-900">{t.subentroTitle}</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-amber-900">{t.subentroBody}</p>
             </div>
-            <div className="rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
-              <p className="text-[13px] font-medium text-stone-500">{w.endLabel}</p>
-              <p className="mt-0.5 text-sm font-bold text-stone-900">{form.endDate ? formatDate(form.endDate, lang) : '—'}</p>
-            </div>
-            <div className="col-span-2 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-3.5 py-3">
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-orange-900">
-                <CalendarRange className="h-4 w-4 text-orange-600" />
-                {w.duration}
-              </span>
-              <span className="text-base font-extrabold text-orange-700" aria-live="polite">
-                {months ? fill(months === 1 ? w.monthsUnit_one : w.monthsUnit_other, { n: months }) : '—'}
-              </span>
-            </div>
-            {(form.startDate || form.endDate) && (
-              <button
-                type="button"
-                onClick={() => set({ startDate: '', endDate: '' })}
-                className="col-span-2 min-h-[44px] self-start text-left text-sm font-semibold text-stone-600 hover:text-stone-900 cursor-pointer"
-              >
-                {w.clearDates}
-              </button>
-            )}
-            {errors.dates && (
-              <p role="alert" className="col-span-2 text-[13px] font-medium text-rose-600">
-                {errors.dates}
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3">
+              <input
+                type="checkbox"
+                checked={form.landlordConsent}
+                onChange={(e) => set({ landlordConsent: e.target.checked })}
+                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-orange-600"
+              />
+              <span className="text-sm text-stone-800">{t.subentroAckLabel}</span>
+            </label>
+            {errors.landlordConsent && (
+              <p role="alert" className="text-[13px] font-medium text-rose-600">
+                {errors.landlordConsent}
               </p>
             )}
           </div>
-        </div>
+        )}
       </Card>
+
+      {/* Tarih kartı ve yanında ayrı bir bilgi kutusu: sütun yeterince genişse yan yana, dar sütunda alt alta (container query). */}
+      <div className="@container">
+        <div className="grid gap-5 @xl:grid-cols-[19rem_minmax(0,1fr)] @xl:items-start">
+          <Card>
+            <SectionTitle hint={form.isSubentro ? t.subentroDatesHelp : w.datesHelp}>{form.isSubentro ? t.subentroDatesLabel : w.datesLabel}</SectionTitle>
+
+            <div className="space-y-4">
+              <DateRangePicker
+                start={form.startDate}
+                end={form.endDate}
+                locale={locale}
+                // Geçmiş günler seçilemez.
+                min={toISO(new Date())}
+                hintStart={w.pickStartFirst}
+                hintEnd={w.pickEnd}
+                prevLabel={t.prevMonth}
+                nextLabel={t.nextMonth}
+                onChange={(s, e) => set({ startDate: s, endDate: e })}
+                // 30 gün ve daha kısa kalışlar seçilemez (turistik kiralama / CIN kapsamına girer).
+                minSpanDays={MIN_STAY_DAYS}
+                minSpanHint={t.minStayPickHint}
+              />
+
+              <div className="grid max-w-[16rem] grid-cols-2 gap-2">
+                <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5">
+                  <p className="text-[12px] font-medium text-stone-500">{w.startLabel}</p>
+                  <p className="mt-0.5 text-[13px] font-bold leading-snug text-stone-900">
+                    {form.startDate ? formatDate(form.startDate, lang) : '—'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5">
+                  <p className="text-[12px] font-medium text-stone-500">{w.endLabel}</p>
+                  <p className="mt-0.5 text-[13px] font-bold leading-snug text-stone-900">{form.endDate ? formatDate(form.endDate, lang) : '—'}</p>
+                </div>
+                <div className="col-span-2 flex items-center justify-between gap-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2.5">
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-orange-900">
+                    <CalendarRange className="h-4 w-4 text-orange-600" />
+                    {w.duration}
+                  </span>
+                  <span className="text-sm font-extrabold text-orange-700" aria-live="polite">
+                    {months ? fill(months === 1 ? w.monthsUnit_one : w.monthsUnit_other, { n: months }) : '—'}
+                  </span>
+                </div>
+                {(form.startDate || form.endDate) && (
+                  <button
+                    type="button"
+                    onClick={() => set({ startDate: '', endDate: '' })}
+                    className="col-span-2 min-h-[40px] self-start text-left text-sm font-semibold text-stone-600 hover:text-stone-900 cursor-pointer"
+                  >
+                    {w.clearDates}
+                  </button>
+                )}
+                {errors.dates && (
+                  <p role="alert" className="col-span-2 text-[13px] font-medium text-rose-600">
+                    {errors.dates}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* Yanındaki ayrı kutu: ilanın hangi sekmede yayınlanacağı ve (kısa dönemde) konut amaçlı kiralama beyanı */}
+          {validDates && (
+            <Card className="!p-4">
+              <p className="text-[13px] font-semibold leading-snug text-stone-900" aria-live="polite">
+                {term === 'short' ? t.termBadgeShort : t.termBadgeLong}
+              </p>
+              {term === 'short' && (
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                    <p className="text-[13px] font-bold leading-snug text-amber-900">{t.purposeTitle}</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-amber-900">{t.purposeBody}</p>
+                  </div>
+                  <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-stone-200 bg-white px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={form.purposeAck}
+                      onChange={(e) => set({ purposeAck: e.target.checked })}
+                      className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-orange-600"
+                    />
+                    <span className="text-[13px] leading-snug text-stone-800">{t.purposeAckLabel}</span>
+                  </label>
+                  {errors.purposeAck && (
+                    <p role="alert" className="text-[13px] font-medium text-rose-600">
+                      {errors.purposeAck}
+                    </p>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -701,8 +788,9 @@ export const StepMedia: React.FC<MediaProps> = ({
 
 // ---------- 5) Ev arkadaşları ----------
 
-export const StepFlatmates: React.FC<StepProps> = ({ form, set, lang }) => {
+export const StepFlatmates: React.FC<StepProps> = ({ form, set, errors, lang }) => {
   const w = WIZARD_TEXT[lang];
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
   const known = form.femaleCount + form.maleCount;
   const total = form.totalHousemates;
 
@@ -762,6 +850,16 @@ export const StepFlatmates: React.FC<StepProps> = ({ form, set, lang }) => {
             <p className="mt-1.5 text-[13px] text-stone-500">
               {form.femaleCount} {w.women} · {form.maleCount} {w.men}
             </p>
+            {total - known > 0 && (
+              <p className={`mt-1 text-[13px] font-medium ${errors.distribution ? 'text-rose-600' : 'text-amber-700'}`} aria-live="polite">
+                {t.distributionRemaining.replace('{n}', String(total - known))}
+              </p>
+            )}
+            {errors.distribution && (
+              <p role="alert" className="mt-1 text-[13px] font-medium text-rose-600">
+                {errors.distribution}
+              </p>
+            )}
           </div>
         </div>
       </Card>

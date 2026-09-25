@@ -23,6 +23,7 @@ const fieldLabel = 'text-[13px] font-semibold text-stone-700 flex items-center g
 
 const criteriaOf = (r: ListingRadar): RadarCriteria => ({
   district: r.district,
+  rentalTerm: r.rentalTerm,
   roomType: r.roomType,
   contractType: r.contractType,
   minPrice: r.minPrice,
@@ -33,7 +34,7 @@ const criteriaOf = (r: ListingRadar): RadarCriteria => ({
   gender: r.gender,
   onlyVideoTour: r.onlyVideoTour,
   onlyStudentVerified: r.onlyStudentVerified,
-  roommatesOnly: r.roommatesOnly,
+  onlySubentro: r.onlySubentro,
 });
 
 export const RadarPage: React.FC = () => {
@@ -91,17 +92,16 @@ export const RadarPage: React.FC = () => {
     { value: 'Policlinico / Tıp Fakültesi (< 500m)', label: t.districtPoliclinico },
     { value: 'Portello / Mühendislik & Fen (< 500m)', label: t.districtPortello },
     { value: 'Beato Pellegrino / Beşeri Bilimler', label: t.districtBeato },
-    { value: 'Centro Storico / Prato della Valle', label: t.districtCentro },
+    { value: 'Centro Storico', label: t.districtCentro },
+    { value: 'Prato della Valle', label: t.districtPrato },
   ];
   const contractOptions: { value: string; label: string }[] = [
     { value: 'Contratto per Studenti (Canone Concordato)', label: t.contractOptionStudent },
-    { value: 'Subentro (Resmi Sözleşme Devri)', label: t.contractOptionSubentro },
     { value: 'Contratto Transitorio (1-18 Ay)', label: t.contractOptionTransitorio },
     { value: 'Standart 4+4 / 3+2 Yıllık', label: t.contractOptionStandard },
   ];
   const stayOptions = [
     { months: 0, label: t.stayAny },
-    { months: 1, label: t.stayUpTo1 },
     { months: 3, label: t.stayUpTo3 },
     { months: 6, label: t.stayUpTo6 },
     { months: 12, label: t.stayUpTo12 },
@@ -120,6 +120,7 @@ export const RadarPage: React.FC = () => {
   const summaryChips = (c: RadarCriteria): string[] => {
     const chips: string[] = [];
     if (c.district) chips.push(districtLabel(c.district).split(' / ')[0]);
+    if (c.rentalTerm) chips.push(c.rentalTerm === 'short' ? t.termShort : t.termLong);
     if (c.roomType) chips.push(c.roomType);
     if (c.contractType) chips.push(contractOptions.find((o) => o.value === c.contractType)?.label.split(' (')[0] ?? c.contractType);
     if (c.minPrice && c.maxPrice) chips.push(`€${c.minPrice} – €${c.maxPrice}`);
@@ -132,7 +133,7 @@ export const RadarPage: React.FC = () => {
     if (c.gender) chips.push(c.gender === 'female' ? t.genderFilterFemale : t.genderFilterMale);
     if (c.onlyVideoTour) chips.push(t.tabVideo);
     if (c.onlyStudentVerified) chips.push(t.verifiedStudent);
-    if (c.roommatesOnly) chips.push(t.tabRoommates);
+    if (c.onlySubentro) chips.push(t.tabSubentro);
     return chips;
   };
 
@@ -160,6 +161,7 @@ export const RadarPage: React.FC = () => {
       {
         name: name.trim(),
         district: criteria.district,
+        rentalTerm: criteria.rentalTerm,
         roomType: criteria.roomType,
         contractType: criteria.contractType,
         minPrice: criteria.minPrice,
@@ -170,7 +172,7 @@ export const RadarPage: React.FC = () => {
         gender: criteria.gender,
         onlyVideoTour: criteria.onlyVideoTour,
         onlyStudentVerified: criteria.onlyStudentVerified,
-        roommatesOnly: criteria.roommatesOnly,
+        onlySubentro: criteria.onlySubentro,
       },
       editingId ?? undefined
     );
@@ -194,7 +196,7 @@ export const RadarPage: React.FC = () => {
         </div>
         <h1 className="font-display font-black text-3xl sm:text-4xl tracking-tight text-stone-900">{t.radarTitle}</h1>
       </div>
-      <p className="max-w-2xl text-base leading-relaxed text-stone-600">{t.radarIntro}</p>
+      <p className="text-base leading-relaxed text-stone-600">{t.radarIntro}</p>
       <ol className="flex flex-wrap gap-2.5">
         {[t.radarStep1, t.radarStep2, t.radarStep3].map((step, i) => (
           <li key={i} className="flex items-center gap-2 rounded-full bg-white border border-stone-200 pl-1.5 pr-4 py-1.5 text-sm font-semibold text-stone-800">
@@ -250,6 +252,25 @@ export const RadarPage: React.FC = () => {
                 className={inputClass()}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <span className={fieldLabel}>
+                <Hourglass className="w-3.5 h-3.5 text-orange-600" />
+                {t.termLabel}
+              </span>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={t.termLabel}>
+                {([
+                  [undefined, t.termAll],
+                  ['long', t.termLong],
+                  ['short', t.termShort],
+                ] as const).map(([value, label]) => (
+                  <button key={label} type="button" onClick={() => patch({ rentalTerm: value })} aria-pressed={criteria.rentalTerm === value} className={optionChip(criteria.rentalTerm === value)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {criteria.rentalTerm === 'short' && <p className="text-[13px] text-stone-500">{t.termShortHint}</p>}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
@@ -356,16 +377,15 @@ export const RadarPage: React.FC = () => {
                 <GraduationCap className="w-4 h-4" />
                 {t.verifiedStudent}
               </button>
-              <button type="button" onClick={() => patch({ roommatesOnly: !criteria.roommatesOnly })} aria-pressed={criteria.roommatesOnly} className={optionChip(criteria.roommatesOnly)}>
-                <Users className="w-4 h-4" />
-                {t.tabRoommates}
+              <button type="button" onClick={() => patch({ onlySubentro: !criteria.onlySubentro })} aria-pressed={criteria.onlySubentro} className={optionChip(criteria.onlySubentro)}>
+                {t.tabSubentro}
               </button>
             </div>
 
             <div className="space-y-2">
               <span className={fieldLabel}>
                 <Calendar className="w-3.5 h-3.5 text-orange-600" />
-                {t.contractStartDateLabel}
+                {t.stayDatesLabel}
               </span>
               <div className="max-w-[360px] rounded-2xl border border-stone-200 p-3">
                 <StartDatePanel

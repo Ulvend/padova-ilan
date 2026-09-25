@@ -14,6 +14,8 @@ import { landmarkLabel } from '../../utils/landmarkText';
 import { WIZARD_TEXT, LANG_LOCALE } from '../../utils/wizardText';
 import { TRANSLATIONS } from '../../utils/translations';
 import { ENERGY_PERFORMANCE_MAX, isRatedEnergyClass } from '../../utils/energy';
+import { MIN_STAY_DAYS, stayDays, termFromDates } from '../../utils/rentalTerm';
+import { LEGACY_SUBENTRO_CONTRACT, isSubentroListing } from '../../utils/subentro';
 
 export type PhotoStatus = 'done' | 'uploading' | 'error';
 
@@ -47,8 +49,13 @@ export interface FormState {
   deposit: string;
   condoFees: string;
   contractType: ContractType;
+  // Sözleşme devri (subentro) ilanı; işaretliyse ev sahibi onayı beyanı zorunludur.
+  isSubentro: boolean;
+  landlordConsent: boolean;
   startDate: string;
   endDate: string;
+  // Kısa dönem (1–6 ay) ilanlarda zorunlu: konut amaçlı geçici kiralama beyanı (turistik / 30 gün ve altı kiralama değil).
+  purposeAck: boolean;
 
   roomM2: string;
   apartmentM2: string;
@@ -107,8 +114,11 @@ export const createInitialForm = (): FormState => {
     deposit: '',
     condoFees: '',
     contractType: 'Contratto per Studenti (Canone Concordato)',
+    isSubentro: false,
+    landlordConsent: false,
     startDate: todayISO(),
     endDate: '',
+    purposeAck: false,
     roomM2: '',
     apartmentM2: '',
     bathrooms: 1,
@@ -263,8 +273,13 @@ export const formFromListing = (l: HousingListing): FormState => {
     deposit: l.deposit ? String(l.deposit) : '',
     condoFees: l.condoFees ? String(l.condoFees) : '',
     contractType: l.contractType,
+    isSubentro: isSubentroListing(l),
+    // Mevcut ilanı düzenlerken beyan yeniden istenmez.
+    landlordConsent: true,
     startDate: l.contractStartISO || todayISO(),
     endDate: l.contractEndISO || '',
+    // Mevcut ilanı düzenlerken beyan yeniden istenmez.
+    purposeAck: true,
     roomM2: l.roomM2 ? String(l.roomM2) : '',
     apartmentM2: l.apartmentM2 ? String(l.apartmentM2) : '',
     bathrooms: l.bathrooms || 1,
@@ -335,6 +350,7 @@ export const buildListing = (
     fairPriceText: existing?.fairPriceText ?? '',
     roomType: f.roomType,
     contractType: f.contractType,
+    isSubentro: f.isSubentro,
     contractStartDate: f.startDate ? formatDate(f.startDate, lang) : undefined,
     contractStartISO: f.startDate || undefined,
     contractEndDate: f.endDate ? formatDate(f.endDate, lang) : undefined,
@@ -421,9 +437,16 @@ export const validateStep = (step: number, f: FormState, lang: Language): Errors
       const c = Number(f.condoFees);
       if (!(c > 0) || c > CONDO_FEES_MAX) e.condoFees = TRANSLATIONS[lang].condoFeesError;
     }
+    // Eski "Subentro" tipi artık seçilemez; asıl sözleşme tipi seçilmelidir.
+    if (f.contractType === LEGACY_SUBENTRO_CONTRACT) e.contractType = TRANSLATIONS[lang].contractTypeRequired;
+    // Devir ilanında ev sahibi onayı beyanı zorunlu.
+    if (f.isSubentro && !f.landlordConsent) e.landlordConsent = TRANSLATIONS[lang].subentroAckError;
     // Süresiz ilan verilemez: başlangıç ve bitiş günü zorunlu.
     if (!f.startDate || !f.endDate) e.dates = w.datesRequired;
     else if (f.endDate <= f.startDate) e.dates = w.endBeforeStart;
+    // 30 gün ve daha kısa kalışlar yayınlanamaz (turistik kiralama / CIN kapsamına girer).
+    else if ((stayDays(f.startDate, f.endDate) ?? 0) < MIN_STAY_DAYS) e.dates = TRANSLATIONS[lang].minStayError;
+    else if (termFromDates(f.startDate, f.endDate) === 'short' && !f.purposeAck) e.purposeAck = TRANSLATIONS[lang].purposeAckError;
   }
   if (step === 2) {
     if (!(Number(f.roomM2) > 0)) e.roomM2 = w.areaError;
@@ -446,6 +469,12 @@ export const validateStep = (step: number, f: FormState, lang: Language): Errors
   }
   if (step === 3) {
     if (f.photos.length === 0) e.photos = w.photoError;
+  }
+  // Ev arkadaşı sayısı verildikten sonra herkesin cinsiyeti seçilmeli: kadın + erkek toplamı kişi sayısına eşit olmalı.
+  if (step === 4) {
+    if (f.femaleCount + f.maleCount !== f.totalHousemates) {
+      e.distribution = TRANSLATIONS[lang].distributionIncomplete.replace('{n}', String(f.totalHousemates));
+    }
   }
   return e;
 };

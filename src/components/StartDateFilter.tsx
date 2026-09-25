@@ -5,6 +5,7 @@ import { TRANSLATIONS } from '../utils/translations';
 import { LANG_LOCALE } from '../utils/locale';
 import { fillText } from '../utils/homeText';
 import { DateRangePicker, fromISO, toISO } from './ui/DateRangePicker';
+import { MIN_STAY_DAYS } from '../utils/rentalTerm';
 
 interface StartDateFilterProps {
   filters: FilterState;
@@ -48,8 +49,12 @@ export const StartDatePanel: React.FC<StartDateFilterProps> = ({ filters, onFilt
         hintEnd={t.startPickLast}
         prevLabel={t.prevMonth}
         nextLabel={t.nextMonth}
+        // Sitede en az 31 günlük kalışlar yayınlandığı için daha kısa aralık seçilemez (yalnızca ilk gün seçmek serbest).
+        minSpanDays={MIN_STAY_DAYS}
+        minSpanHint={t.minStayPickHint}
         onChange={(from, to) => onFilterChange({ contractStartFrom: from || undefined, contractStartTo: to || undefined })}
       />
+      <p className="mt-2 text-[12px] leading-snug text-stone-500">{t.datesCoverHint}</p>
       {hasStartDateFilter(filters) && (
         <button
           type="button"

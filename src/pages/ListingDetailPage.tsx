@@ -58,7 +58,7 @@ export const ListingDetailPage: React.FC = () => {
         </div>
         <div className="space-y-1">
           <h2 className="text-xl font-bold text-stone-900">{t.listingNotFoundTitle}</h2>
-          <p className="text-xs text-stone-500 max-w-sm mx-auto">
+          <p className="text-xs text-stone-500 max-w-sm mx-auto text-balance">
             {t.listingNotFoundBody.replace('{id}', id ?? '')}
           </p>
         </div>

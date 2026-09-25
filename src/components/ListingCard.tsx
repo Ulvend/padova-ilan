@@ -1,5 +1,6 @@
 import React from 'react';
-import { Heart, Video, MapPin, Eye, ShieldCheck, GraduationCap, Users, Camera } from 'lucide-react';
+import { isSubentroListing } from '../utils/subentro';
+import { Heart, Video, MapPin, Eye, GraduationCap, Users, Camera } from 'lucide-react';
 import { HousingListing, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { HOME_TEXT } from '../utils/homeText';
@@ -62,7 +63,6 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   };
 
   const isPricey = listing.fairPriceStatus !== 'lower' && listing.fairPriceStatus !== 'average';
-  const isVerified = Boolean(listing.poster.verifiedUniPD || listing.isStudentCardVerified);
   const hasGender = Boolean(listing.femaleCount || listing.maleCount);
   const occupants =
     listing.occupantType === 'students_only'
@@ -178,12 +178,13 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <div className="flex items-center gap-1.5 text-[13px] text-stone-600">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">
-              {listing.streetAddress} · {listing.district.split('/')[0].trim()}
+              {listing.streetAddress}
             </span>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
+          {isSubentroListing(rawListing) && <span className={`${chipCls} !bg-amber-50 !text-amber-800`}>{t.subentroBadge}</span>}
           <span className={chipCls}>{listing.roomType}</span>
           <span className={chipCls}>{listingAreaM2(rawListing)} m²</span>
           <span className={chipCls}>
@@ -205,16 +206,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({
               <span className="truncate">{matesLine}</span>
             </div>
           )}
-          <div className="flex items-center justify-between gap-2 pt-1 text-xs text-stone-500">
-            <span className="truncate">
+          <div className="pt-1 text-xs text-stone-500">
+            <span className="block truncate">
               {listing.contractStartDate ? `${t.contractStartDateLabel}: ${listing.contractStartDate}` : listing.contractType}
             </span>
-            {isVerified && (
-              <span className="flex items-center gap-1 font-bold text-emerald-700 shrink-0">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {t.verifiedStudent}
-              </span>
-            )}
           </div>
         </div>
       </div>
