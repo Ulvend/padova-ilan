@@ -74,16 +74,16 @@ export const ListingCard: React.FC<ListingCardProps> = ({
     .filter(Boolean)
     .join(' · ');
 
-  const chipCls = 'px-3 py-1.5 bg-stone-100 rounded-[10px] text-[13px] font-semibold text-stone-700';
+  const chipCls = 'px-2.5 py-1 bg-stone-100 rounded-lg text-xs font-semibold text-stone-700';
 
   return (
     <article
       id={`housing-card-${listing.id}`}
-      className="bg-white rounded-[20px] border border-stone-200 overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow"
+      className="bg-white rounded-2xl border border-stone-200 overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow"
     >
       {/* Fotoğraf */}
       <div
-        className="relative h-[230px] sm:h-[250px] bg-stone-200 cursor-pointer shrink-0"
+        className="relative aspect-[3/2] bg-stone-200 cursor-pointer shrink-0"
         onClick={handleOpenDetail}
       >
         {listing.images && listing.images.length > 0 ? (
@@ -98,9 +98,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <button
             type="button"
             onClick={handleOpenVideo}
-            className="absolute left-3.5 top-3.5 h-8 px-3 bg-white rounded-full text-[13px] font-bold text-stone-900 flex items-center gap-1.5 cursor-pointer hover:bg-stone-50 transition"
+            className="absolute left-3 top-3 h-7 px-2.5 bg-white rounded-full text-xs font-bold text-stone-900 flex items-center gap-1.5 cursor-pointer hover:bg-stone-50 transition"
           >
-            <Video className="w-[15px] h-[15px]" />
+            <Video className="w-3.5 h-3.5" />
             {h.videoTour30}
           </button>
         )}
@@ -119,7 +119,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
         </button>
 
         {listing.images && listing.images.length > 0 && (
-          <span className="absolute left-3.5 bottom-3.5 h-7 px-2.5 bg-stone-900/70 text-white text-xs font-semibold rounded-full flex items-center">
+          <span className="absolute left-3 bottom-3 h-6 px-2 bg-stone-900/70 text-white text-[11px] font-semibold rounded-full flex items-center">
             {listing.images.length} {h.photoWord}
           </span>
         )}
@@ -131,7 +131,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             e.stopPropagation();
             onOpenPreviewModal(rawListing);
           }}
-          className="absolute right-3 bottom-2.5 h-11 px-4 bg-white text-stone-900 rounded-full shadow-md flex items-center gap-2 text-sm font-bold cursor-pointer hover:bg-stone-50 transition active:scale-95"
+          className="absolute right-2.5 bottom-2.5 h-10 px-3.5 bg-white text-stone-900 rounded-full shadow-md flex items-center gap-1.5 text-[13px] font-bold cursor-pointer hover:bg-stone-50 transition active:scale-95"
           title={t.quickPreview}
         >
           <Eye className="w-4 h-4" />
@@ -140,19 +140,19 @@ export const ListingCard: React.FC<ListingCardProps> = ({
       </div>
 
       {/* Bilgi */}
-      <div className="p-5 sm:px-[22px] flex flex-col gap-3.5 flex-1">
+      <div className="p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-extrabold tracking-tight text-stone-900">€{listing.price}</span>
-              <span className="text-sm text-stone-500">{t.perMonth}</span>
+              <span className="text-2xl font-extrabold tracking-tight text-stone-900">€{listing.price}</span>
+              <span className="text-[13px] text-stone-500">{t.perMonth}</span>
             </div>
-            <span className="text-[13px] text-stone-500">{listing.expenses}</span>
+            <span className="text-xs text-stone-500">{listing.expenses}</span>
           </div>
 
           {insight.status !== 'unknown' && (
             <span
-              className={`max-w-[150px] text-center px-2.5 py-1.5 rounded-[10px] border text-xs font-bold leading-tight ${
+              className={`max-w-[120px] text-center px-2 py-1 rounded-lg border text-[11px] font-bold leading-tight ${
                 isPricey ? 'bg-orange-50 border-orange-300 text-orange-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
               }`}
             >
@@ -161,24 +161,24 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           )}
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <h3
             id={`listing-title-${listing.id}`}
             onClick={handleOpenDetail}
-            className="font-bold text-lg text-stone-900 hover:text-orange-700 cursor-pointer transition-colors leading-snug line-clamp-2"
+            className="font-bold text-base text-stone-900 hover:text-orange-700 cursor-pointer transition-colors leading-snug line-clamp-2"
             title={t.goToDetailPage}
           >
             {listing.title}
           </h3>
-          <div className="flex items-center gap-1.5 text-sm text-stone-600">
-            <MapPin className="w-[15px] h-[15px] shrink-0" />
+          <div className="flex items-center gap-1.5 text-[13px] text-stone-600">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">
               {listing.streetAddress} · {listing.district.split('/')[0].trim()}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <span className={chipCls}>{listing.roomType}</span>
           <span className={chipCls}>{listing.roomM2} m²</span>
           <span className={chipCls}>
@@ -186,24 +186,24 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </span>
         </div>
 
-        <div className="border-t border-stone-100 pt-3.5 mt-auto space-y-2 text-sm text-stone-600">
+        <div className="border-t border-stone-100 pt-3 mt-auto space-y-1.5 text-[13px] text-stone-600">
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 shrink-0 text-stone-500" />
+            <GraduationCap className="w-3.5 h-3.5 shrink-0 text-stone-500" />
             <span className="truncate">{listing.distanceToFaculty}</span>
           </div>
           {matesLine && (
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 shrink-0 text-stone-500" />
+              <Users className="w-3.5 h-3.5 shrink-0 text-stone-500" />
               <span className="truncate">{matesLine}</span>
             </div>
           )}
-          <div className="flex items-center justify-between gap-2 pt-1 text-[13px] text-stone-500">
+          <div className="flex items-center justify-between gap-2 pt-1 text-xs text-stone-500">
             <span className="truncate">
               {listing.contractStartDate ? `${t.contractStartDateLabel}: ${listing.contractStartDate}` : listing.contractType}
             </span>
             {isVerified && (
               <span className="flex items-center gap-1 font-bold text-emerald-700 shrink-0">
-                <ShieldCheck className="w-[15px] h-[15px]" />
+                <ShieldCheck className="w-3.5 h-3.5" />
                 {t.verifiedStudent}
               </span>
             )}

@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 // Tek sayfada gösterilen ilan sayısı.
-export const PAGE_SIZE = 9;
+export const PAGE_SIZE = 12;
 
 const CONTRACT_STUDENT = 'Contratto per Studenti (Canone Concordato)';
 const CONTRACT_SUBENTRO = 'Subentro (Resmi Sözleşme Devri)';
@@ -375,7 +375,7 @@ export const HomePage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid gap-x-7 gap-y-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-x-5 gap-y-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {pageListings.map((listing) => (
               <ListingCard
                 key={listing.id}
