@@ -757,6 +757,16 @@ export async function deleteNotificationFromFirestore(id: string): Promise<void>
   }
 }
 
+export async function deleteNotifications(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  try {
+    const { error } = await supabase.from('notifications').delete().in('id', ids);
+    if (error) throw error;
+  } catch (error) {
+    handleDbError(error, OperationType.DELETE, 'notifications');
+  }
+}
+
 export type { RealtimeChannel };
 
 /**

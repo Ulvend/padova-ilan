@@ -13,7 +13,6 @@ import {
   Minimize2, 
   RotateCw, 
   RotateCcw,
-  Sparkles,
   RefreshCw,
   Eye
 } from 'lucide-react';

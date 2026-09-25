@@ -4,17 +4,12 @@ import { HousingListing, Language, UserProfile } from '../types';
 import { 
   ShieldCheck, 
   Heart, 
-  GraduationCap, 
-  CheckCircle2, 
   User, 
-  Clock, 
-  Star, 
   Settings, 
   Copy, 
   Check, 
   Key, 
   ShieldAlert, 
-  Sparkles,
   ArrowLeft
 } from 'lucide-react';
 import { TRANSLATIONS } from '../utils/translations';

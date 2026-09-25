@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { ListingDetailPage as ListingDetailComponent } from '../components/ListingDetailPage';
 import { recordListingView } from '../services/supabaseService';
 import { shouldCountView } from '../utils/viewTracking';
-import { ArrowLeft, Home, Building2, Share2, Check } from 'lucide-react';
+import { Home, Building2 } from 'lucide-react';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

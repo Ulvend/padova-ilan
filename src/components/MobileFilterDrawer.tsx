@@ -1,9 +1,15 @@
 import { useModalBehavior } from '../utils/useModalBehavior';
 import React from 'react';
 import { MAX_PRICE_UNLIMITED } from '../context/AppContext';
-import { X, RotateCcw, ShieldCheck, Video, Check, ArrowUpDown, Filter, GraduationCap, Calendar } from 'lucide-react';
+import { X, RotateCcw, Video, Check, ArrowUpDown, Filter, GraduationCap, Calendar, Hourglass, Users } from 'lucide-react';
+import { StartDatePanel } from './StartDateFilter';
 import { FilterState, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
+
+const optionChip = (active: boolean) =>
+  `min-h-[40px] px-3.5 rounded-full border text-xs font-semibold transition cursor-pointer active:scale-95 ${
+    active ? 'bg-stone-900 border-stone-900 text-white' : 'bg-white text-stone-800 border-stone-300 hover:border-stone-500'
+  }`;
 
 interface MobileFilterDrawerProps {
   isOpen: boolean;
@@ -29,6 +35,19 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
   useModalBehavior(isOpen, onClose);
 
   if (!isOpen) return null;
+
+  const stayOptions = [
+    { months: 0, label: t.stayAny },
+    { months: 1, label: t.stayUpTo1 },
+    { months: 3, label: t.stayUpTo3 },
+    { months: 6, label: t.stayUpTo6 },
+  ];
+
+  const genderOptions: { value: FilterState['genderFilter']; label: string }[] = [
+    { value: undefined, label: t.genderFilterAny },
+    { value: 'female', label: t.genderFilterFemale },
+    { value: 'male', label: t.genderFilterMale },
+  ];
 
   return (
     <div 
@@ -128,23 +147,63 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
             </select>
           </div>
 
+          {/* Cinsiyet: seçilen cinsiyete açık ilanlar (karma evler dahil) */}
+          <div className="space-y-1.5 border-t border-stone-100 pt-4">
+            <label className="font-semibold text-xs uppercase tracking-wide text-stone-600 block flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-orange-600" />
+              <span>{t.genderFilterLabel}</span>
+            </label>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t.genderFilterLabel}>
+              {genderOptions.map(({ value, label }) => {
+                const active = filters.genderFilter === value;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => onFilterChange({ genderFilter: value })}
+                    aria-pressed={active}
+                    className={optionChip(active)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-stone-500 leading-relaxed">{t.genderFilterHint}</p>
+          </div>
+
           {/* Contract Start Date */}
           <div className="space-y-1.5 border-t border-stone-100 pt-4">
             <label className="font-semibold text-xs uppercase tracking-wide text-stone-600 block flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-orange-600" />
               <span>{t.contractStartDateLabel}</span>
             </label>
-            <select 
-              value={filters.contractStartDateFilter || 'all'}
-              onChange={(e) => onFilterChange({ contractStartDateFilter: e.target.value })}
-              className="w-full min-h-[46px] px-3 text-xs border border-stone-200 bg-stone-50/50 rounded-xl outline-none text-stone-900 cursor-pointer focus:bg-white focus:border-stone-400 transition-colors"
-            >
-              <option value="all">{t.allDates}</option>
-              <option value="immediate">{t.contractStartImmediate}</option>
-              <option value="october">{t.dateOctober}</option>
-              <option value="november">{t.dateNovember}</option>
-              <option value="spring">{t.dateSpring}</option>
-            </select>
+            <StartDatePanel filters={filters} onFilterChange={onFilterChange} currentLang={currentLang} />
+          </div>
+
+          {/* Kiralama süresi (kısa dönem) */}
+          <div className="space-y-1.5 border-t border-stone-100 pt-4">
+            <label className="font-semibold text-xs uppercase tracking-wide text-stone-600 block flex items-center gap-1.5">
+              <Hourglass className="w-3.5 h-3.5 text-orange-600" />
+              <span>{t.stayLabel}</span>
+            </label>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t.stayLabel}>
+              {stayOptions.map(({ months, label }) => {
+                const active = (filters.maxStayMonths || 0) === months;
+                return (
+                  <button
+                    key={months}
+                    type="button"
+                    onClick={() => onFilterChange({ maxStayMonths: months || undefined })}
+                    aria-pressed={active}
+                    className={optionChip(active)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-stone-500 leading-relaxed">{t.stayHint}</p>
           </div>
 
           {/* Budget Slider with Large Touch Area */}

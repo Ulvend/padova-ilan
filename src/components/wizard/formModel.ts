@@ -41,7 +41,6 @@ export interface FormState {
   expensesIncluded: boolean;
   expensesAmount: string;
   contractType: ContractType;
-  isImmediate: boolean;
   startDate: string;
   endDate: string;
 
@@ -94,7 +93,6 @@ export const createInitialForm = (): FormState => {
     expensesIncluded: false,
     expensesAmount: '',
     contractType: 'Contratto per Studenti (Canone Concordato)',
-    isImmediate: false,
     startDate: todayISO(),
     endDate: '',
     roomM2: '',
@@ -234,7 +232,6 @@ export const formFromListing = (l: HousingListing): FormState => {
     expensesIncluded: exp.included,
     expensesAmount: exp.amount,
     contractType: l.contractType,
-    isImmediate: !l.contractStartISO,
     startDate: l.contractStartISO || todayISO(),
     endDate: l.contractEndISO || '',
     roomM2: l.roomM2 ? String(l.roomM2) : '',
@@ -282,7 +279,6 @@ export const buildListing = (
   const videoAngles = f.hasVideoTour ? buildAngles(f) : undefined;
   const videoUrl = f.hasVideoTour ? f.videoUrl.trim() || undefined : undefined;
   const travel = travelEstimate(f.lat, f.lng, lang);
-  const startISO = f.isImmediate ? '' : f.startDate;
   const w = WIZARD_TEXT[lang];
 
   return {
@@ -301,8 +297,8 @@ export const buildListing = (
     fairPriceText: existing?.fairPriceText ?? '',
     roomType: f.roomType,
     contractType: f.contractType,
-    contractStartDate: f.isImmediate ? undefined : formatDate(f.startDate, lang),
-    contractStartISO: startISO,
+    contractStartDate: f.startDate ? formatDate(f.startDate, lang) : undefined,
+    contractStartISO: f.startDate || undefined,
     contractEndDate: f.endDate ? formatDate(f.endDate, lang) : undefined,
     contractEndISO: f.endDate || undefined,
     hasVideoTour: Boolean(f.hasVideoTour && (videoUrl || videoAngles?.length)),
@@ -361,7 +357,9 @@ export const validateStep = (step: number, f: FormState, lang: Language): Errors
   if (step === 1) {
     if (!(Number(f.price) > 0)) e.price = w.rentError;
     if (!f.expensesIncluded && f.expensesAmount !== '' && !(Number(f.expensesAmount) >= 0)) e.expensesAmount = w.rentError;
-    if (f.endDate && !f.isImmediate && f.startDate && f.endDate <= f.startDate) e.dates = w.endBeforeStart;
+    // Süresiz ilan verilemez: başlangıç ve bitiş günü zorunlu.
+    if (!f.startDate || !f.endDate) e.dates = w.datesRequired;
+    else if (f.endDate <= f.startDate) e.dates = w.endBeforeStart;
   }
   if (step === 2) {
     if (!(Number(f.roomM2) > 0)) e.roomM2 = w.areaError;

@@ -17,13 +17,12 @@ import {
   Wifi,
   Wind,
   WashingMachine,
-  Zap,
   CalendarRange,
 } from 'lucide-react';
 import { ContractType, Language, RoomType } from '../../types';
 import { TRANSLATIONS } from '../../utils/translations';
 import { LANG_LOCALE, WIZARD_TEXT, fill } from '../../utils/wizardText';
-import { Card, Chip, Field, HelpTip, InfoBox, Segmented, SectionTitle, Stepper, inputClass } from '../ui/kit';
+import { Card, Chip, Field, HelpTip, Segmented, SectionTitle, Stepper, inputClass } from '../ui/kit';
 import { DateRangePicker, monthsBetween } from '../ui/DateRangePicker';
 import { LocationField } from './LocationField';
 import { PriceGauge } from './PriceGauge';
@@ -105,7 +104,7 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
   const w = WIZARD_TEXT[lang];
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
   const locale = LANG_LOCALE[lang];
-  const months = form.isImmediate ? monthsBetween(new Date().toISOString().slice(0, 10), form.endDate) : monthsBetween(form.startDate, form.endDate);
+  const months = monthsBetween(form.startDate, form.endDate);
   const contracts: { value: ContractType; label: string }[] = [
     { value: 'Contratto per Studenti (Canone Concordato)', label: t.contractCanone },
     { value: 'Subentro (Resmi Sözleşme Devri)', label: t.contractSubentro },
@@ -189,23 +188,12 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
       <Card>
         <SectionTitle hint={w.datesHelp}>{w.datesLabel}</SectionTitle>
 
-        <div className="mb-4">
-          <Chip
-            selected={form.isImmediate}
-            onClick={() => set({ isImmediate: !form.isImmediate })}
-            icon={<Zap className="h-4 w-4" />}
-          >
-            {w.moveInNow}
-          </Chip>
-        </div>
-
         <div className="flex flex-col gap-5 md:flex-row md:items-start">
-          <div className={form.isImmediate ? 'pointer-events-none opacity-40' : ''} aria-hidden={form.isImmediate}>
+          <div>
             <DateRangePicker
-              start={form.isImmediate ? '' : form.startDate}
+              start={form.startDate}
               end={form.endDate}
               locale={locale}
-              min={undefined}
               hintStart={w.pickStartFirst}
               hintEnd={w.pickEnd}
               prevLabel={t.prevMonth}
@@ -218,12 +206,12 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
             <div className="rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
               <p className="text-[13px] font-medium text-stone-500">{w.startLabel}</p>
               <p className="mt-0.5 text-sm font-bold text-stone-900">
-                {form.isImmediate ? w.moveInNow : form.startDate ? formatDate(form.startDate, lang) : '—'}
+                {form.startDate ? formatDate(form.startDate, lang) : '—'}
               </p>
             </div>
             <div className="rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
               <p className="text-[13px] font-medium text-stone-500">{w.endLabel}</p>
-              <p className="mt-0.5 text-sm font-bold text-stone-900">{form.endDate ? formatDate(form.endDate, lang) : w.openEnded}</p>
+              <p className="mt-0.5 text-sm font-bold text-stone-900">{form.endDate ? formatDate(form.endDate, lang) : '—'}</p>
             </div>
             <div className="col-span-2 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-3.5 py-3">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-orange-900">
@@ -234,10 +222,10 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
                 {months ? fill(months === 1 ? w.monthsUnit_one : w.monthsUnit_other, { n: months }) : '—'}
               </span>
             </div>
-            {(form.endDate || !form.isImmediate) && (
+            {(form.startDate || form.endDate) && (
               <button
                 type="button"
-                onClick={() => set({ endDate: '', startDate: new Date().toISOString().slice(0, 10) })}
+                onClick={() => set({ startDate: '', endDate: '' })}
                 className="col-span-2 min-h-[44px] self-start text-left text-sm font-semibold text-stone-600 hover:text-stone-900 cursor-pointer"
               >
                 {w.clearDates}

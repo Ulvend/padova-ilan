@@ -6,6 +6,7 @@ import { PadovaMap } from '../components/PadovaMap';
 import { ListingCard } from '../components/ListingCard';
 import { Pagination } from '../components/Pagination';
 import { MaxRentField } from '../components/MaxRentField';
+import { StartDateField, hasStartDateFilter } from '../components/StartDateFilter';
 import { HOME_TEXT, fillText } from '../utils/homeText';
 import {
   Map as MapIcon,
@@ -19,6 +20,7 @@ import {
   RefreshCw,
   Scale,
   ChevronDown,
+  Hourglass,
 } from 'lucide-react';
 
 // Tek sayfada gösterilen ilan sayısı.
@@ -26,6 +28,8 @@ export const PAGE_SIZE = 9;
 
 const CONTRACT_STUDENT = 'Contratto per Studenti (Canone Concordato)';
 const CONTRACT_SUBENTRO = 'Subentro (Resmi Sözleşme Devri)';
+// "Kısa dönem" çipi: sözleşmesi en fazla bu kadar ay süren ilanlar.
+const SHORT_TERM_MONTHS = 6;
 
 const fieldLabel = 'truncate text-[11px] font-bold uppercase tracking-[0.08em] text-stone-500';
 const fieldSelect =
@@ -89,7 +93,9 @@ export const HomePage: React.FC = () => {
     filters.onlyVideoTour,
     filters.onlyStudentVerified,
     filters.roomType !== 'all',
-    Boolean(filters.contractStartDateFilter && filters.contractStartDateFilter !== 'all'),
+    hasStartDateFilter(filters),
+    Boolean(filters.maxStayMonths),
+    Boolean(filters.genderFilter),
   ].filter(Boolean).length;
 
   // Fiyat radarı: sitedeki tüm Singola ilanlarının ortalaması. Yeterli ilan yoksa kart gösterilmez.
@@ -182,19 +188,13 @@ export const HomePage: React.FC = () => {
         </label>
 
         <div className="w-px my-5 bg-stone-200" />
-        <label className="flex-1 px-6 flex flex-col justify-center gap-1 min-w-0">
-          <span className={fieldLabel}>{t.contractStartDateLabel.split(' ').slice(0, 2).join(' ')}</span>
-          <div className="relative">
-            <select id="select-start-date" value={filters.contractStartDateFilter || 'all'} onChange={(e) => update({ contractStartDateFilter: e.target.value })} className={fieldSelect}>
-              <option value="all">{t.allDates}</option>
-              <option value="immediate">{t.contractStartImmediate}</option>
-              <option value="october">{t.dateOctober}</option>
-              <option value="november">{t.dateNovember}</option>
-              <option value="spring">{t.dateSpring}</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-stone-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        </label>
+        <StartDateField
+          label={t.contractStartDateLabel.split(' ').slice(0, 2).join(' ')}
+          labelClassName={fieldLabel}
+          filters={filters}
+          onFilterChange={update}
+          currentLang={currentLang}
+        />
 
         <div className="w-px my-5 bg-stone-200" />
         <MaxRentField
@@ -266,6 +266,10 @@ export const HomePage: React.FC = () => {
           <button type="button" onClick={() => update({ categoryTab: filters.categoryTab === 'roommates' ? 'all' : 'roommates' })} className={chip(filters.categoryTab === 'roommates')} aria-pressed={filters.categoryTab === 'roommates'}>
             {t.tabRoommates}
           </button>
+          <button type="button" onClick={() => update({ maxStayMonths: filters.maxStayMonths ? undefined : SHORT_TERM_MONTHS })} className={chip(Boolean(filters.maxStayMonths))} aria-pressed={Boolean(filters.maxStayMonths)}>
+            <Hourglass className="w-4 h-4" />
+            {t.shortTermChip}
+          </button>
         </div>
 
         <button
@@ -306,7 +310,7 @@ export const HomePage: React.FC = () => {
               <select
                 id="select-sort"
                 value={filters.sortBy}
-                onChange={(e) => update({ sortBy: e.target.value as any, categoryTab: filters.categoryTab === 'newest' ? 'all' : filters.categoryTab })}
+                onChange={(e) => update({ sortBy: e.target.value as typeof filters.sortBy })}
                 className="min-h-[44px] pl-3 pr-8 bg-transparent text-sm font-semibold text-stone-900 outline-none cursor-pointer appearance-none"
               >
                 <option value="relevance">{t.sortRelevance}</option>

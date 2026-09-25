@@ -11,6 +11,8 @@ export const NotificationsPage: React.FC = () => {
     notifications,
     handleMarkAllNotificationsRead,
     handleDeleteNotification,
+    handleMarkNotificationRead,
+    handleClearAllNotifications,
     setActiveConversationId,
     currentLang,
     isLoggedIn,
@@ -40,9 +42,9 @@ export const NotificationsPage: React.FC = () => {
     <NotificationsView
       notifications={notifications}
       onMarkAllAsRead={handleMarkAllNotificationsRead}
-      onMarkAsRead={(id) => {}}
+      onMarkAsRead={handleMarkNotificationRead}
       onDeleteNotification={handleDeleteNotification}
-      onClearAll={() => {}}
+      onClearAll={handleClearAllNotifications}
       onNavigateView={handleNavigateView}
       onBackToHome={() => navigate('/')}
       currentLang={currentLang}

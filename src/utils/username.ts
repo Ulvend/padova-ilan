@@ -8,9 +8,6 @@ const slug = (value: string): string =>
     .replace(/[^a-z0-9]/g, '')
     .slice(0, 12);
 
-export const USERNAME_MIN = 3;
-export const USERNAME_MAX = 20;
-
 /** 3-20 karakter; küçük harf, rakam, nokta ve alt çizgi. Başta ve sonda nokta/alt çizgi olamaz. */
 const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._]{1,18}[a-z0-9]$/;
 

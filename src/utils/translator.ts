@@ -17,15 +17,6 @@ export const SUPPORTED_LANGUAGES: LanguageOption[] = [
   { code: 'hi', name: 'हिन्दी', nativeName: 'हिन्दी', flag: 'HI' },
 ];
 
-export const LANGUAGE_NAMES: Record<Language, string> = {
-  tr: 'Türkçe',
-  it: 'Italiano',
-  en: 'English',
-  de: 'Deutsch',
-  ru: 'Русский',
-  hi: 'हिन्दी',
-};
-
 // Target translation action labels per site language
 export const TRANSLATE_ACTION_LABELS: Record<Language, Record<Language, string>> = {
   tr: {
@@ -80,90 +71,6 @@ export const TRANSLATE_ACTION_LABELS: Record<Language, Record<Language, string>>
 
 // Known high-fidelity translations dictionary for Padova student housing dialogue
 const PRESET_TRANSLATIONS: Record<string, Partial<Record<Language, string>>> = {
-  // Giulia - Room availability & contract
-  "ciao cenk! la nostra stanza è disponibile per l'inizio del semestre. siamo vicinissimi alla facoltà di medicina. il contratto è ufficiale canone concordato.": {
-    it: "Ciao Cenk! La nostra stanza è disponibile per l'inizio del semestre. Siamo vicinissimi alla facoltà di medicina. Il contratto è ufficiale Canone Concordato.",
-    tr: 'Selam Cenk! Odamız dönem başı için müsait. Tıp fakültesine çok yakınız. Sözleşme resmi Canone Concordato.',
-    en: 'Hi Cenk! Our room is available for the semester start. We are very close to the medical school. The contract is official Canone Concordato.',
-    de: 'Hallo Cenk! Unser Zimmer ist für den Semesterbeginn verfügbar. Wir sind ganz in der Nähe der medizinischen Fakultät. Der Vertrag ist ein offizieller Canone Concordato.',
-    ru: 'Привет Дженк! Наша комната свободна к началу семестра. Мы совсем рядом с медицинским факультетом. Официальный договор Canone Concordato.',
-    hi: 'नमस्ते Cenk! हमारा कमरा सेमेस्टर की शुरुआत के लिए उपलब्ध है। हम मेडिकल फैकल्टी के बहुत करीब हैं। अनुबंध आधिकारिक Canone Concordato है।',
-  },
-  'selam cenk! odamız dönem başı için müsait. tıp fakültesine çok yakınız. sözleşme resmi canone concordato.': {
-    it: "Ciao Cenk! La nostra stanza è disponibile per l'inizio del semestre. Siamo vicinissimi alla facoltà di medicina. Il contratto è ufficiale Canone Concordato.",
-    tr: 'Selam Cenk! Odamız dönem başı için müsait. Tıp fakültesine çok yakınız. Sözleşme resmi Canone Concordato.',
-    en: 'Hi Cenk! Our room is available for the semester start. We are very close to the medical school. The contract is official Canone Concordato.',
-    de: 'Hallo Cenk! Unser Zimmer ist für den Semesterbeginn verfügbar. Wir sind ganz in der Nähe der medizinischen Fakultät. Der Vertrag ist ein offizieller Canone Concordato.',
-    ru: 'Привет Дженк! Наша комната свободна к началу семестра. Мы совсем рядом с медицинским факультетом. Официальный договор Canone Concordato.',
-    hi: 'नमस्ते Cenk! हमारा कमरा सेमेस्टर की शुरुआत के लिए उपलब्ध है। हम मेडिकल फैकल्टी के बहुत करीब हैं। अनुबंध आधिकारिक Canone Concordato है।',
-  },
-
-  // Giulia - Video tour & in person
-  "se sei disponibile, posso mostrarti la stanza nei giorni feriali dopo le 17:00 tramite videochiamata o di persona.": {
-    it: "Se sei disponibile, posso mostrarti la stanza nei giorni feriali dopo le 17:00 tramite videochiamata o di persona.",
-    tr: 'Eğer uygunsan hafta içi 17:00 sonrasında video görüşmeyle veya yüz yüze odayı gösterebilirim.',
-    en: 'If you are free, I can show you the room on weekdays after 17:00 via video call or in person.',
-    de: 'Wenn du Zeit hast, kann ich dir das Zimmer wochentags nach 17:00 Uhr per Videoanruf oder persönlich zeigen.',
-    ru: 'Если тебе удобно, могу показать комнату в будни после 17:00 по видеосвязи или лично.',
-    hi: 'यदि आप उपलब्ध हैं, तो मैं कार्यदिवसों में 17:00 के बाद वीडियो कॉल या व्यक्तिगत रूप से कमरा दिखा सकती हूं।',
-  },
-  'eğer uygunsan hafta içi 17:00 sonrasında video görüşmeyle veya yüz yüze odayı gösterebilirim.': {
-    it: "Se sei disponibile, posso mostrarti la stanza nei giorni feriali dopo le 17:00 tramite videochiamata o di persona.",
-    tr: 'Eğer uygunsan hafta içi 17:00 sonrasında video görüşmeyle veya yüz yüze odayı gösterebilirim.',
-    en: 'If you are free, I can show you the room on weekdays after 17:00 via video call or in person.',
-    de: 'Wenn du Zeit hast, kann ich dir das Zimmer wochentags nach 17:00 Uhr per Videoanruf oder persönlich zeigen.',
-    ru: 'Если тебе удобно, могу показать комнату в будни после 17:00 по видеосвязи или лично.',
-    hi: 'यदि आप उपलब्ध हैं, तो मैं कार्यदिवसों में 17:00 के बाद वीडियो कॉल या व्यक्तिगत रूप से कमरा दिखा सकती हूं।',
-  },
-
-  // Giulia - Subentro & Agenzia delle Entrate
-  "ciao cenk! abbiamo anche preparato il contratto di subentro registrato all'agenzia delle entrate, così sei subito in regola per il permesso di soggiorno.": {
-    it: "Ciao Cenk! Abbiamo anche preparato il contratto di subentro registrato all'Agenzia delle Entrate, così sei subito in regola per il permesso di soggiorno.",
-    tr: "Selam Cenk! Gelir İdaresi'ne (Agenzia delle Entrate) kayıtlı resmi devir (subentro) sözleşmesini de hazırladık, böylece oturum iznin (permesso) için hemen yasal güvencede olacaksın.",
-    en: "Hi Cenk! We also prepared the official takeover (subentro) contract registered with the Revenue Agency, so you'll be fully compliant for your residence permit right away.",
-    de: "Hallo Cenk! Wir haben auch den beim Finanzamt registrierten Subentro-Übernahmevertrag vorbereitet, sodass du sofort für deine Aufenthaltsgenehmigung abgesichert bist.",
-    ru: 'Привет Дженк! Мы также подготовили официальный договор переуступки (subentro), зарегистрированный в налоговой, так что у тебя сразу будет всё в порядке для ВНЖ.',
-    hi: 'नमस्ते Cenk! हमने राजस्व एजेंसी में पंजीकृत आधिकारिक सबेंट्रो अनुबंध भी तैयार किया है, ताकि आपका निवास परमिट तुरंत वैध रहे।',
-  },
-
-  // Lucas - Portello Engineering room
-  "hi! the room is 2 minutes walk from portello engineering dept. everything is included in the rent, let me know if you want a video call.": {
-    en: 'Hi! The room is 2 minutes walk from Portello engineering dept. Everything is included in the rent, let me know if you want a video call.',
-    it: "Ciao! La stanza dista 2 minuti a piedi dal polo d'ingegneria del Portello. Tutto è compreso nel canone, fammi sapere se vuoi una videochiamata.",
-    tr: 'Selam! Oda Portello mühendislik bölümüne 2 dakika yürüme mesafesinde. Her şey kiraya dahil, görüntülü görüşmek istersen haber ver.',
-    de: 'Hallo! Das Zimmer ist 2 Gehminuten vom Ingenieurbereich Portello entfernt. Alles ist in der Miete enthalten, sag Bescheid, wenn du einen Videoanruf möchtest.',
-    ru: 'Привет! Комната в 2 минутах ходьбы от инженерного факультета в Портелло. Всё включено в стоимость, дай знать, если нужен видеозвонок.',
-    hi: 'नमस्ते! कमरा पोर्टेलो इंजीनियरिंग विभाग से 2 मिनट की पैदल दूरी पर है। सब कुछ किराए में शामिल है, वीडियो कॉल के लिए बताएं।',
-  },
-  'selam! oda portello mühendislik bölümüne 2 dakika yürüme mesafesinde. her şey kiraya dahil, görüntülü görüşmek istersen haber ver.': {
-    en: 'Hi! The room is 2 minutes walk from Portello engineering dept. Everything is included in the rent, let me know if you want a video call.',
-    it: "Ciao! La stanza dista 2 minuti a piedi dal polo d'ingegneria del Portello. Tutto è compreso nel canone, fammi sapere se vuoi una videochiamata.",
-    tr: 'Selam! Oda Portello mühendislik bölümüne 2 dakika yürüme mesafesinde. Her şey kiraya dahil, görüntülü görüşmek istersen haber ver.',
-    de: 'Hallo! Das Zimmer ist 2 Gehminuten vom Ingenieurbereich Portello entfernt. Alles ist in der Miete enthalten, sag Bescheid, wenn du einen Videoanruf möchtest.',
-    ru: 'Привет! Комната в 2 минутах ходьбы от инженерного факультета в Портелло. Всё включено в стоимость, дай знать, если нужен видеозвонок.',
-    hi: 'नमस्ते! कमरा पोर्टेलो इंजीनियरिंग विभाग से 2 मिनट की पैदल दूरी पर है। सब कुछ किराए में शामिल है, वीडियो कॉल के लिए बताएं।',
-  },
-
-  // Sara - Quiet flat & Codice Fiscale
-  "ciao! l'appartamento è molto silenzioso, perfetto per studiare. se hai bisogno del codice fiscale o della registrazione del contratto, ti aiutiamo noi.": {
-    it: "Ciao! L'appartamento è molto silenzioso, perfetto per studiare. Se hai bisogno del codice fiscale o della registrazione del contratto, ti aiutiamo noi.",
-    tr: "Selam! Dairemiz son derece sessiz, ders çalışmak için mükemmel. Codice fiscale (vergi numarası) veya sözleşme kaydında yardıma ihtiyacın olursa sana yardımcı oluruz.",
-    en: "Hi! The apartment is very quiet, perfect for studying. If you need help with the codice fiscale or contract registration, we will assist you.",
-    de: 'Hallo! Die Wohnung ist sehr ruhig, perfekt zum Lernen. Wenn du Hilfe bei der Steuernummer (Codice Fiscale) oder der Vertragsregistrierung brauchst, helfen wir dir gern.',
-    ru: 'Привет! Квартира очень тихая, идеальна для учебы. Если понадобится помощь с codice fiscale или регистрацией договора, мы поможем.',
-    hi: 'नमस्ते! अपार्टमेंट बहुत शांत है, पढ़ाई के लिए बिल्कुल सही। यदि आपको कोडिस फिस्केल या अनुबंध पंजीकरण में मदद चाहिए, तो हम आपकी सहायता करेंगे।',
-  },
-
-  // Marco - Prato della Valle
-  "prato della valle è a due passi dal tram, zona perfetta per uscire la sera e per raggiungere qualsiasi facoltà in bicicletta.": {
-    it: 'Prato della Valle è a due passi dal tram, zona perfetta per uscire la sera e per raggiungere qualsiasi facoltà in bicicletta.',
-    tr: 'Prato della Valle tramvaya iki adım mesafede; akşam dışarı çıkmak ve herhangi bir fakülteye bisikletle ulaşmak için kusursuz bir konum.',
-    en: 'Prato della Valle is just steps away from the tram; a perfect area for evening life and reaching any campus easily by bike.',
-    de: 'Prato della Valle ist nur wenige Schritte von der Straßenbahn entfernt, perfekt für den Feierabend und mit dem Rad zu jeder Fakultät.',
-    ru: 'Прато-делла-Валле буквально в двух шагах от трамвая — идеальный район для вечерних прогулок и поездок на велосипеде на любой факультет.',
-    hi: 'प्रातो देल्ला वैले ट्रैम से कुछ ही कदम दूर है; शाम को घूमने और साइकिल से किसी भी संकाय तक पहुंचने के लिए आदर्श क्षेत्र।',
-  },
-
   // Common user inquiries
   'odayı ne zaman görebilirim? video tur imkanı var mı?': {
     tr: 'Odayı ne zaman görebilirim? Video tur imkanı var mı?',
@@ -334,13 +241,6 @@ function normalizeTextForLookup(str: string): string {
     .trim()
     .replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, '')
     .replace(/\s+/g, ' ');
-}
-
-function decodeHtmlEntities(str: string): string {
-  if (typeof document === 'undefined') return str;
-  const txt = document.createElement('textarea');
-  txt.innerHTML = str;
-  return txt.value;
 }
 
 const CACHE_PREFIX = 'padova_trans_v2_';

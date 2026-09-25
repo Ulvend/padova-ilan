@@ -5,7 +5,6 @@ import {
   translateText, 
   detectLanguage, 
   SUPPORTED_LANGUAGES, 
-  LANGUAGE_NAMES,
   TRANSLATE_ACTION_LABELS
 } from '../utils/translator';
 import { Globe, RefreshCw, ChevronDown, Check, Undo2 } from 'lucide-react';

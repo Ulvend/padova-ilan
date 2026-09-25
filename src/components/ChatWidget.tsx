@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, AlertTriangle, MessageSquare, Users, ChevronDown, Clock, Globe } from 'lucide-react';
+import { AlertTriangle, MessageSquare, Users, Clock, Globe } from 'lucide-react';
 import { ConversationContact, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { formatDeviceTime, formatDeviceRelativeDate, getDeviceRegionInfo } from '../utils/deviceTime';

@@ -20,6 +20,8 @@ import { buildPriceIndex, type PriceInsight, type PriceTarget } from '../utils/d
 import { resolveUsername, isValidUsername, normalizeUsername } from '../utils/username';
 import { EXPIRED_ARCHIVE_REASON, isConfirmationExpired } from '../utils/listingExpiry';
 import { DISTRICT_TRANSLATIONS } from '../utils/listingTranslator';
+import { availableFromISO, stayMonths } from '../utils/contractPeriod';
+import { toISO } from '../components/ui/DateRangePicker';
 import {
   supabase,
   logOut,
@@ -46,6 +48,7 @@ import {
   saveNotificationToFirestore,
   markNotificationsRead,
   deleteNotificationFromFirestore,
+  deleteNotifications,
   subscribeToAdminStatus,
   type AdminRole,
   subscribeToAdminGrants,
@@ -198,6 +201,8 @@ interface AppContextType {
   unreadNotificationsCount: number;
   handleMarkAllNotificationsRead: () => void;
   handleDeleteNotification: (id: string) => void;
+  handleMarkNotificationRead: (id: string) => void;
+  handleClearAllNotifications: () => void;
 
   // Kullanıcıya gösterilen kısa hata/başarı mesajları
   toast: ToastMessage | null;
@@ -246,12 +251,6 @@ const createdAtMs = (listing: HousingListing) => {
 };
 
 // Sözleşme başlangıç filtresi: ilan oluştururken kaydedilen ISO tarihin ayına bakar.
-const START_FILTER_MONTHS: Record<string, number[]> = {
-  october: [10],
-  november: [11],
-  spring: [2],
-};
-
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. Language State
   const [currentLang, setCurrentLang] = useState<Language>(() => {
@@ -1010,10 +1009,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     markNotificationsRead(ids).catch((err) => console.warn('Notifications read error:', err));
   };
 
+  const handleMarkNotificationRead = (id: string) => {
+    if (!notifications.some((n) => n.id === id && !n.read)) return;
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    markNotificationsRead([id]).catch((err) => console.warn('Notification read error:', err));
+  };
+
+  // Realtime DELETE olayları filtrelenmiş aboneliğe gelmez; silinenler listeden hemen düşürülür,
+  // hata olursa önceki liste geri yüklenir.
   const handleDeleteNotification = (id: string) => {
+    const previous = notifications;
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
     deleteNotificationFromFirestore(id).catch((err) => {
       console.warn('Notification delete error:', err);
+      setNotifications(previous);
       showToast(t.toastNotifDeleteFail);
+    });
+  };
+
+  const handleClearAllNotifications = () => {
+    const previous = notifications;
+    if (previous.length === 0) return;
+    setNotifications([]);
+    deleteNotifications(previous.map((n) => n.id)).catch((err) => {
+      console.warn('Notifications clear error:', err);
+      setNotifications(previous);
+      showToast(t.toastNotifClearFail);
     });
   };
 
@@ -1056,6 +1077,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const priceIndex = useMemo(() => buildPriceIndex(publicListings), [publicListings]);
 
   const filteredListings = useMemo(() => {
+    const todayIso = toISO(new Date());
     const result = publicListings.filter((l) => {
       if (filters.searchQuery) {
         const query = normalizeSearch(filters.searchQuery.trim());
@@ -1068,20 +1090,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           normalizeSearch(l.streetAddress || '').includes(query);
         if (!matches) return false;
       }
-      switch (filters.categoryTab) {
-        case 'video':
-          if (!l.hasVideoTour) return false;
-          break;
-        case 'transitorio':
-          if (!l.contractType?.includes('Transitorio')) return false;
-          break;
-        case 'subentro':
-          if (!l.contractType?.includes('Subentro')) return false;
-          break;
-        case 'roommates':
-          if (!((l.currentFlatmates?.length || 0) > 0 || (l.totalHousemates || 0) > 1)) return false;
-          break;
-      }
+      if (filters.categoryTab === 'roommates' && !((l.currentFlatmates?.length || 0) > 0 || (l.totalHousemates || 0) > 1)) return false;
       if (filters.district !== 'all' && l.district !== filters.district) return false;
       if (filters.contractType !== 'all' && l.contractType !== filters.contractType) return false;
       if (filters.roomType !== 'all' && l.roomType !== filters.roomType) return false;
@@ -1089,32 +1098,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (filters.onlyVideoTour && !l.hasVideoTour) return false;
       if (filters.onlyStudentVerified && !l.isStudentCardVerified) return false;
 
-      const start = filters.contractStartDateFilter;
-      if (start && start !== 'all') {
-        if (start === 'immediate') {
-          if (l.contractStartISO) return false;
-        } else {
-          const month = l.contractStartISO ? Number(l.contractStartISO.split('-')[1]) : NaN;
-          if (!START_FILTER_MONTHS[start]?.includes(month)) return false;
-        }
+      const availableFrom = availableFromISO(l, todayIso);
+      if (filters.contractStartFrom && availableFrom < filters.contractStartFrom) return false;
+      if (filters.contractStartTo && availableFrom > filters.contractStartTo) return false;
+      if (filters.genderFilter === 'female' && l.genderPreference === 'male_only') return false;
+      if (filters.genderFilter === 'male' && l.genderPreference === 'female_only') return false;
+      if (filters.maxStayMonths) {
+        const months = stayMonths(l, todayIso);
+        if (months === null || months > filters.maxStayMonths) return false;
       }
-      if (filters.genderPreferenceFilter && filters.genderPreferenceFilter !== 'all' && l.genderPreference !== filters.genderPreferenceFilter) return false;
-      if (filters.heatingTypeFilter && filters.heatingTypeFilter !== 'all' && l.heatingType !== filters.heatingTypeFilter) return false;
-      if (filters.occupantTypeFilter && filters.occupantTypeFilter !== 'all' && l.occupantType !== filters.occupantTypeFilter) return false;
-      if (filters.smokingFilter === 'allowed' && !l.smokingAllowed) return false;
-      if (filters.smokingFilter === 'forbidden' && l.smokingAllowed) return false;
-      if (filters.petsFilter === 'allowed' && !l.petsAllowed) return false;
-      if (filters.petsFilter === 'forbidden' && l.petsAllowed) return false;
-      if (filters.onlyAirConditioning && !l.hasAirConditioning) return false;
-      if (filters.onlyWashingMachine && !l.hasWashingMachine) return false;
-      if (filters.onlyWifi && !l.hasWifi) return false;
-      if (filters.onlyBikeParking && !l.hasBikeParking) return false;
-      if (filters.onlyParking && !l.hasParking) return false;
       return true;
     });
 
-    const sortBy = filters.categoryTab === 'newest' ? 'newest' : filters.sortBy;
-    switch (sortBy) {
+    switch (filters.sortBy) {
       case 'price-asc':
         return result.sort((a, b) => a.price - b.price);
       case 'price-desc':
@@ -1192,6 +1188,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     unreadNotificationsCount,
     handleMarkAllNotificationsRead,
     handleDeleteNotification,
+    handleMarkNotificationRead,
+    handleClearAllNotifications,
     toast,
     showToast,
     dismissToast,

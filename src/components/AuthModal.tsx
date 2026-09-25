@@ -10,15 +10,12 @@ import {
   RefreshCw, 
   ShieldCheck, 
   GraduationCap,
-  Sparkles,
   Info,
   User,
   BookOpen,
   UserPlus,
-  LogIn,
   KeyRound,
   MessageSquare,
-  Zap,
   AlertCircle,
   ChevronDown
 } from 'lucide-react';

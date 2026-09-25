@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatDeviceRelativeDate } from '../utils/deviceTime';
 import { 
   Bell, 
@@ -10,8 +10,6 @@ import {
   ShieldCheck, 
   ShieldAlert, 
   Sparkles, 
-  Users, 
-  Filter,
   CheckCircle2,
   ExternalLink
 } from 'lucide-react';
@@ -41,6 +39,19 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const [filterType, setFilterType] = useState<'all' | NotificationType>('all');
+  // Tümünü silmek geri alınamaz: ilk tıklama onay ister, 4 sn içinde ikinci tıklama siler.
+  const [confirmClear, setConfirmClear] = useState(false);
+  useEffect(() => {
+    if (!confirmClear) return;
+    const timer = setTimeout(() => setConfirmClear(false), 4000);
+    return () => clearTimeout(timer);
+  }, [confirmClear]);
+
+  const handleClearClick = () => {
+    if (!confirmClear) return setConfirmClear(true);
+    setConfirmClear(false);
+    onClearAll();
+  };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -150,11 +161,13 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
           {notifications.length > 0 && (
             <button
               type="button"
-              onClick={onClearAll}
-              className="px-3 py-2 text-xs font-semibold rounded-xl text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer flex items-center gap-1.5"
+              onClick={handleClearClick}
+              className={`px-3 py-2 text-xs font-semibold rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                confirmClear ? 'bg-rose-600 text-white hover:bg-rose-700' : 'text-stone-500 hover:text-rose-600 hover:bg-rose-50'
+              }`}
             >
               <Trash2 className="w-4 h-4" />
-              <span>{t.clearAll}</span>
+              <span aria-live="polite">{confirmClear ? t.clearAllConfirm : t.clearAll}</span>
             </button>
           )}
         </div>

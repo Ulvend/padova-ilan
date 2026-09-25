@@ -11,7 +11,6 @@ import {
   Camera, 
   ShieldCheck, 
   AlertCircle,
-  Sparkles,
   RefreshCw,
   GraduationCap,
   ChevronDown,

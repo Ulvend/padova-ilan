@@ -14,8 +14,6 @@ import {
   Building2, 
   Eye, 
   ExternalLink,
-  Layers,
-  Sparkles,
   Train,
   X
 } from 'lucide-react';
@@ -49,7 +47,6 @@ interface PadovaMapProps {
   onOpenPreviewModal: (listing: HousingListing) => void;
   currentLang?: Language;
   height?: string;
-  isStandalone?: boolean;
 }
 
 export const PadovaMap: React.FC<PadovaMapProps> = ({
@@ -59,7 +56,6 @@ export const PadovaMap: React.FC<PadovaMapProps> = ({
   onOpenPreviewModal,
   currentLang = 'tr',
   height = '480px',
-  isStandalone = false,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.tr;
   const mapContainerRef = useRef<HTMLDivElement>(null);

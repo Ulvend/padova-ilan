@@ -114,7 +114,7 @@ export interface HousingListing {
 }
 
 export interface FilterState {
-  categoryTab: 'all' | 'video' | 'transitorio' | 'subentro' | 'roommates' | 'newest';
+  categoryTab: 'all' | 'roommates';
   searchQuery: string;
   contractType: string;
   district: string;
@@ -123,17 +123,13 @@ export interface FilterState {
   onlyStudentVerified: boolean;
   roomType: string;
   sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'newest';
-  contractStartDateFilter?: string;
-  genderPreferenceFilter?: 'all' | 'female_only' | 'male_only' | 'any';
-  heatingTypeFilter?: 'all' | 'autonomo' | 'centralizzato';
-  onlyAirConditioning?: boolean;
-  onlyWashingMachine?: boolean;
-  onlyWifi?: boolean;
-  onlyBikeParking?: boolean;
-  onlyParking?: boolean;
-  occupantTypeFilter?: 'all' | 'students_only' | 'workers_only' | 'mixed';
-  smokingFilter?: 'all' | 'allowed' | 'forbidden';
-  petsFilter?: 'all' | 'allowed' | 'forbidden';
+  // Takvimden seçilen başlangıç aralığı (YYYY-MM-DD). Yalnızca `from` varsa o günden sonrası.
+  contractStartFrom?: string;
+  contractStartTo?: string;
+  // Kısa dönem: taşınılabilir günden sözleşme bitişine en fazla bu kadar ay kalan ilanlar.
+  maxStayMonths?: number;
+  // Seçilen cinsiyete açık ilanlar: o cinsiyete özel ve karma evler. Boşsa farketmez.
+  genderFilter?: 'female' | 'male';
 }
 
 export type ActiveView = 'home' | 'myListings' | 'messages' | 'profile' | 'listingDetail' | 'admin' | 'notifications';

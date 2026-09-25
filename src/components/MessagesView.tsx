@@ -1,23 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ConversationContact, DirectMessage, Language } from '../types';
+import { ConversationContact, Language } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
 import { 
   MessageSquare, 
   Send, 
   Search, 
-  ShieldCheck, 
-  AlertTriangle, 
-  CheckCheck, 
-  User, 
-  Home, 
   ArrowLeft,
   Clock,
   ChevronLeft,
   Globe
 } from 'lucide-react';
-import { formatDeviceTime, formatDeviceRelativeDate, getDeviceRegionInfo } from '../utils/deviceTime';
+import { formatDeviceTime, formatDeviceRelativeDate } from '../utils/deviceTime';
 import { ChatMessageItem } from './ChatMessageItem';
-import { LANGUAGE_NAMES } from '../utils/translator';
 
 interface MessagesViewProps {
   conversations: ConversationContact[];
@@ -45,7 +39,6 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
 
   // Live device local time and region info
   const [currentDeviceTime, setCurrentDeviceTime] = useState(() => formatDeviceTime());
-  const deviceInfo = useRef(getDeviceRegionInfo()).current;
 
   useEffect(() => {
     const timer = setInterval(() => {

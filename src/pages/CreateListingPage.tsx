@@ -691,8 +691,8 @@ const StepReview: React.FC<{
       step: 1,
       label: w.step2,
       value: `€${listing.price}${listing.expenses ? ` · ${listing.expenses}` : ''} · ${
-        form.isImmediate ? w.moveInNow : formatDate(form.startDate, lang)
-      }${form.endDate ? ` → ${formatDate(form.endDate, lang)}` : ''}`,
+        form.startDate ? formatDate(form.startDate, lang) : '—'
+      } → ${form.endDate ? formatDate(form.endDate, lang) : '—'}`,
     },
     { step: 2, label: w.step3, value: `${listing.roomM2} m² · ${listing.apartmentM2} m² · ${listing.bathrooms} ${w.bathroomsLabel.toLowerCase()}` },
     { step: 3, label: w.step4, value: `${fill(w.photoCount, { n: form.photos.length })}${form.hasVideoTour ? ` · ${w.videoTitle}` : ''}` },

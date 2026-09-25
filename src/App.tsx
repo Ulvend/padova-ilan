@@ -19,7 +19,7 @@ import { AdminPage } from './pages/AdminPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { Footer } from './components/Footer';
-import { ActiveView, HousingListing } from './types';
+import { ActiveView } from './types';
 
 const VIEW_TO_PATH: Record<ActiveView, string> = {
   home: '/',
@@ -72,9 +72,6 @@ const AppLayout: React.FC = () => {
     isCreateModalOpen,
     setIsCreateModalOpen,
     editingListing,
-    setEditingListing,
-    handleAddListing,
-    handleUpdateListing,
     isProfileSettingsOpen,
     handleUpdateProfile,
     handleChangeUsername,
@@ -196,7 +193,6 @@ const AppLayout: React.FC = () => {
         onOpenCreateModal={handleOpenCreateListingModal}
         onToggleMapSection={() => setIsMapSectionOpen((prev) => !prev)}
         isMapOpen={isMapSectionOpen}
-        unreadMessagesCount={unreadMessagesCount}
         unreadNotificationsCount={unreadNotificationsCount}
         currentLang={currentLang}
         currentUser={currentUser}

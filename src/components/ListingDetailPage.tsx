@@ -4,15 +4,12 @@ import {
   Heart, 
   Share2, 
   MapPin, 
-  CheckCircle2, 
   ShieldCheck, 
   Play, 
   Pause, 
   Maximize2, 
   MessageSquare, 
   Calendar, 
-  Eye, 
-  Building2, 
   Sparkles, 
   Check, 
   AlertTriangle,
@@ -23,13 +20,11 @@ import {
   TrendingUp,
   Scale,
   Copy,
-  Info,
   Camera,
   Video,
   FileText,
   Ban,
   ClipboardList,
-  Map,
   Bike,
   Wind,
   Wifi,
@@ -578,7 +573,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
         <div className="lg:col-span-8 space-y-6">
           
           {/* Description Section */}
-          <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
+          <div className="[zoom:0.95] p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
             <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-orange-600" />
               <span>{t.listingDescriptionTitle}</span>
@@ -612,7 +607,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           </div>
 
           {/* Key Amenities Grid */}
-          <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
+          <div className="[zoom:0.95] p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
             <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span>{t.amenitiesTitle}</span>
@@ -691,7 +686,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           </div>
 
           {/* Detailed Technical Specs Table */}
-          <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
+          <div className="[zoom:0.95] p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
             <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-stone-700" />
               <span>{t.specsTitle}</span>
@@ -763,14 +758,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     <td className="py-2.5 text-orange-900 font-semibold uppercase">{t.contractStartDateLabel}</td>
                     <td className="py-2.5 font-bold text-orange-950 flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                      <span>{listing.contractStartDate || t.contractStartImmediate}</span>
+                      <span>{listing.contractStartDate}</span>
                     </td>
                   </tr>
                   {listing.contractEndDate && (
                     <tr className="border-b border-stone-100">
                       <td className="py-2.5 text-stone-400 font-medium uppercase">{t.contractDurationLabel}</td>
                       <td className="py-2.5 font-semibold text-stone-800">
-                        {listing.contractStartDate || t.contractStartImmediate} – {listing.contractEndDate}
+                        {listing.contractStartDate} – {listing.contractEndDate}
                       </td>
                     </tr>
                   )}
@@ -779,154 +774,40 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             </div>
           </div>
 
-          {/* Interactive Location & Street Map */}
-          <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-sm space-y-4">
-            <div className="flex flex-wrap items-center justify-between border-b border-stone-100 pb-3 gap-2">
-              <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-orange-600" />
-                <span>{t.mapTitle}</span>
-              </h2>
-              <span className="text-[11px] font-semibold text-stone-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
-                {listing.streetAddress}
-              </span>
-            </div>
+          {/* Interactive Location & Street Map: %5 küçük. Leaflet CSS zoom altında tıklama konumlarını
+              kaydırabildiği için zoom yalnızca başlık kısmına uygulanır, harita yüksekliği ayrıca küçültülür. */}
+          <div className="p-[19px] bg-white rounded-2xl border border-stone-200 shadow-sm space-y-[15px]">
+            <div className="[zoom:0.95] space-y-4">
+              <div className="flex flex-wrap items-center justify-between border-b border-stone-100 pb-3 gap-2">
+                <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-orange-600" />
+                  <span>{t.mapTitle}</span>
+                </h2>
+                <span className="text-[11px] font-semibold text-stone-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
+                  {listing.streetAddress}
+                </span>
+              </div>
 
-            <div className="text-xs text-stone-600 flex items-center justify-between flex-wrap gap-2">
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-orange-600" />
-                <strong className="text-stone-900">{listing.distanceToFaculty}</strong> • {listing.district}
-              </span>
-              <span className="text-[10px] text-stone-400 font-medium">{t.realCoordinates}</span>
+              <div className="text-xs text-stone-600 flex items-center justify-between flex-wrap gap-2">
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                  <strong className="text-stone-900">{listing.distanceToFaculty}</strong> • {listing.district}
+                </span>
+                <span className="text-[10px] text-stone-400 font-medium">{t.realCoordinates}</span>
+              </div>
             </div>
 
             <div className="rounded-xl overflow-hidden border border-stone-200">
               <PadovaMap
                 listings={[listing]}
                 selectedListing={listing}
-                height="340px"
+                height="323px"
                 onOpenDetailPage={() => {}}
                 onOpenPreviewModal={() => {}}
                 currentLang={currentLang}
               />
             </div>
           </div>
-
-          {/* 3. DEDICATED REGIONAL AVERAGE PRICE RATIO & FAIR PRICE AUDIT (Bölge Ortalamasına Göre Oran) */}
-          {showPriceRadar && benchmark && (
-          <div className="p-4 md:p-5 bg-gradient-to-r from-emerald-50/70 via-teal-50/50 to-amber-50/60 rounded-2xl border border-emerald-200/80 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/60 pb-2.5">
-              <div className="flex items-center gap-2">
-                <Scale className="w-5 h-5 text-emerald-800" />
-                <h2 className="text-sm md:text-base font-bold uppercase tracking-tight text-stone-900">
-                  {t.regionalPriceRatioTitle}
-                </h2>
-              </div>
-            </div>
-
-            {/* Big Ratio Badge and Key Comparison Figures */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            
-              {/* Left Result Highlight (5 cols) */}
-              <div className="md:col-span-5 bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
-                <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block mb-1">
-                  {benchmark.districtLabel}
-                </span>
-              
-                {!hasInsight ? (
-                  <p className="text-xs text-stone-600 leading-snug">
-                    {t.priceNoDataNote.replace('{min}', String(MIN_COMPARABLE_LISTINGS))}
-                  </p>
-                ) : (
-                <div className="flex items-center gap-2.5">
-                  {priceDifference <= 0 ? (
-                    <div className="bg-emerald-600 text-white p-2 rounded-xl">
-                      <TrendingDown className="w-6 h-6" />
-                    </div>
-                  ) : (
-                    <div className="bg-rose-600 text-white p-2 rounded-xl">
-                      <TrendingUp className="w-6 h-6" />
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="text-lg md:text-xl font-bold text-stone-900 leading-tight">
-                      {priceDifference < 0 ? (
-                        <span className="text-emerald-700">{formatPercent(percentageRatio, currentLang)} {t.moreAffordable}</span>
-                      ) : priceDifference === 0 ? (
-                        <span className="text-amber-700">{t.exactAverage}</span>
-                      ) : (
-                        <span className="text-rose-700">{formatPercent(percentageRatio, currentLang)} {t.aboveAverage}</span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-stone-500 font-medium block">
-                      {t.regionalAverage}: €{regionalAverage} ({priceDifference < 0 ? `-€${Math.abs(priceDifference)}` : `+€${priceDifference}`})
-                    </span>
-                    <span className="text-[10px] text-stone-400 font-medium block">
-                      {t.priceBasedOn.replace('{n}', String(priceInsight.count))}
-                    </span>
-                  </div>
-                </div>
-                )}
-              </div>
-
-              {/* Right Comparison Metrics Grid (7 cols) */}
-              <div className="md:col-span-7 grid grid-cols-2 gap-2.5 text-xs">
-                <div className="bg-white border border-stone-200 rounded-xl p-2.5">
-                  <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.rentOfThisRoom}</span>
-                  <span className="text-base font-bold text-stone-900">€{listing.price}</span>
-                  <span className="text-[9px] text-emerald-700 block font-semibold">{listing.contractType.split(' ')[0]}</span>
-                </div>
-
-                {hasInsight && (
-                  <div className="bg-white border border-stone-200 rounded-xl p-2.5">
-                    <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.regionalAverage}</span>
-                    <span className="text-base font-bold text-stone-800">€{regionalAverage}</span>
-                    <span className="text-[9px] text-stone-500 block">{listing.roomType}</span>
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Visual Gauge Bar */}
-            <div className="space-y-1.5 pt-1">
-              {hasInsight && (
-                <>
-                  <div className="flex justify-between text-[10px] font-semibold text-stone-500">
-                    <span>≤ €{Math.round(regionalAverage * LOW_RATIO)} ({t.economicLabel})</span>
-                    <span className="text-emerald-800 font-bold flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-emerald-800" />
-                      <span>{t.thisListingLabel}: €{listing.price}</span>
-                    </span>
-                    <span className="text-stone-700">{t.regionalAverage}: €{regionalAverage}</span>
-                    <span>≥ €{Math.round(regionalAverage * HIGH_RATIO)} ({t.expensiveLabel})</span>
-                  </div>
-
-                  <div className="h-2.5 w-full bg-stone-200 rounded-full relative overflow-hidden">
-                    {/* Scale zone */}
-                    <div className="absolute inset-y-0 left-0 bg-emerald-300" style={{ width: `${gaugePct(LOW_RATIO)}%` }}></div>
-                    <div className="absolute inset-y-0 bg-amber-200" style={{ left: `${gaugePct(LOW_RATIO)}%`, width: `${gaugePct(HIGH_RATIO) - gaugePct(LOW_RATIO)}%` }}></div>
-                    <div className="absolute inset-y-0 right-0 bg-rose-300" style={{ width: `${100 - gaugePct(HIGH_RATIO)}%` }}></div>
-
-                    {/* Bölge ortalaması */}
-                    <div className="absolute top-0 bottom-0 w-px bg-stone-900/40" style={{ left: `${gaugePct(1)}%` }}></div>
-
-                    {/* Marker for this listing */}
-                    <div
-                      className="absolute top-0 bottom-0 w-2 bg-stone-900 -translate-x-1/2 rounded-full shadow-md"
-                      style={{ left: `${Math.min(95, Math.max(5, gaugePct(priceRatio)))}%` }}
-                      title={`${t.thisListingLabel}: €${listing.price}`}
-                    ></div>
-                  </div>
-                </>
-              )}
-
-              <p className="text-[11px] text-stone-600 leading-snug pt-1">
-                <strong>*{t.priceNoteTitle}:</strong> {marketTrendLabel(rawListing.district, benchmark.marketTrend, currentLang)}.
-              </p>
-            </div>
-          </div>
-          )}
 
         </div>
 
@@ -1115,6 +996,123 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               {t.securityWarning}
             </p>
           </div>
+
+          {/* Bölge ortalamasına göre fiyat oranı (sağ sütunda, ilan bilgilerinin yanında) */}
+          {showPriceRadar && benchmark && (
+          <div className="p-4 md:p-5 bg-gradient-to-br from-emerald-50/70 via-teal-50/50 to-amber-50/60 rounded-2xl border border-emerald-200/80 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/60 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Scale className="w-5 h-5 text-emerald-800 shrink-0" />
+                <h2 className="text-sm font-bold uppercase tracking-tight text-stone-900 leading-snug">
+                  {t.regionalPriceRatioTitle}
+                </h2>
+              </div>
+            </div>
+
+            {/* Big Ratio Badge and Key Comparison Figures */}
+            <div className="space-y-2.5">
+            
+              {/* Left Result Highlight (5 cols) */}
+              <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+                <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide block mb-1">
+                  {benchmark.districtLabel}
+                </span>
+              
+                {!hasInsight ? (
+                  <p className="text-xs text-stone-600 leading-snug">
+                    {t.priceNoDataNote.replace('{min}', String(MIN_COMPARABLE_LISTINGS))}
+                  </p>
+                ) : (
+                <div className="flex items-center gap-2.5">
+                  {priceDifference <= 0 ? (
+                    <div className="bg-emerald-600 text-white p-2 rounded-xl">
+                      <TrendingDown className="w-6 h-6" />
+                    </div>
+                  ) : (
+                    <div className="bg-rose-600 text-white p-2 rounded-xl">
+                      <TrendingUp className="w-6 h-6" />
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="text-lg md:text-xl font-bold text-stone-900 leading-tight">
+                      {priceDifference < 0 ? (
+                        <span className="text-emerald-700">{formatPercent(percentageRatio, currentLang)} {t.moreAffordable}</span>
+                      ) : priceDifference === 0 ? (
+                        <span className="text-amber-700">{t.exactAverage}</span>
+                      ) : (
+                        <span className="text-rose-700">{formatPercent(percentageRatio, currentLang)} {t.aboveAverage}</span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-stone-500 font-medium block">
+                      {t.regionalAverage}: €{regionalAverage} ({priceDifference < 0 ? `-€${Math.abs(priceDifference)}` : `+€${priceDifference}`})
+                    </span>
+                    <span className="text-[10px] text-stone-400 font-medium block">
+                      {t.priceBasedOn.replace('{n}', String(priceInsight.count))}
+                    </span>
+                  </div>
+                </div>
+                )}
+              </div>
+
+              {/* Right Comparison Metrics Grid (7 cols) */}
+              <div className={`grid gap-2.5 text-xs ${hasInsight ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <div className="bg-white border border-stone-200 rounded-xl p-2.5">
+                  <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.rentOfThisRoom}</span>
+                  <span className="text-base font-bold text-stone-900">€{listing.price}</span>
+                  <span className="text-[9px] text-emerald-700 block font-semibold">{listing.contractType.split(' ')[0]}</span>
+                </div>
+
+                {hasInsight && (
+                  <div className="bg-white border border-stone-200 rounded-xl p-2.5">
+                    <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.regionalAverage}</span>
+                    <span className="text-base font-bold text-stone-800">€{regionalAverage}</span>
+                    <span className="text-[9px] text-stone-500 block">{listing.roomType}</span>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Visual Gauge Bar */}
+            <div className="space-y-1.5 pt-1">
+              {hasInsight && (
+                <>
+                  <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px] font-semibold text-stone-500">
+                    <span>≤ €{Math.round(regionalAverage * LOW_RATIO)} ({t.economicLabel})</span>
+                    <span className="text-emerald-800 font-bold flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-emerald-800" />
+                      <span>{t.thisListingLabel}: €{listing.price}</span>
+                    </span>
+                    <span className="text-stone-700">{t.regionalAverage}: €{regionalAverage}</span>
+                    <span>≥ €{Math.round(regionalAverage * HIGH_RATIO)} ({t.expensiveLabel})</span>
+                  </div>
+
+                  <div className="h-2.5 w-full bg-stone-200 rounded-full relative overflow-hidden">
+                    {/* Scale zone */}
+                    <div className="absolute inset-y-0 left-0 bg-emerald-300" style={{ width: `${gaugePct(LOW_RATIO)}%` }}></div>
+                    <div className="absolute inset-y-0 bg-amber-200" style={{ left: `${gaugePct(LOW_RATIO)}%`, width: `${gaugePct(HIGH_RATIO) - gaugePct(LOW_RATIO)}%` }}></div>
+                    <div className="absolute inset-y-0 right-0 bg-rose-300" style={{ width: `${100 - gaugePct(HIGH_RATIO)}%` }}></div>
+
+                    {/* Bölge ortalaması */}
+                    <div className="absolute top-0 bottom-0 w-px bg-stone-900/40" style={{ left: `${gaugePct(1)}%` }}></div>
+
+                    {/* Marker for this listing */}
+                    <div
+                      className="absolute top-0 bottom-0 w-2 bg-stone-900 -translate-x-1/2 rounded-full shadow-md"
+                      style={{ left: `${Math.min(95, Math.max(5, gaugePct(priceRatio)))}%` }}
+                      title={`${t.thisListingLabel}: €${listing.price}`}
+                    ></div>
+                  </div>
+                </>
+              )}
+
+              <p className="text-[11px] text-stone-600 leading-snug pt-1">
+                <strong>*{t.priceNoteTitle}:</strong> {marketTrendLabel(rawListing.district, benchmark.marketTrend, currentLang)}.
+              </p>
+            </div>
+          </div>
+          )}
 
         </div>
 

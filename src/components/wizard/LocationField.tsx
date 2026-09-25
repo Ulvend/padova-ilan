@@ -3,7 +3,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Bus, Crosshair, Footprints, GraduationCap, Loader2, MapPin, Search } from 'lucide-react';
 import { DistrictArea, Language } from '../../types';
-import { DISTRICT_COORDINATES_MAP } from '../../data/mockData';
 import {
   AddressSuggestion,
   geocodeAddress,

@@ -26,10 +26,6 @@ const tr = {
   goToPage: '{n}. sayfaya git',
   photoWord: 'fotoğraf',
   videoTour30: '30 sn video tur',
-  billsIncluded: 'Giderler dahil',
-  billsExtra: 'Giderler hariç',
-  authTabLogin: 'Giriş yap',
-  authTabRegister: 'Kayıt ol',
   navExplore: 'Keşfet',
   guestLogin: 'Giriş Yap',
   postAd: 'İlan Ver',
@@ -68,10 +64,6 @@ const en: Dict = {
   goToPage: 'Go to page {n}',
   photoWord: 'photos',
   videoTour30: '30 s video tour',
-  billsIncluded: 'Bills included',
-  billsExtra: 'Bills not included',
-  authTabLogin: 'Log in',
-  authTabRegister: 'Sign up',
   navExplore: 'Explore',
   guestLogin: 'Log in',
   postAd: 'Post a listing',
@@ -108,10 +100,6 @@ const it: Dict = {
   goToPage: 'Vai a pagina {n}',
   photoWord: 'foto',
   videoTour30: 'Video tour 30 s',
-  billsIncluded: 'Spese incluse',
-  billsExtra: 'Spese escluse',
-  authTabLogin: 'Accedi',
-  authTabRegister: 'Registrati',
   navExplore: 'Esplora',
   guestLogin: 'Accedi',
   postAd: 'Pubblica annuncio',
@@ -148,10 +136,6 @@ const de: Dict = {
   goToPage: 'Zu Seite {n}',
   photoWord: 'Fotos',
   videoTour30: '30-Sek.-Videotour',
-  billsIncluded: 'Nebenkosten inklusive',
-  billsExtra: 'Nebenkosten extra',
-  authTabLogin: 'Anmelden',
-  authTabRegister: 'Registrieren',
   navExplore: 'Entdecken',
   guestLogin: 'Anmelden',
   postAd: 'Inserat aufgeben',
@@ -188,10 +172,6 @@ const ru: Dict = {
   goToPage: 'Перейти на страницу {n}',
   photoWord: 'фото',
   videoTour30: 'Видеотур 30 с',
-  billsIncluded: 'Коммунальные включены',
-  billsExtra: 'Коммунальные отдельно',
-  authTabLogin: 'Вход',
-  authTabRegister: 'Регистрация',
   navExplore: 'Поиск',
   guestLogin: 'Войти',
   postAd: 'Подать объявление',
@@ -228,10 +208,6 @@ const hi: Dict = {
   goToPage: 'पृष्ठ {n} पर जाएँ',
   photoWord: 'फ़ोटो',
   videoTour30: '30 सेकंड वीडियो टूर',
-  billsIncluded: 'खर्च शामिल',
-  billsExtra: 'खर्च अलग',
-  authTabLogin: 'लॉग इन',
-  authTabRegister: 'रजिस्टर',
   navExplore: 'खोजें',
   guestLogin: 'लॉग इन',
   postAd: 'विज्ञापन दें',
@@ -245,7 +221,6 @@ const hi: Dict = {
 };
 
 export const HOME_TEXT: Record<Language, Dict> = { tr, en, it, de, ru, hi };
-export type HomeText = Dict;
 
 export const fillText = (text: string, vars: Record<string, string | number>) =>
   text.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));

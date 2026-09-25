@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Map, Plus, MessageSquare, User, FileText, LogIn, UserPlus, Bell } from 'lucide-react';
+import { Home, Map, Plus, LogIn, UserPlus, Bell } from 'lucide-react';
 import { ActiveView, Language, UserProfile } from '../types';
 import { CURRENT_USER } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
@@ -10,7 +10,6 @@ interface MobileBottomNavProps {
   onOpenCreateModal: () => void;
   onToggleMapSection?: () => void;
   isMapOpen?: boolean;
-  unreadMessagesCount: number;
   unreadNotificationsCount?: number;
   currentLang?: Language;
   currentUser?: UserProfile;
@@ -24,7 +23,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenCreateModal,
   onToggleMapSection,
   isMapOpen,
-  unreadMessagesCount,
   unreadNotificationsCount = 0,
   currentLang = 'tr',
   currentUser = CURRENT_USER,

@@ -243,7 +243,7 @@ const ListingDetailModalContent: React.FC<Omit<ListingPreviewModalProps, 'listin
               <div className={tile}>
                 <span className={tileLabel}>{t.contractStartDateLabel}</span>
                 <strong className="text-[15px] text-stone-900">
-                  {listing.contractStartDate || t.contractStartImmediate}
+                  {listing.contractStartDate}
                   {listing.contractEndDate ? ` – ${listing.contractEndDate}` : ''}
                 </strong>
               </div>

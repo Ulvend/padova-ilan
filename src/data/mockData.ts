@@ -1,10 +1,4 @@
-import { HousingListing, UserProfile, UserNotification } from '../types';
-
-export const PADOVA_STATS = {
-  videoToursCount: '142 Doğrulandı',
-  confirmationRate: '%98.4 Güncel',
-  officialContractsCount: '310 İlan',
-};
+import { HousingListing, UserProfile } from '../types';
 
 export const UNIPD_LANDMARKS = [
   {
@@ -94,10 +88,6 @@ export const resolveListingCoords = (listing: Partial<HousingListing>, _index: n
   return [45.4064, 11.8768];
 };
 
-export const INITIAL_HOUSING_LISTINGS: HousingListing[] = [];
-
-export const INITIAL_CONVERSATIONS: import('../types').ConversationContact[] = [];
-
 export const DISTRICT_BENCHMARKS: Record<string, {
   districtLabel: string;
   marketTrend: string;
@@ -149,9 +139,5 @@ export const DEFAULT_GUEST_USER: UserProfile = {
 };
 
 export const CURRENT_USER: UserProfile = DEFAULT_GUEST_USER;
-
-export const INITIAL_ARCHIVED_LISTINGS: HousingListing[] = [];
-
-export const INITIAL_NOTIFICATIONS: UserNotification[] = [];
 
 

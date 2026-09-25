@@ -1,31 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { 
   ShieldCheck, 
-  AlertTriangle, 
   CheckCircle2, 
-  XCircle, 
   Trash2, 
   Video, 
   Search, 
   Building2, 
-  Users, 
   GraduationCap, 
   DollarSign, 
   ArrowLeft, 
   Copy, 
-  Check, 
   Scale, 
   ShieldAlert,
   Lock,
   Archive,
   Key,
   UserCheck,
-  UserX,
-  Sparkles,
-  Calendar,
-  Clock,
-  TrendingUp,
-  FileCheck,
   Flag
 } from 'lucide-react';
 import { HousingListing, Language, UserProfile } from '../types';

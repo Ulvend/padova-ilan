@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   Plus, 
   CheckCircle2, 
-  Clock, 
   Trash2, 
   Video, 
   Archive, 
