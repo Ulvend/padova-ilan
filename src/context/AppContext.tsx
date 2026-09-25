@@ -1151,20 +1151,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => clearInterval(timer);
   }, []);
 
-  // Yalnızca geliştirme: adrese `?demo=20` eklenirse sahte ilanlar listeye katılır (data/demoListings.ts).
-  // Veritabanına yazılmaz, önbelleğe girmez ve üretim paketine dahil edilmez.
-  const [demoListings, setDemoListings] = useState<HousingListing[]>([]);
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    const param = new URLSearchParams(window.location.search).get('demo');
-    if (param === null) return;
-    const count = Math.min(60, Math.max(1, Number(param) || 20));
-    import('../data/demoListings').then((m) => setDemoListings(m.generateDemoListings(count)));
-  }, []);
-
   const listings = useMemo(
-    () => [...allListings, ...demoListings].filter((l) => !l.isArchived && !isConfirmationExpired(l, nowMs)),
-    [allListings, demoListings, nowMs]
+    () => allListings.filter((l) => !l.isArchived && !isConfirmationExpired(l, nowMs)),
+    [allListings, nowMs]
   );
 
   // Sözleşme aralığı bitmiş ilanlar herkese açık akışlarda gösterilmez (sahibi kendi listesinde görmeye devam eder).
