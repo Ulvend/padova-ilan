@@ -172,7 +172,14 @@ export const StepPrice: React.FC<StepProps> = ({ form, set, errors, lang }) => {
         </div>
 
         <div className="mt-4">
-          <PriceGauge price={Number(form.price) || 0} district={form.district} roomType={form.roomType} lang={lang} />
+          <PriceGauge
+            price={Number(form.price) || 0}
+            district={form.district}
+            roomType={form.roomType}
+            roomM2={form.roomM2}
+            apartmentM2={form.apartmentM2}
+            lang={lang}
+          />
         </div>
       </Card>
 
@@ -289,6 +296,18 @@ export const StepDetails: React.FC<StepProps> = ({ form, set, errors, lang }) =>
           <Field label={w.bathroomsLabel}>
             <Stepper value={form.bathrooms} min={1} max={6} label={w.bathroomsLabel} onChange={(n) => set({ bathrooms: n })} />
           </Field>
+        </div>
+
+        {/* Kira önceki adımda girildi; metrekare burada girilince m² başına karşılaştırma tamamlanır. */}
+        <div className="mt-4">
+          <PriceGauge
+            price={Number(form.price) || 0}
+            district={form.district}
+            roomType={form.roomType}
+            roomM2={form.roomM2}
+            apartmentM2={form.apartmentM2}
+            lang={lang}
+          />
         </div>
       </Card>
 

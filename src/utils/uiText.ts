@@ -207,9 +207,9 @@ const ROWS = {
 
   // ---- Fiyat radarı etiketleri ----
   fairNoData: ['Bölge karşılaştırması yok', 'No area comparison', 'Nessun confronto di zona', 'Kein Gebietsvergleich', 'Нет сравнения по району', 'इलाके की तुलना उपलब्ध नहीं'],
-  fairBelow: ['Bölge ortalamasının altında (ort. €{avg})', 'Below area average (avg. €{avg})', 'Sotto la media di zona (media €{avg})', 'Unter dem Gebietsdurchschnitt (Ø €{avg})', 'Ниже среднего по району (ср. €{avg})', 'इलाके के औसत से कम (औसत €{avg})'],
-  fairAbove: ['Bölge ortalamasının üstünde (ort. €{avg})', 'Above area average (avg. €{avg})', 'Sopra la media di zona (media €{avg})', 'Über dem Gebietsdurchschnitt (Ø €{avg})', 'Выше среднего по району (ср. €{avg})', 'इलाके के औसत से अधिक (औसत €{avg})'],
-  fairAt: ['Bölge ortalamasında (ort. €{avg})', 'In line with area average (avg. €{avg})', 'In linea con la media di zona (media €{avg})', 'Im Gebietsdurchschnitt (Ø €{avg})', 'На уровне среднего по району (ср. €{avg})', 'इलाके के औसत के अनुरूप (औसत €{avg})'],
+  fairBelow: ['Bölge ortalamasının altında (ort. €{avg}/m²)', 'Below area average (avg. €{avg}/m²)', 'Sotto la media di zona (media €{avg}/m²)', 'Unter dem Gebietsdurchschnitt (Ø €{avg}/m²)', 'Ниже среднего по району (ср. €{avg}/m²)', 'इलाके के औसत से कम (औसत €{avg}/m²)'],
+  fairAbove: ['Bölge ortalamasının üstünde (ort. €{avg}/m²)', 'Above area average (avg. €{avg}/m²)', 'Sopra la media di zona (media €{avg}/m²)', 'Über dem Gebietsdurchschnitt (Ø €{avg}/m²)', 'Выше среднего по району (ср. €{avg}/m²)', 'इलाके के औसत से अधिक (औसत €{avg}/m²)'],
+  fairAt: ['Bölge ortalamasında (ort. €{avg}/m²)', 'In line with area average (avg. €{avg}/m²)', 'In linea con la media di zona (media €{avg}/m²)', 'Im Gebietsdurchschnitt (Ø €{avg}/m²)', 'На уровне среднего по району (ср. €{avg}/m²)', 'इलाके के औसत के अनुरूप (औसत €{avg}/m²)'],
 
   // ---- Hata ve bilgi mesajları ----
   errWrongPassword: ['Mevcut şifreniz hatalı.', 'Your current password is incorrect.', 'La password attuale non è corretta.', 'Dein aktuelles Passwort ist falsch.', 'Текущий пароль неверен.', 'आपका वर्तमान पासवर्ड गलत है।'],

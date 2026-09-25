@@ -40,7 +40,7 @@ import { DISTRICT_BENCHMARKS } from '../data/mockData';
 import { TRANSLATIONS } from '../utils/translations';
 import { getLocalizedListing } from '../utils/listingTranslator';
 import { formatGenderDistribution } from '../utils/genderDistribution';
-import { formatFloor, formatPercent } from '../utils/format';
+import { formatFloor, formatPercent, formatPerM2 } from '../utils/format';
 import { LOW_RATIO, HIGH_RATIO, MIN_COMPARABLE_LISTINGS, type PriceInsight } from '../utils/districtPricing';
 import { marketTrendLabel } from '../utils/marketTrendText';
 import { PadovaMap } from './PadovaMap';
@@ -103,10 +103,13 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const benchmark = DISTRICT_BENCHMARKS[rawListing.district];
   const hasInsight = priceInsight.status !== 'unknown';
   const showPriceRadar = Boolean(benchmark);
+  // Karşılaştırma m² başına euro üzerinden yapılır: Singola/Doppia oda, Monolocale/Bilocale evin tüm metrekaresi.
   const regionalAverage = priceInsight.average;
-  const priceDifference = listing.price - regionalAverage;
+  const listingPerM2 = priceInsight.pricePerM2;
+  const priceDifference = listingPerM2 - regionalAverage;
   const percentageRatio = priceInsight.percentDiff;
-  const priceRatio = regionalAverage ? listing.price / regionalAverage : 1;
+  const priceRatio = regionalAverage ? listingPerM2 / regionalAverage : 1;
+  const perM2 = (n: number) => `€${formatPerM2(n, currentLang)}/m²`;
   // Ölçek ortalamanın %75–%125'i; renk bölgeleri "uygun" (≤%95) / "ortalama" / "yüksek" (≥%110) eşikleriyle aynı.
   const gaugePct = (r: number) => ((Math.min(1.25, Math.max(0.75, r)) - 0.75) / 0.5) * 100;
 
@@ -1084,7 +1087,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                       )}
                     </div>
                     <span className="text-[11px] text-stone-500 font-medium block">
-                      {t.regionalAverage}: €{regionalAverage} ({priceDifference < 0 ? `-€${Math.abs(priceDifference)}` : `+€${priceDifference}`})
+                      {t.regionalAverage}: {perM2(regionalAverage)} ({priceDifference < 0 ? '-' : '+'}{perM2(Math.abs(priceDifference))})
                     </span>
                     <span className="text-[10px] text-stone-400 font-medium block">
                       {t.priceBasedOn.replace('{n}', String(priceInsight.count))}
@@ -1099,13 +1102,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 <div className="bg-white border border-stone-200 rounded-xl p-2.5">
                   <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.rentOfThisRoom}</span>
                   <span className="text-base font-bold text-stone-900">€{listing.price}</span>
+                  {hasInsight && <span className="text-[10px] text-stone-500 block font-semibold">{perM2(listingPerM2)} · {priceInsight.areaM2} m²</span>}
                   <span className="text-[9px] text-emerald-700 block font-semibold">{listing.contractType.split(' ')[0]}</span>
                 </div>
 
                 {hasInsight && (
                   <div className="bg-white border border-stone-200 rounded-xl p-2.5">
                     <span className="text-[10px] text-stone-400 block uppercase font-medium">{t.regionalAverage}</span>
-                    <span className="text-base font-bold text-stone-800">€{regionalAverage}</span>
+                    <span className="text-base font-bold text-stone-800">{perM2(regionalAverage)}</span>
                     <span className="text-[9px] text-stone-500 block">{listing.roomType}</span>
                   </div>
                 )}
@@ -1118,13 +1122,13 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               {hasInsight && (
                 <>
                   <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px] font-semibold text-stone-500">
-                    <span>≤ €{Math.round(regionalAverage * LOW_RATIO)} ({t.economicLabel})</span>
+                    <span>≤ {perM2(regionalAverage * LOW_RATIO)} ({t.economicLabel})</span>
                     <span className="text-emerald-800 font-bold flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-emerald-800" />
-                      <span>{t.thisListingLabel}: €{listing.price}</span>
+                      <span>{t.thisListingLabel}: {perM2(listingPerM2)}</span>
                     </span>
-                    <span className="text-stone-700">{t.regionalAverage}: €{regionalAverage}</span>
-                    <span>≥ €{Math.round(regionalAverage * HIGH_RATIO)} ({t.expensiveLabel})</span>
+                    <span className="text-stone-700">{t.regionalAverage}: {perM2(regionalAverage)}</span>
+                    <span>≥ {perM2(regionalAverage * HIGH_RATIO)} ({t.expensiveLabel})</span>
                   </div>
 
                   <div className="h-2.5 w-full bg-stone-200 rounded-full relative overflow-hidden">
@@ -1140,7 +1144,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                     <div
                       className="absolute top-0 bottom-0 w-2 bg-stone-900 -translate-x-1/2 rounded-full shadow-md"
                       style={{ left: `${Math.min(95, Math.max(5, gaugePct(priceRatio)))}%` }}
-                      title={`${t.thisListingLabel}: €${listing.price}`}
+                      title={`${t.thisListingLabel}: ${perM2(listingPerM2)}`}
                     ></div>
                   </div>
                 </>

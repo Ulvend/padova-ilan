@@ -1,7 +1,12 @@
 import type { HousingListing, Language } from '../types';
+import { LANG_LOCALE } from './locale';
 
 // Yüzde işareti Türkçe'de sayıdan önce (%3), diğer dillerde sonra (3%) yazılır.
 export const formatPercent = (n: number, lang: Language): string => (lang === 'tr' ? `%${n}` : `${n}%`);
+
+// m² başına euro değeri, dile göre ondalık ayracıyla ("14,5"); tam sayıysa ondalıksız ("15").
+export const formatPerM2 = (n: number, lang: Language): string =>
+  n.toLocaleString(LANG_LOCALE[lang], { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 
 // Monolocale / Bilocale bütün bir daire olarak kiralanır: kartlarda evin metrekaresi gösterilir.
 // Singola ve Doppia'da kiralanan şey oda olduğu için oda metrekaresi gösterilir.

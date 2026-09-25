@@ -5,11 +5,15 @@ import { useApp } from '../../context/AppContext';
 import { LOW_RATIO, HIGH_RATIO } from '../../utils/districtPricing';
 import { Language, RoomType } from '../../types';
 import { WIZARD_TEXT } from '../../utils/wizardText';
+import { formatPerM2 } from '../../utils/format';
 
 interface PriceGaugeProps {
   price: number;
   district: string;
   roomType: RoomType;
+  /** Form alanları olduğu gibi (boş olabilir). Singola/Doppia'da oda, Monolocale/Bilocale'de ev metrekaresi kullanılır. */
+  roomM2: string;
+  apartmentM2: string;
   lang: Language;
 }
 
@@ -20,13 +24,22 @@ const LOW = LOW_RATIO;
 const HIGH = HIGH_RATIO;
 const pct = (r: number) => ((Math.min(MAX, Math.max(MIN, r)) - MIN) / (MAX - MIN)) * 100;
 
-export const PriceGauge: React.FC<PriceGaugeProps> = ({ price, district, roomType, lang }) => {
+export const PriceGauge: React.FC<PriceGaugeProps> = ({ price, district, roomType, roomM2, apartmentM2, lang }) => {
   const w = WIZARD_TEXT[lang];
   const { getPriceInsight } = useApp();
-  // Düzenlenen ilanın kendi fiyatı ortalamaya girmesin; fiyat boşken de ortalama gösterilebilsin diye 1 verilir.
+  // Düzenlenen ilanın kendi fiyatı ortalamaya girmesin. Fiyat veya metrekare boşken de bölge ortalaması gösterilir.
   const { id: editingId } = useParams<{ id?: string }>();
-  const insight = getPriceInsight({ id: editingId, district, roomType, price: price > 0 ? price : 1 });
-  const avg = insight.status === 'unknown' ? undefined : insight.average;
+  const insight = getPriceInsight({
+    id: editingId,
+    district,
+    roomType,
+    price,
+    roomM2: Number(roomM2) || 0,
+    apartmentM2: Number(apartmentM2) || 0,
+  });
+  // Ortalama €/m²; yeterli ilan yoksa 0.
+  const avg = insight.average > 0 ? insight.average : undefined;
+  const fmt = (n: number) => `€${formatPerM2(n, lang)}/m²`;
 
   const shell = 'rounded-xl border border-stone-200 bg-stone-50 px-4 py-3.5';
 
@@ -42,10 +55,10 @@ export const PriceGauge: React.FC<PriceGaugeProps> = ({ price, district, roomTyp
     );
   }
 
-  const ratio = price > 0 ? price / avg : null;
+  const ratio = insight.pricePerM2 > 0 ? insight.pricePerM2 / avg : null;
   const status = ratio === null ? null : ratio <= LOW ? 'low' : ratio >= HIGH ? 'high' : 'fair';
   const statusText = status === 'low' ? w.radarLow : status === 'high' ? w.radarHigh : w.radarFair;
-  const message = status === 'low' ? w.radarLowMsg : status === 'high' ? w.radarHighMsg : status === 'fair' ? w.radarFairMsg : w.radarEmpty;
+  const message = status === 'low' ? w.radarLowMsg : status === 'high' ? w.radarHighMsg : status === 'fair' ? w.radarFairMsg : price > 0 ? w.radarNeedArea : w.radarEmpty;
   const badge =
     status === 'low'
       ? 'bg-emerald-100 text-emerald-800'
@@ -80,14 +93,19 @@ export const PriceGauge: React.FC<PriceGaugeProps> = ({ price, district, roomTyp
       </div>
 
       <div className="mt-1 flex justify-between text-[12px] font-medium text-stone-500 tabular-nums">
-        <span>€{Math.round(avg * MIN)}</span>
+        <span>{fmt(avg * MIN)}</span>
         <span>
-          {w.radarAvg}: €{avg}
+          {w.radarAvg}: {fmt(avg)}
         </span>
-        <span>€{Math.round(avg * MAX)}</span>
+        <span>{fmt(avg * MAX)}</span>
       </div>
 
-      <p className="mt-2.5 text-[13px] text-stone-600">{message}</p>
+      {ratio !== null && (
+        <p className="mt-2.5 text-[13px] font-semibold text-stone-800 tabular-nums">
+          {fmt(insight.pricePerM2)} · {insight.areaM2} m²
+        </p>
+      )}
+      <p className="mt-1 text-[13px] text-stone-600">{message}</p>
     </div>
   );
 };

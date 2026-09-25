@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { formatPerM2 } from '../utils/format';
 import { useApp, DEFAULT_FILTERS, MAX_PRICE_UNLIMITED } from '../context/AppContext';
 import { RecentlyAddedSection } from '../components/RecentlyAddedSection';
 import { ListingCard } from '../components/ListingCard';
@@ -100,7 +101,7 @@ export const HomePage: React.FC = () => {
     Boolean(filters.genderFilter),
   ].filter(Boolean).length;
 
-  // Fiyat radarı: sitedeki tüm Singola ilanlarının ortalaması. Yeterli ilan yoksa kart gösterilmez.
+  // Fiyat radarı: sitedeki tüm Singola ilanlarının m² başına (oda metrekaresi) ortalama kirası. Yeterli ilan yoksa kart gösterilmez.
   const radarRoom = 'Singola';
   const cityAverage = getCityAverage(radarRoom);
 
@@ -128,8 +129,8 @@ export const HomePage: React.FC = () => {
             {h.radarLabel}
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-stone-900">€{cityAverage.average}</span>
-            <span className="text-sm text-stone-500">{t.perMonth}</span>
+            <span className="text-4xl font-extrabold tracking-tight text-stone-900">€{formatPerM2(cityAverage.average, currentLang)}</span>
+            <span className="text-sm text-stone-500">/m²</span>
           </div>
           <p className="text-sm leading-snug text-stone-600">
             {radarRoom} {h.radarNote}
